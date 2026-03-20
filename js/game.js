@@ -406,9 +406,11 @@ function goScreen(name){
   prevScreen=currentScreen;currentScreen=name;
   if(name==='leaderboard')renderLB('global');
   if(name==='start')document.getElementById('best-score-start').textContent=bestScore;
+  if(name==='tutorial'){tutSlide=0;renderTutSlide(0);}
 }
 function goGame(){
-  score=0;levelScore=0;moves=getDiffMoves();level=1;combo=0;targetScore=getDiffTarget();paused=false;busy=false;
+  paused=false;busy=false;
+  score=0;levelScore=0;moves=getDiffMoves();level=1;combo=0;targetScore=getDiffTarget();
   document.getElementById('overlay-pause').classList.add('hidden');
   initGrid();renderBoard();updateStats();
   document.getElementById('progress-fill').style.width='0%';
@@ -452,6 +454,7 @@ function loadSettings(){
   applyThemeColors(settings.theme||'');
   initBgAnim(settings.theme||'');
   if(settings.music)startBgMusic();
+  checkFirstTime();
 }
 document.getElementById('set-sfx').onchange=e=>{settings.sfx=e.target.checked;saveSettings();};
 document.getElementById('set-music').onchange=e=>{settings.music=e.target.checked;saveSettings();if(settings.music)startBgMusic();else stopBgMusic();};
@@ -460,7 +463,7 @@ document.getElementById('set-anim').onchange=e=>{settings.anim=e.target.checked;
 function resetProgress(){document.getElementById('overlay-reset').classList.remove('hidden');}
 function confirmReset(){
   document.getElementById('overlay-reset').classList.add('hidden');
-  localStorage.removeItem('cb_best');localStorage.removeItem('cb_settings');localStorage.removeItem('cb_personal');
+  localStorage.removeItem('cb_best');localStorage.removeItem('cb_settings');localStorage.removeItem('cb_personal');localStorage.removeItem('cb_tutorial_done');
   bestScore=0;score=0;level=1;
   settings={sfx:true,music:false,vibro:true,anim:true,volume:70,diff:'normal',theme:''};
   stopBgMusic();loadSettings();goScreen('start');

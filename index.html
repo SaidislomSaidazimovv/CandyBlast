@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Candy Blast 🍭</title>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/tutorial.css">
 </head>
 <body>
 
@@ -19,6 +20,7 @@
   <div class="start-btns">
     <button class="btn btn-play" onclick="goGame()">▶ Play</button>
     <button class="btn btn-leaderboard" onclick="goScreen('leaderboard')">🏆 Leaderboard</button>
+    <button class="btn btn-tutorial" onclick="tutSlide=0;goScreen('tutorial');renderTutSlide(0);">🎓 How to Play</button>
     <button class="btn btn-settings" onclick="goScreen('settings')">⚙️ Settings</button>
   </div>
   <div class="best-score-text" style="position:absolute;bottom:20px;color:var(--t-text-muted);font-size:.75rem;">
@@ -132,6 +134,15 @@
   </div>
 </div></div>
 
+<div class="screen hidden" id="screen-tutorial">
+  <div style="position:fixed;top:16px;left:0;right:0;display:flex;justify-content:space-between;padding:0 20px;z-index:300;pointer-events:none;" id="tut-nav">
+    <button onclick="goScreen('start')" style="pointer-events:all;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);font-size:.8rem;padding:6px 14px;border-radius:20px;cursor:pointer;font-family:'Nunito',sans-serif;">← Back</button>
+    <button id="tut-skip-btn" onclick="skipTutorial()" style="pointer-events:all;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);font-size:.8rem;padding:6px 14px;border-radius:20px;cursor:pointer;font-family:'Nunito',sans-serif;">Skip →</button>
+  </div>
+  <div id="tut-container" style="width:100%;height:100vh;display:flex;flex-direction:column;overflow:hidden;position:relative;"></div>
+</div>
+
+<script src="js/tutorial.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>
