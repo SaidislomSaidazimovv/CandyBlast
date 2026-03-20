@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Candy Blast 🍭</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div class="screen" id="screen-start">
+  <div class="logo-wrap">
+    <span class="logo-candy">🍭</span>
+    <span class="logo-title">Candy Blast</span>
+    <span class="logo-sub">Match 3 • Puzzle Game</span>
+  </div>
+  <div class="start-btns">
+    <button class="btn btn-play" onclick="goGame()">▶ Play</button>
+    <button class="btn btn-leaderboard" onclick="goScreen('leaderboard')">🏆 Leaderboard</button>
+    <button class="btn btn-settings" onclick="goScreen('settings')">⚙️ Settings</button>
+  </div>
+  <div class="best-score-text" style="position:absolute;bottom:20px;color:var(--t-text-muted);font-size:.75rem;">
+    Best: <span id="best-score-start">0</span> pts
+  </div>
+</div>
+
+<div class="screen hidden" id="screen-settings">
+  <div class="panel" style="max-width:360px;width:100%;max-height:90vh;">
+    <div class="panel-title">⚙️ Settings</div>
+    <div class="setting-row"><div><div class="setting-label">🔊 Sound Effects</div></div><label class="toggle"><input type="checkbox" id="set-sfx" checked><span class="toggle-slider"></span></label></div>
+    <div class="setting-row"><div><div class="setting-label">🎵 Music</div></div><label class="toggle"><input type="checkbox" id="set-music"><span class="toggle-slider"></span></label></div>
+    <div class="setting-row"><div><div class="setting-label">📳 Vibration</div></div><label class="toggle"><input type="checkbox" id="set-vibro" checked><span class="toggle-slider"></span></label></div>
+    <div class="setting-row"><div><div class="setting-label">✨ Animations</div></div><label class="toggle"><input type="checkbox" id="set-anim" checked><span class="toggle-slider"></span></label></div>
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
+      <div class="setting-label">🎨 Theme</div>
+      <div class="theme-row" id="theme-dots">
+        <div class="theme-dot active" style="background:linear-gradient(135deg,#4a0080,#ff5fa0)" data-theme="" onclick="setTheme(this,'')"></div>
+        <div class="theme-dot" style="background:linear-gradient(135deg,#003366,#00f2fe)" data-theme="theme-ocean" onclick="setTheme(this,'theme-ocean')"></div>
+        <div class="theme-dot" style="background:linear-gradient(135deg,#0a2e0a,#43e97b)" data-theme="theme-forest" onclick="setTheme(this,'theme-forest')"></div>
+        <div class="theme-dot" style="background:linear-gradient(135deg,#1a0500,#ff4500)" data-theme="theme-fire" onclick="setTheme(this,'theme-fire')"></div>
+        <div class="theme-dot" style="background:linear-gradient(135deg,#440055,#ff88cc)" data-theme="theme-candy" onclick="setTheme(this,'theme-candy')"></div>
+        <div class="theme-dot" style="background:linear-gradient(135deg,#e0e0e0,#ffffff);border:2px solid #ccc" data-theme="theme-white" onclick="setTheme(this,'theme-white')"></div>
+        <div class="theme-dot" style="background:linear-gradient(135deg,#000000,#1a1a1a);border:2px solid #333" data-theme="theme-black" onclick="setTheme(this,'theme-black')"></div>
+      </div>
+    </div>
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
+      <div class="setting-label">⚡ Difficulty</div>
+      <div class="diff-row" style="width:100%">
+        <button class="diff-btn" data-diff="easy" onclick="setDiff(this)">Easy</button>
+        <button class="diff-btn active" data-diff="normal" onclick="setDiff(this)">Normal</button>
+        <button class="diff-btn" data-diff="hard" onclick="setDiff(this)">Hard</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">🔊 Volume</div><div class="setting-sub">Sound level</div></div>
+      <div class="range-wrap"><input type="range" min="0" max="100" value="70" id="set-volume" oninput="updateVolume(this)"><span class="range-val" id="vol-val">70</span></div>
+    </div>
+    <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-secondary" onclick="resetProgress()">🗑️ Reset Progress</button>
+      <button class="btn btn-play" style="padding:14px" onclick="goBack()">← Back</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen hidden" id="screen-leaderboard">
+  <div class="panel" style="max-width:380px;width:100%;max-height:90vh;">
+    <div class="panel-title">🏆 Leaderboard</div>
+    <div class="lb-tabs">
+      <button class="lb-tab active" onclick="showTab(this,'global')">🌍 Global</button>
+      <button class="lb-tab" onclick="showTab(this,'weekly')">📅 Weekly</button>
+      <button class="lb-tab" onclick="showTab(this,'personal')">👤 Personal</button>
+    </div>
+    <div class="lb-list" id="lb-list"></div>
+    <button class="btn btn-play" style="padding:14px;width:100%" onclick="goScreen('start')">← Back</button>
+  </div>
+</div>
+
+<div class="screen hidden" id="screen-game">
+  <div class="game-header">
+    <button class="header-btn" onclick="pauseGame()">⏸</button>
+    <span class="game-title-small">🍭 Candy Blast</span>
+    <button class="header-btn" onclick="showQuitDialog()">🏠</button>
+  </div>
+  <div class="stats">
+    <div class="stat-box"><div class="stat-label">Score</div><div class="stat-value" id="score-val" style="color:var(--t-accent)">0</div></div>
+    <div class="stat-box"><div class="stat-label">Level</div><div class="stat-value" id="level-val" style="color:var(--cyan)">1</div></div>
+    <div class="stat-box"><div class="stat-label">Moves</div><div class="stat-value" id="moves-val" style="color:var(--t-primary)">30</div></div>
+    <div class="stat-box"><div class="stat-label">Best</div><div class="stat-value" id="best-val" style="opacity:.6">0</div></div>
+  </div>
+  <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div id="combo-display"></div>
+  <div id="board-wrap"><div id="board"></div></div>
+</div>
+
+<div class="overlay hidden" id="overlay-pause"><div class="overlay-card"><div class="ov-title">⏸ Paused</div><div class="ov-btns">
+  <button class="btn btn-play" onclick="resumeGame()">▶ Resume</button>
+  <button class="btn btn-settings" onclick="document.getElementById('overlay-pause').classList.add('hidden');goScreen('settings')">⚙️ Settings</button>
+  <button class="btn btn-secondary" onclick="document.getElementById('overlay-pause').classList.add('hidden');paused=false;goScreen('start')">🏠 Main Menu</button>
+</div></div></div>
+
+<div class="overlay hidden" id="overlay-quit"><div class="overlay-card"><div class="ov-title">Quit? 🏠</div><div class="ov-sub">Your progress will be saved</div><div class="ov-btns">
+  <button class="btn btn-play" onclick="confirmQuit()">Yes, Quit</button>
+  <button class="btn btn-secondary" onclick="cancelQuit()">Cancel</button>
+</div></div></div>
+
+<div class="overlay hidden" id="overlay-reset"><div class="overlay-card"><div class="ov-title">Reset? 🗑️</div><div class="ov-sub">All progress will be erased</div><div class="ov-btns">
+  <button class="btn btn-play" onclick="confirmReset()">Yes, Reset</button>
+  <button class="btn btn-secondary" onclick="document.getElementById('overlay-reset').classList.add('hidden')">Cancel</button>
+</div></div></div>
+
+<div class="overlay hidden" id="overlay-win"><div class="overlay-card">
+  <div class="ov-title">Level Clear! 🎉</div>
+  <div class="stars" id="win-stars">⭐⭐⭐</div>
+  <div class="ov-sub">Final Score</div>
+  <div class="ov-score" id="win-score">0</div>
+  <div class="ov-sub" id="win-level-score" style="margin-top:-4px;margin-bottom:4px;font-size:.8rem;color:var(--t-secondary)"></div>
+  <div class="ov-btns">
+    <button class="btn btn-play" onclick="nextLevel()">Next Level →</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('overlay-win').classList.add('hidden');goScreen('start')">🏠 Menu</button>
+  </div>
+</div></div>
+
+<div class="overlay hidden" id="overlay-over"><div class="overlay-card">
+  <div class="ov-title">Game Over 😢</div>
+  <div class="ov-sub">No more moves!</div>
+  <div class="ov-score" id="over-score">0</div>
+  <div class="ov-btns">
+    <button class="btn btn-play" onclick="retryLevel()">🔄 Retry</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('overlay-over').classList.add('hidden');goScreen('start')">🏠 Menu</button>
+  </div>
+</div></div>
+
+<script src="js/game.js"></script>
+</body>
+</html>
