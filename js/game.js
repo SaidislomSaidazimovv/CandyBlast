@@ -401,15 +401,18 @@ const weeklyLB=[
 // ═══════ SCREENS ═══════
 let currentScreen='start',prevScreen='start';
 function goScreen(name){
+  if(currentScreen==='game'&&name!=='game')stopPlayTimer();
   document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
   document.getElementById('screen-'+name).classList.remove('hidden');
   prevScreen=currentScreen;currentScreen=name;
   if(name==='leaderboard')renderLB('global');
   if(name==='start')document.getElementById('best-score-start').textContent=bestScore;
   if(name==='tutorial'){tutSlide=0;renderTutSlide(0);}
+  if(name==='game')setTimeout(startPlayTimer,100);
 }
 function goGame(){
   paused=false;busy=false;
+  if(!hasLives()){showNoLivesPopup();return;}
   score=0;levelScore=0;moves=getDiffMoves();level=1;combo=0;targetScore=getDiffTarget();
   document.getElementById('overlay-pause').classList.add('hidden');
   initGrid();renderBoard();updateStats();
@@ -417,6 +420,8 @@ function goGame(){
   document.getElementById('combo-display').textContent='';
   document.getElementById('best-val').textContent=bestScore;
   goScreen('game');
+  updateIngameBoosterUI();
+  showPreGame();
 }
 
 // ═══════ SETTINGS ═══════
@@ -454,6 +459,8 @@ function loadSettings(){
   applyThemeColors(settings.theme||'');
   initBgAnim(settings.theme||'');
   if(settings.music)startBgMusic();
+  initLives();
+  initDaily();
   checkFirstTime();
 }
 document.getElementById('set-sfx').onchange=e=>{settings.sfx=e.target.checked;saveSettings();};
@@ -463,7 +470,7 @@ document.getElementById('set-anim').onchange=e=>{settings.anim=e.target.checked;
 function resetProgress(){document.getElementById('overlay-reset').classList.remove('hidden');}
 function confirmReset(){
   document.getElementById('overlay-reset').classList.add('hidden');
-  localStorage.removeItem('cb_best');localStorage.removeItem('cb_settings');localStorage.removeItem('cb_personal');localStorage.removeItem('cb_tutorial_done');
+  localStorage.removeItem('cb_best');localStorage.removeItem('cb_settings');localStorage.removeItem('cb_personal');localStorage.removeItem('cb_tutorial_done');localStorage.removeItem('cb_lives');localStorage.removeItem('cb_daily');localStorage.removeItem('cb_daily_done');
   bestScore=0;score=0;level=1;
   settings={sfx:true,music:false,vibro:true,anim:true,volume:70,diff:'normal',theme:''};
   stopBgMusic();loadSettings();goScreen('start');
@@ -529,6 +536,19 @@ function updateStats(){
 }
 function onCellClick(e){
   if(busy||paused)return;
+  if(hammerMode){
+    const hr=+e.currentTarget.dataset.r,hc=+e.currentTarget.dataset.c;
+    grid[hr][hc]=-1;showHammerHint(false);busy=true;
+    const hb=document.getElementById('ingame-btn-hammer');if(hb)hb.classList.remove('active-hammer');
+    const hcell=getCell(hr,hc);
+    if(hcell){hcell.classList.add('matched');
+      setTimeout(async()=>{
+        for(let col=0;col<GRID;col++){let empty=0;for(let row=GRID-1;row>=0;row--){if(grid[row][col]===-1)empty++;else if(empty>0){grid[row+empty][col]=grid[row][col];grid[row][col]=-1;}}for(let row=0;row<empty;row++)grid[row][col]=randType();}
+        renderBoard();await processMatches();busy=false;
+      },350);
+    }
+    return;
+  }
   const r=+e.currentTarget.dataset.r,c=+e.currentTarget.dataset.c;
   if(selected===null){selected={r,c};getCell(r,c).classList.add('selected');playSwap();}
   else{const pr=selected.r,pc=selected.c;getCell(pr,pc).classList.remove('selected');if(pr===r&&pc===c){selected=null;return;}if(Math.abs(pr-r)+Math.abs(pc-c)!==1){selected={r,c};getCell(r,c).classList.add('selected');playSwap();return;}selected=null;trySwap(pr,pc,r,c);}
@@ -582,8 +602,8 @@ async function processMatches(){
 }
 function showCombo(c,pts){const el=document.getElementById('combo-display');if(c>=2){el.textContent=`🔥 x${c} COMBO! +${pts}`;el.style.color=c>=4?'var(--t-primary)':c>=3?'var(--t-accent)':'var(--t-secondary)';}else{el.textContent=pts>0?`+${pts}`:'';el.style.color='var(--t-text-muted)';}}
 function checkEnd(){if(score>=targetScore)setTimeout(()=>{savePersonalScore();showWin();},300);else if(moves<=0)setTimeout(()=>{savePersonalScore();showOver();},300);}
-function showWin(){playWin();document.getElementById('win-score').textContent=levelScore.toLocaleString();const stars=levelScore>=targetScore*1.5?'⭐⭐⭐':levelScore>=targetScore*1.1?'⭐⭐':'⭐';document.getElementById('win-stars').textContent=stars;document.getElementById('win-level-score').textContent='This level: +'+levelScore.toLocaleString()+' pts';document.getElementById('overlay-win').classList.remove('hidden');}
-function showOver(){playOver();document.getElementById('over-score').textContent=score.toLocaleString();document.getElementById('overlay-over').classList.remove('hidden');}
+function showWin(){playWin();document.getElementById('win-score').textContent=levelScore.toLocaleString();const stars=levelScore>=targetScore*1.5?'⭐⭐⭐':levelScore>=targetScore*1.1?'⭐⭐':'⭐';document.getElementById('win-stars').textContent=stars;document.getElementById('win-level-score').textContent='This level: +'+levelScore.toLocaleString()+' pts';document.getElementById('overlay-win').classList.remove('hidden');if(stars==='⭐⭐⭐'){const bt=['extraMoves','hammer','bomb'];setTimeout(()=>earnBooster(bt[Math.floor(Math.random()*3)]),800);}}
+function showOver(){loseLife();playOver();document.getElementById('over-score').textContent=score.toLocaleString();document.getElementById('overlay-over').classList.remove('hidden');}
 function nextLevel(){document.getElementById('overlay-win').classList.add('hidden');level++;score=0;levelScore=0;targetScore=getDiffTarget()*level;moves=getDiffMoves()+Math.floor(level/3);combo=0;busy=false;initGrid();renderBoard();updateStats();document.getElementById('progress-fill').style.width='0%';}
 function retryLevel(){document.getElementById('overlay-over').classList.add('hidden');score=0;levelScore=0;moves=getDiffMoves();combo=0;targetScore=getDiffTarget()*level;busy=false;initGrid();renderBoard();updateStats();document.getElementById('progress-fill').style.width='0%';document.getElementById('combo-display').textContent='';}
 function pauseGame(){paused=true;document.getElementById('overlay-pause').classList.remove('hidden');}

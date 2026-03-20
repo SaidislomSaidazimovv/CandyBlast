@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
 <title>Candy Blast 🍭</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/tutorial.css">
@@ -12,16 +16,43 @@
 <canvas id="bg-canvas"></canvas>
 
 <div class="screen" id="screen-start">
+  <div id="start-top-bar" style="display:none;position:absolute;top:0;left:0;right:0;padding:12px 16px;z-index:10;pointer-events:none;">
+    <div style="display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;width:100%;pointer-events:none;">
+      <button onclick="goScreen('settings')" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.15);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;pointer-events:all;flex-shrink:0;">⚙️</button>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none;">
+        <div style="display:flex;flex-direction:row;gap:8px;pointer-events:all;">
+          <button onclick="goScreen('leaderboard')" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.15);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">🏆</button>
+          <button id="spin-mobile-btn" onclick="onSpinBtnClick()" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,220,0,0.2);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;">🎡<span id="spin-mobile-count" style="position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:rgba(255,220,0,0.9);color:#000;font-family:'Fredoka One',cursive;font-size:0.6rem;display:flex;align-items:center;justify-content:center;padding:0 4px;border:1.5px solid rgba(0,0,0,0.3);">0</span></button>
+          <button onclick="goScreen('rewards');renderRewardsScreen();" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.15);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;">🎁<span id="daily-notif-dot" style="position:absolute;top:1px;right:1px;width:8px;height:8px;border-radius:50%;background:#ff4444;display:none;border:1.5px solid rgba(0,0,0,0.4);"></span></button>
+        </div>
+        <div id="lives-display-mobile" style="display:flex;flex-direction:row;align-items:center;gap:6px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:5px 10px;pointer-events:all;">
+          <div id="lives-hearts-mobile" style="display:flex;gap:2px;"></div>
+          <div style="width:1px;height:14px;background:rgba(255,255,255,0.2);"></div>
+          <div id="lives-timer-mobile" style="font-family:'Fredoka One',cursive;font-size:0.75rem;color:#43e97b;white-space:nowrap;">Full</div>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="logo-wrap">
     <span class="logo-candy">🍭</span>
     <span class="logo-title">Candy Blast</span>
     <span class="logo-sub">Match 3 • Puzzle Game</span>
   </div>
+  <div id="lives-display" style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:10px 20px;width:100%;max-width:280px;">
+    <div id="lives-hearts" style="display:flex;gap:3px;"></div>
+    <div style="width:1px;height:24px;background:rgba(255,255,255,0.15);"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+      <div style="font-size:0.6rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;">Next life</div>
+      <div id="lives-timer" style="font-family:'Fredoka One',cursive;font-size:0.95rem;color:#43e97b;">Full</div>
+    </div>
+  </div>
   <div class="start-btns">
     <button class="btn btn-play" onclick="goGame()">▶ Play</button>
-    <button class="btn btn-leaderboard" onclick="goScreen('leaderboard')">🏆 Leaderboard</button>
+    <button class="btn btn-daily" id="btn-daily-big" onclick="goScreen('rewards');renderRewardsScreen();">🎁 Daily Rewards</button>
+    <button class="btn btn-spin" id="spin-desktop-btn" onclick="onSpinBtnClick()"><span>🎡 Lucky Spin</span><span id="spin-desktop-count" style="background:rgba(255,220,0,0.2);color:#ffe259;font-size:0.75rem;padding:2px 10px;border-radius:10px;margin-left:8px;">0</span></button>
+    <button class="btn btn-leaderboard" id="btn-leaderboard-big" onclick="goScreen('leaderboard')">🏆 Leaderboard</button>
     <button class="btn btn-tutorial" onclick="tutSlide=0;goScreen('tutorial');renderTutSlide(0);">🎓 How to Play</button>
-    <button class="btn btn-settings" onclick="goScreen('settings')">⚙️ Settings</button>
+    <button class="btn btn-settings" id="btn-settings-big" onclick="goScreen('settings')">⚙️ Settings</button>
   </div>
   <div class="best-score-text" style="position:absolute;bottom:20px;color:var(--t-text-muted);font-size:.75rem;">
     Best: <span id="best-score-start">0</span> pts
@@ -29,7 +60,8 @@
 </div>
 
 <div class="screen hidden" id="screen-settings">
-  <div class="panel" style="max-width:360px;width:100%;max-height:90vh;">
+  <div class="panel" style="max-width:360px;width:100%;max-height:90vh;position:relative;">
+    <button onclick="goBack()" style="position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);transition:background 0.15s;z-index:1;">✕</button>
     <div class="panel-title">⚙️ Settings</div>
     <div class="setting-row"><div><div class="setting-label">🔊 Sound Effects</div></div><label class="toggle"><input type="checkbox" id="set-sfx" checked><span class="toggle-slider"></span></label></div>
     <div class="setting-row"><div><div class="setting-label">🎵 Music</div></div><label class="toggle"><input type="checkbox" id="set-music"><span class="toggle-slider"></span></label></div>
@@ -59,9 +91,8 @@
       <div><div class="setting-label">🔊 Volume</div><div class="setting-sub">Sound level</div></div>
       <div class="range-wrap"><input type="range" min="0" max="100" value="70" id="set-volume" oninput="updateVolume(this)"><span class="range-val" id="vol-val">70</span></div>
     </div>
-    <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px;">
-      <button class="btn btn-secondary" onclick="resetProgress()">🗑️ Reset Progress</button>
-      <button class="btn btn-play" style="padding:14px" onclick="goBack()">← Back</button>
+    <div style="margin-top:20px;">
+      <button class="btn btn-secondary" onclick="resetProgress()" style="width:100%;">🗑️ Reset Progress</button>
     </div>
   </div>
 </div>
@@ -94,6 +125,23 @@
   <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
   <div id="combo-display"></div>
   <div id="board-wrap"><div id="board"></div></div>
+  <div id="ingame-boosters" style="display:flex;gap:10px;justify-content:center;width:100%;max-width:420px;margin-top:10px;padding:0 4px;">
+    <div class="ingame-booster-btn" id="ingame-btn-extraMoves" onclick="useIngameBooster('extraMoves')" style="border-color:rgba(255,220,0,0.3);">
+      <span class="ingame-booster-icon">⚡</span>
+      <span class="ingame-booster-label" style="color:#ffe259;">+5</span>
+      <span class="ingame-booster-count" id="ingame-count-extraMoves" style="background:rgba(255,220,0,0.2);color:#ffe259;">0</span>
+    </div>
+    <div class="ingame-booster-btn" id="ingame-btn-hammer" onclick="useIngameBooster('hammer')" style="border-color:rgba(255,140,66,0.3);">
+      <span class="ingame-booster-icon">🔨</span>
+      <span class="ingame-booster-label" style="color:#ff8c42;">Hammer</span>
+      <span class="ingame-booster-count" id="ingame-count-hammer" style="background:rgba(255,140,66,0.2);color:#ff8c42;">0</span>
+    </div>
+    <div class="ingame-booster-btn" id="ingame-btn-bomb" onclick="useIngameBooster('bomb')" style="border-color:rgba(196,113,237,0.3);">
+      <span class="ingame-booster-icon">💣</span>
+      <span class="ingame-booster-label" style="color:#c471ed;">Bomb</span>
+      <span class="ingame-booster-count" id="ingame-count-bomb" style="background:rgba(196,113,237,0.2);color:#c471ed;">0</span>
+    </div>
+  </div>
 </div>
 
 <div class="overlay hidden" id="overlay-pause"><div class="overlay-card"><div class="ov-title">⏸ Paused</div><div class="ov-btns">
@@ -134,6 +182,36 @@
   </div>
 </div></div>
 
+<div class="overlay hidden" id="overlay-pregame"><div class="overlay-card" style="max-width:320px;">
+  <div class="ov-title">Ready? 🎮</div>
+  <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-bottom:20px;">Use a booster before you start!</div>
+  <div style="display:flex;gap:10px;margin-bottom:20px;">
+    <div class="booster-card" id="booster-btn-extraMoves" onclick="useBooster('extraMoves')">
+      <div class="booster-icon">⚡</div>
+      <div class="booster-name" style="color:#ffe259;">+5 Moves</div>
+      <div class="booster-badge" style="background:rgba(255,220,0,0.15);color:#ffe259;">x<span id="booster-count-extraMoves">0</span></div>
+    </div>
+    <div class="booster-card" id="booster-btn-hammer" onclick="useBooster('hammer')">
+      <div class="booster-icon">🔨</div>
+      <div class="booster-name" style="color:#ff8c42;">Hammer</div>
+      <div class="booster-badge" style="background:rgba(255,140,66,0.15);color:#ff8c42;">x<span id="booster-count-hammer">0</span></div>
+    </div>
+    <div class="booster-card" id="booster-btn-bomb" onclick="useBooster('bomb')">
+      <div class="booster-icon">💣</div>
+      <div class="booster-name" style="color:#c471ed;">Bomb</div>
+      <div class="booster-badge" style="background:rgba(196,113,237,0.15);color:#c471ed;">x<span id="booster-count-bomb">0</span></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    <button class="btn btn-play" onclick="hidePreGame()" style="padding:14px;">▶ Play Now!</button>
+    <button class="btn btn-secondary" onclick="hidePreGame();goScreen('start')" style="padding:10px;font-size:0.9rem;">← Back</button>
+  </div>
+</div></div>
+
+<div class="screen hidden" id="screen-rewards">
+  <div id="rewards-container" style="width:100%;max-width:480px;height:100vh;display:flex;flex-direction:column;overflow:hidden;"></div>
+</div>
+
 <div class="screen hidden" id="screen-tutorial">
   <div style="position:fixed;top:16px;left:0;right:0;display:flex;justify-content:space-between;padding:0 20px;z-index:300;pointer-events:none;" id="tut-nav">
     <button onclick="goScreen('start')" style="pointer-events:all;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);font-size:.8rem;padding:6px 14px;border-radius:20px;cursor:pointer;font-family:'Nunito',sans-serif;">← Back</button>
@@ -143,6 +221,8 @@
 </div>
 
 <script src="js/tutorial.js"></script>
+<script src="js/lives.js"></script>
+<script src="js/daily.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>
