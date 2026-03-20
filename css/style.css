@@ -870,17 +870,7 @@ input[type="range"]::-webkit-slider-thumb {
 .btn-daily:hover {
   background: rgba(255, 220, 0, 0.1);
 }
-.btn-spin {
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffe259;
-  border: 1.5px solid rgba(255, 220, 0, 0.25);
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-}
-.btn-spin:hover {
-  background: rgba(255, 220, 0, 0.1);
-}
+
 
 /* ═══════════ MOBILE + TABLET START SCREEN ═══════════ */
 @media (max-width: 1023px) {
