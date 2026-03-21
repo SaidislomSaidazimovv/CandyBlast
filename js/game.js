@@ -74,17 +74,12 @@ function applyThemeColors(theme){
   Object.entries(t).forEach(([k,v])=>root.style.setProperty(k,v));
 }
 
-// ═══════ BACKGROUND ANIMATION ═══════
+// ═══════ BACKGROUND ANIMATION (legacy — replaced by SVG) ═══════
 const bgCanvas=document.getElementById('bg-canvas');
-const bgCtx=bgCanvas.getContext('2d');
-let bgParticles=[],bgAnimId=null,bgTheme='',bgTime=0,bgExtra={};
+if(bgCanvas)bgCanvas.style.display='none';
 
-function resizeBgCanvas(){bgCanvas.width=window.innerWidth;bgCanvas.height=window.innerHeight;}
-window.addEventListener('resize',resizeBgCanvas);
-resizeBgCanvas();
-function rnd(a,b){return a+Math.random()*(b-a);}
-
-const TC={
+// Legacy canvas particle system removed — replaced by SVG backgrounds (js/backgrounds.js)
+const TC_LEGACY={
   '':{// PURPLE — deep space candy
     count:50,
     init(p,w,h,i){
@@ -360,24 +355,7 @@ const TC={
   }
 };
 
-function initBgAnim(theme){
-  bgTheme=theme||'';bgTime=0;
-  const cfg=TC[bgTheme]||TC[''];
-  const w=bgCanvas.width,h=bgCanvas.height;
-  bgParticles=[];
-  if(cfg.initBg)cfg.initBg(bgCtx,w,h);
-  for(let i=0;i<cfg.count;i++){const p={};cfg.init(p,w,h,i);bgParticles.push(p);}
-  if(!bgAnimId)bgAnimLoop();
-}
-function bgAnimLoop(){
-  bgTime++;
-  const w=bgCanvas.width,h=bgCanvas.height;
-  const cfg=TC[bgTheme]||TC[''];
-  if(cfg.drawBg)cfg.drawBg(bgCtx,w,h,bgTime);
-  bgParticles.forEach(p=>{cfg.update(p,w,h,bgTime);cfg.draw(bgCtx,p,bgTime);});
-  bgCtx.globalAlpha=1;
-  bgAnimId=requestAnimationFrame(bgAnimLoop);
-}
+function initBgAnim(){} // legacy stub
 
 // ═══════ LEADERBOARD DATA ═══════
 const globalLB=[
@@ -438,7 +416,7 @@ function setTheme(el,theme){
   el.classList.add('active');
   document.body.className=theme;
   settings.theme=theme;saveSettings();
-  applyThemeColors(theme);initBgAnim(theme);
+  applyThemeColors(theme);applyBackground(theme);
 }
 function setDiff(el){
   document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
@@ -465,7 +443,7 @@ function loadSettings(){
   document.querySelectorAll('.theme-dot').forEach(d=>d.classList.toggle('active',d.dataset.theme===settings.theme));
   document.querySelectorAll('.diff-btn').forEach(b=>b.classList.toggle('active',b.dataset.diff===settings.diff));
   applyThemeColors(settings.theme||'');
-  initBgAnim(settings.theme||'');
+  initBackground();
   if(settings.music)startBgMusic();
   initLives();
   initDaily();
