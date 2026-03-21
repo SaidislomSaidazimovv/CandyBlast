@@ -1,0 +1,99 @@
+/* ── Special candy animations ── */
+@keyframes laserFade {
+  0% { opacity: 1; transform: scaleY(1); }
+  100% { opacity: 0; transform: scaleY(2); }
+}
+
+@keyframes bombBurst {
+  0% { transform: scale(0); opacity: 1; }
+  60% { transform: scale(2.5); opacity: 0.8; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+@keyframes wrappedBurst {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+@keyframes wrappedPulse {
+  0%, 100% {
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2),
+      0 0 0 3px rgba(255, 200, 255, 0.7),
+      0 0 8px rgba(255, 150, 255, 0.5);
+  }
+  50% {
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2),
+      0 0 0 3px rgba(255, 200, 255, 1),
+      0 0 16px rgba(255, 150, 255, 0.8);
+  }
+}
+
+/* ── Striped Horizontal ── */
+.cell.special-striped-h {
+  position: relative;
+  overflow: hidden;
+}
+.cell.special-striped-h::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  z-index: 1;
+}
+
+/* ── Striped Vertical ── */
+.cell.special-striped-v {
+  position: relative;
+  overflow: hidden;
+}
+.cell.special-striped-v::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  z-index: 1;
+}
+
+/* ── Color Bomb ── */
+.cell.special-bomb {
+  position: relative;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.3),
+    transparent 70%
+  ) !important;
+  border: 2px solid rgba(255, 255, 255, 0.5) !important;
+  animation: wrappedPulse 1.2s ease-in-out infinite !important;
+}
+
+/* ── Wrapped ── */
+.cell.special-wrapped {
+  position: relative;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2),
+    0 0 0 3px rgba(255, 200, 255, 0.7),
+    0 0 8px rgba(255, 150, 255, 0.5) !important;
+  animation: wrappedPulse 1.5s ease-in-out infinite !important;
+}
+
+/* ── Special badge (corner icon) ── */
+.special-badge {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 0.5em;
+  line-height: 1;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
+  z-index: 2;
+}

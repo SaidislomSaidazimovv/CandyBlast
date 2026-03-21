@@ -1,0 +1,20 @@
+/* Map/Level select scrollbar hidden */
+#map-container *,
+#levelselect-container * {
+  scrollbar-width: none;
+}
+#map-container *::-webkit-scrollbar,
+#levelselect-container *::-webkit-scrollbar {
+  display: none;
+}
+
+/* Region card press */
+#map-container div[style*="pointer"]:active {
+  transform: scale(0.98) !important;
+}
+
+/* Current level pulse */
+@keyframes currentPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.1); }
+}
