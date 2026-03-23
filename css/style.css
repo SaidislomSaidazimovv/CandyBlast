@@ -77,11 +77,16 @@ body {
   transition:
     opacity 0.35s ease,
     transform 0.35s ease;
+  visibility: visible;
 }
 .screen.hidden {
   opacity: 0;
   pointer-events: none;
   transform: scale(0.96);
+  visibility: hidden;
+}
+.screen.hidden * {
+  pointer-events: none !important;
 }
 
 .logo-wrap {
