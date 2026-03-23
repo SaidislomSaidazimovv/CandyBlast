@@ -79,12 +79,12 @@ function renderMapScreen() {
 
   // Header
   const h = document.createElement('div');
-  h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px;flex-shrink:0;position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(0,0,0,0.8),transparent);';
+  h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px;flex-shrink:0;position:sticky;top:0;z-index:10;background:rgba(0,0,0,0.7);';
   h.innerHTML = `<button onclick="goScreen('start')" style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:1.1rem;cursor:pointer;">←</button><div style="font-family:'Fredoka One',cursive;font-size:1.3rem;color:#fff;">🗺️ World Map</div><div style="font-family:'Fredoka One',cursive;font-size:0.9rem;color:rgba(255,255,255,0.5);">Lvl ${mapData.currentLevel}</div>`;
   c.appendChild(h);
 
   const scroll = document.createElement('div');
-  scroll.style.cssText = 'flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px;';
+  scroll.style.cssText = 'flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px;background:rgba(0,0,0,0.45);';
 
   REGIONS.forEach(region => {
     const isUnlocked = !mapData.levels.find(l => l.id === region.levels[0])?.locked;

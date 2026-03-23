@@ -378,13 +378,27 @@ const weeklyLB=[
 
 // ═══════ SCREENS ═══════
 let currentScreen='start',prevScreen='start';
+function hideAllOverlays(){
+  ['overlay-pregame','overlay-pause','overlay-win','overlay-over','overlay-quit','overlay-reset'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.classList.add('hidden');
+  });
+}
+function closeToStart(e){
+  if(e){e.preventDefault();e.stopPropagation();}
+  setTimeout(()=>goScreen('start'),50);
+}
 function goScreen(name){
   if(currentScreen==='game'&&name!=='game')stopPlayTimer();
+  if(name!=='game')hideAllOverlays();
   document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
   document.getElementById('screen-'+name).classList.remove('hidden');
   prevScreen=currentScreen;currentScreen=name;
   if(name==='leaderboard')renderLB('global');
-  if(name==='start')document.getElementById('best-score-start').textContent=bestScore;
+  if(name==='start'){
+    document.getElementById('best-score-start').textContent=bestScore;
+    const ss=document.getElementById('screen-start');
+    if(ss){ss.style.pointerEvents='none';setTimeout(()=>{ss.style.pointerEvents='all';},200);}
+  }
   if(name==='tutorial'){tutSlide=0;renderTutSlide(0);}
   if(name==='game')setTimeout(startPlayTimer,100);
 }

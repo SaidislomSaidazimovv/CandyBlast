@@ -43,6 +43,7 @@ body {
 }
 body {
   background: #0a0014;
+  min-height: 100dvh;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -892,8 +893,9 @@ input[type="range"]::-webkit-slider-thumb {
   #screen-start {
     position: relative !important;
     justify-content: center !important;
-    padding-top: 100px !important;
+    padding-top: 76px !important;
     padding-bottom: 20px !important;
+    min-height: 100dvh !important;
     min-height: 100vh !important;
     box-sizing: border-box !important;
   }
@@ -957,7 +959,6 @@ input[type="range"]::-webkit-slider-thumb {
     padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
     padding-top: max(8px, env(safe-area-inset-top)) !important;
     height: 100dvh !important;
-    height: 100vh !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
