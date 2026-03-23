@@ -1,0 +1,19 @@
+{
+  "name": "Candy Blast",
+  "short_name": "CandyBlast",
+  "description": "A sweet match-3 puzzle game! Swap candies, chain combos, blast through 100 levels!",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0014",
+  "theme_color": "#000000",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍭</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

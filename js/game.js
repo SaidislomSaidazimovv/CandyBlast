@@ -700,7 +700,15 @@ function nextLevel(){document.getElementById('overlay-win').classList.add('hidde
   if(nextLv&&!nextLv.locked){startMapLevel(nextId);}
   else{goScreen('map');renderMapScreen();}
 }
-function retryLevel(){document.getElementById('overlay-over').classList.add('hidden');score=0;levelScore=0;moves=getDiffMoves();combo=0;targetScore=getDiffTarget()*level;busy=false;initGrid();renderBoard();updateStats();document.getElementById('progress-fill').style.width='0%';document.getElementById('combo-display').textContent='';}
+function retryLevel(){
+  if(!hasLives()){document.getElementById('overlay-over').classList.add('hidden');showNoLivesPopup();return;}
+  document.getElementById('overlay-over').classList.add('hidden');score=0;levelScore=0;combo=0;busy=false;
+  // Use map level settings if available for this level
+  const lvl=mapData.levels.find(l=>l.id===level);
+  if(lvl){moves=lvl.moves;targetScore=lvl.targetScore;}else{moves=getDiffMoves();targetScore=getDiffTarget()*level;}
+  initGrid();renderBoard();updateStats();document.getElementById('progress-fill').style.width='0%';document.getElementById('combo-display').textContent='';
+  showPreGame();
+}
 function pauseGame(){paused=true;document.getElementById('overlay-pause').classList.remove('hidden');}
 function resumeGame(){paused=false;document.getElementById('overlay-pause').classList.add('hidden');}
 function goBack(){if(prevScreen==='game'){paused=false;goScreen('game');}else{goScreen('start');}}

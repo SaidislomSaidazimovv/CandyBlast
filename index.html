@@ -7,7 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000000">
+<meta name="description" content="Candy Blast — a sweet match-3 puzzle game! Swap colorful candies, chain combos, collect special power-ups, and blast through 100 levels across 5 regions. Free to play!">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍭</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍭</text></svg>">
 <title>Candy Blast 🍭</title>
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/tutorial.css">
 <link rel="stylesheet" href="css/spin.css">
@@ -252,5 +256,8 @@
 <script src="js/map.js"></script>
 <script src="js/backgrounds.js"></script>
 <script src="js/game.js"></script>
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
+</script>
 </body>
 </html>

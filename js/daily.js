@@ -31,7 +31,7 @@ function checkMonthlyLogin(){
   const today=getTodayKey();
   if(dailyData.lastLoginDate===today)return;
   dailyData.lastLoginDate=today;dailyData.totalDaysLoggedIn++;
-  if(!dailyData.currentDay||dailyData.currentDay>=30){dailyData.currentDay=1;dailyData.claimedDays=[];dailyData.monthStart=today;}
+  if(!dailyData.currentDay||dailyData.currentDay>30){dailyData.currentDay=1;dailyData.claimedDays=[];dailyData.monthStart=today;}
   else{dailyData.currentDay++;}
   saveDailyData();
   setTimeout(()=>{goScreen('rewards');renderRewardsScreen();},800);
@@ -103,14 +103,6 @@ function giveMonthlyReward(reward){
     case'jackpot2':addLife(5);earnBooster('extraMoves',3);earnBooster('hammer',3);earnBooster('bomb',3);break;
     case'grand':addLife(5);earnBooster('extraMoves',5);earnBooster('hammer',5);earnBooster('bomb',5);setTimeout(showLuckySpinPopup,500);break;
   }
-}
-
-// ═══ TAP HANDLERS (prevent ghost touch) ═══
-function handleDailyTap(e){
-  if(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}
-  document.body.style.pointerEvents='none';
-  setTimeout(()=>{document.body.style.pointerEvents='';},400);
-  goScreen('rewards');renderRewardsScreen();
 }
 
 // ═══ REWARDS SCREEN ═══
