@@ -3,8 +3,8 @@ let tutSlide=0;
 const TUT_COLORS=['c0','c1','c2','c3','c4','c5'];
 const TUT_ICONS=['🍒','💎','🍀','⭐','🔮','🍊'];
 
-function skipTutorial(){localStorage.setItem('cb_tutorial_done','1');goGame();}
-function nextTutSlide(){tutSlide++;if(tutSlide>=6){localStorage.setItem('cb_tutorial_done','1');goGame();}else{renderTutSlide(tutSlide);}}
+function skipTutorial(){localStorage.setItem('cb_tutorial_done','1');_goGameIntentional=true;goGame();}
+function nextTutSlide(){tutSlide++;if(tutSlide>=6){localStorage.setItem('cb_tutorial_done','1');_goGameIntentional=true;goGame();}else{renderTutSlide(tutSlide);}}
 function checkFirstTime(){if(!localStorage.getItem('cb_tutorial_done')){setTimeout(()=>{tutSlide=0;goScreen('tutorial');renderTutSlide(0);},800);}}
 
 function renderTutSlide(n){

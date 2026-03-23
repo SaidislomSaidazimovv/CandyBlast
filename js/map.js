@@ -167,6 +167,7 @@ function startMapLevel(levelId) {
   window._mapLevelSettings = getLevelSettings(levelId);
   const region = getRegionForLevel(levelId);
   if (region) { applyThemeColors(region.theme); document.body.className = region.theme; }
+  _goGameIntentional=true;
   goGame();
 }
 

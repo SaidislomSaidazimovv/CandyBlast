@@ -402,11 +402,21 @@ function goScreen(name){
   if(name==='tutorial'){tutSlide=0;renderTutSlide(0);}
   if(name==='game')setTimeout(startPlayTimer,100);
 }
+let _goGameIntentional=false;
 function goGame(){
+  // Guard: only run if intentionally triggered (from map/tutorial)
+  if(!_goGameIntentional){
+    // Check no other screen is open
+    const blocking=['rewards','leaderboard','settings','tutorial','levelselect'];
+    for(const s of blocking){
+      const el=document.getElementById('screen-'+s);
+      if(el&&!el.classList.contains('hidden'))return;
+    }
+  }
+  _goGameIntentional=false;
   paused=false;busy=false;
   if(!hasLives()){showNoLivesPopup();return;}
   score=0;levelScore=0;combo=0;
-  // Use map level settings if available
   if(window._mapLevelSettings){
     const ms=window._mapLevelSettings;
     targetScore=ms.targetScore;moves=ms.moves;level=ms.levelId||1;
@@ -414,7 +424,7 @@ function goGame(){
   }else{
     moves=getDiffMoves();level=1;targetScore=getDiffTarget();
   }
-  document.getElementById('overlay-pause').classList.add('hidden');
+  hideAllOverlays();
   initGrid();renderBoard();updateStats();
   document.getElementById('progress-fill').style.width='0%';
   document.getElementById('combo-display').textContent='';
