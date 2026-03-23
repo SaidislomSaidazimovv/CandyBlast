@@ -1,5 +1,4 @@
-// ═══ LUCKY SPIN ═══
-// ═══ LUCKY SPIN — 3-TIER PRIZE WHEEL ═══
+// ═══ LUCKY SPIN — FULL SCREEN VERSION ═══
 const SPIN_PRIZES=[
   {icon:'👑',label:'5 Lives',sub:'GOLD',type:'life',val:5,tier:'gold'},
   {icon:'💎',label:'All Boosters x3',sub:'GOLD',type:'all3',val:3,tier:'gold'},
@@ -17,36 +16,70 @@ const TIER_STYLES={
   bronze:{bg:'rgba(205,127,50,0.1)',border:'rgba(205,127,50,0.3)',label:'#cd7f32',glow:'rgba(205,127,50,0.2)'}
 };
 
-function handleSpinTap(e){
-  if(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}
-  document.body.style.pointerEvents='none';
-  setTimeout(()=>{document.body.style.pointerEvents='';},400);
-  onSpinBtnClick();
+// Opens spin as a full screen (like settings/leaderboard)
+function openSpinScreen(){
+  goScreen('spin');
+  renderSpinScreen();
 }
 
-function showLuckySpinPopup(){
-  document.getElementById('spin-popup')?.remove();
+function renderSpinScreen(){
+  const container=document.getElementById('spin-screen-container');
+  if(!container)return;
+  container.innerHTML='';
+
+  const count=dailyData.spinCount||0;
+
+  // Close button (top-right, same style as settings/leaderboard)
+  const closeBtn=document.createElement('button');
+  closeBtn.style.cssText='position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);z-index:10;';
+  closeBtn.textContent='✕';
+  closeBtn.onclick=()=>goScreen('start');
+  container.appendChild(closeBtn);
+
+  // Card wrapper
+  const card=document.createElement('div');
+  card.style.cssText='background:var(--t-panel-bg,rgba(80,20,120,0.92));border:1.5px solid var(--t-panel-border,rgba(255,255,255,0.15));border-radius:24px;padding:24px 20px;max-width:380px;width:95%;text-align:center;';
+
+  if(count<=0){
+    // No spins state
+    card.innerHTML=`
+      <div style="font-size:3.5rem;margin-bottom:12px;">🎡</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:1.6rem;background:linear-gradient(135deg,#ffe259,#ff5fa0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;">Lucky Spin</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:0.9rem;margin-bottom:20px;">No spins available.<br>Earn spins from Daily Rewards!</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:0.9rem;color:rgba(255,255,255,0.3);">Spins: 0</div>
+    `;
+    container.appendChild(card);
+    return;
+  }
+
+  // Has spins — show wheel
   const weights=[10,10,16,17,17,8,8,7,7];const total=weights.reduce((a,b)=>a+b,0);
   let rand=Math.random()*total,winIdx=0;
   for(let i=0;i<weights.length;i++){rand-=weights[i];if(rand<=0){winIdx=i;break;}}
-  const popup=document.createElement('div');popup.className='overlay';popup.id='spin-popup';popup.style.zIndex='500';
-  popup.innerHTML=`<div class="overlay-card" style="text-align:center;max-width:380px;width:95%;padding:24px 20px;">
+
+  card.innerHTML=`
     <div style="font-family:'Fredoka One',cursive;font-size:1.6rem;background:linear-gradient(135deg,#ffe259,#ff5fa0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;">🎡 Lucky Spin!</div>
-    <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-bottom:18px;">Spins left: <span id="spin-remaining" style="color:#ffe259;font-family:'Fredoka One',cursive;">${(dailyData.spinCount||0)+1}</span></div>
+    <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-bottom:18px;">Spins left: <span id="spin-remaining" style="color:#ffe259;font-family:'Fredoka One',cursive;">${count}</span></div>
     <div id="spin-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;">
       ${SPIN_PRIZES.map((p,i)=>{const s=TIER_STYLES[p.tier];return`<div class="spin-slot" id="spin-slot-${i}" style="border-radius:14px;padding:12px 6px;background:${s.bg};border:2px solid ${s.border};cursor:default;transition:all 0.08s;position:relative;"><div style="font-size:1.6rem;line-height:1;margin-bottom:4px;">${p.icon}</div><div style="font-family:'Fredoka One',cursive;font-size:0.7rem;color:#fff;line-height:1.2;margin-bottom:2px;">${p.label}</div><div style="font-size:0.55rem;font-weight:700;color:${s.label};letter-spacing:0.5px;">${p.sub}</div></div>`;}).join('')}
     </div>
     <button id="spin-action-btn" class="btn btn-play" style="width:100%;padding:14px;font-size:1.1rem;" onclick="doSpin(${winIdx})">🎡 Spin!</button>
-    <button onclick="document.getElementById('spin-popup').remove()" style="margin-top:10px;width:100%;background:transparent;border:none;color:rgba(255,255,255,0.3);font-size:0.8rem;cursor:pointer;padding:6px;">Close</button>
-  </div>`;
-  document.body.appendChild(popup);
+  `;
+  container.appendChild(card);
+}
+
+// Called from daily rewards when spin is earned as prize
+function showLuckySpinPopup(){
+  openSpinScreen();
 }
 
 function doSpin(winIdx){
+  // Deduct spin
+  useSpin();
   const btn=document.getElementById('spin-action-btn');if(btn){btn.disabled=true;btn.textContent='Spinning...';}
   const totalSteps=27+winIdx;let step=0,dl=60,prevIdx=-1;
   function tick(){
-    if(!document.getElementById('spin-popup'))return;
+    if(!document.getElementById('spin-grid'))return;
     if(prevIdx>=0){const prev=document.getElementById('spin-slot-'+prevIdx);if(prev){const s=TIER_STYLES[SPIN_PRIZES[prevIdx].tier];prev.style.background=s.bg;prev.style.borderColor=s.border;prev.style.transform='scale(1)';prev.style.boxShadow='none';}}
     const curIdx=step%9;const cur=document.getElementById('spin-slot-'+curIdx);
     if(cur){cur.style.background='rgba(255,255,255,0.25)';cur.style.borderColor='#ffffff';cur.style.transform='scale(1.08)';cur.style.boxShadow='0 0 16px rgba(255,255,255,0.5)';}
@@ -67,7 +100,6 @@ function finalizeSpin(winIdx){
 }
 
 function claimSpinPrize(prize){
-  document.getElementById('spin-popup')?.remove();
   switch(prize.type){
     case'life':addLife(prize.val);break;case'hammer':earnBooster('hammer',prize.val);break;
     case'bomb':earnBooster('bomb',prize.val);break;case'moves':earnBooster('extraMoves',prize.val);break;
@@ -76,6 +108,10 @@ function claimSpinPrize(prize){
     case'all3':addLife(3);earnBooster('extraMoves',3);earnBooster('hammer',3);earnBooster('bomb',3);break;
   }
   showRewardToast(prize.icon,prize.label+' claimed!');updateSpinUI();
+  // Re-render to show updated count or "no spins" state
+  const count=dailyData.spinCount||0;
+  if(count>0){renderSpinScreen();}
+  else{goScreen('start');}
 }
 
 // ═══ SPIN TRACKING ═══
@@ -93,5 +129,5 @@ function updateSpinUI(){
 function onSpinBtnClick(){
   const count=dailyData.spinCount||0;
   if(count<=0)return;
-  useSpin();showLuckySpinPopup();
+  openSpinScreen();
 }
