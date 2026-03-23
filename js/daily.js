@@ -124,12 +124,7 @@ function renderRewardsScreen(){
   // Close
   const closeBtn=document.createElement('button');
   closeBtn.style.cssText="position:absolute;top:12px;right:16px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);font-size:1rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;";
-  closeBtn.textContent='✕';
-  closeBtn.onclick=closeBtn.ontouchend=function(e){
-    if(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}
-    document.body.style.pointerEvents='none';
-    setTimeout(()=>{document.body.style.pointerEvents='';goScreen('start');},100);
-  };
+  closeBtn.textContent='✕';closeBtn.onclick=()=>goScreen('start');
   container.appendChild(closeBtn);
 
   // Tabs
