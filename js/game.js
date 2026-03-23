@@ -406,12 +406,14 @@ let _goGameIntentional=false;
 function goGame(){
   // Guard: only run if intentionally triggered (from map/tutorial)
   if(!_goGameIntentional){
-    // Check no other screen is open
-    const blocking=['rewards','leaderboard','settings','tutorial','levelselect'];
+    // Block if any other screen is visible
+    const blocking=['rewards','leaderboard','settings','tutorial','levelselect','map'];
     for(const s of blocking){
       const el=document.getElementById('screen-'+s);
       if(el&&!el.classList.contains('hidden'))return;
     }
+    // Block if spin popup is open
+    if(document.getElementById('spin-popup'))return;
   }
   _goGameIntentional=false;
   paused=false;busy=false;

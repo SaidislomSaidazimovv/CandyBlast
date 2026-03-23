@@ -17,6 +17,13 @@ const TIER_STYLES={
   bronze:{bg:'rgba(205,127,50,0.1)',border:'rgba(205,127,50,0.3)',label:'#cd7f32',glow:'rgba(205,127,50,0.2)'}
 };
 
+function handleSpinTap(e){
+  if(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}
+  document.body.style.pointerEvents='none';
+  setTimeout(()=>{document.body.style.pointerEvents='';},400);
+  onSpinBtnClick();
+}
+
 function showLuckySpinPopup(){
   document.getElementById('spin-popup')?.remove();
   const weights=[10,10,16,17,17,8,8,7,7];const total=weights.reduce((a,b)=>a+b,0);

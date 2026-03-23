@@ -105,6 +105,14 @@ function giveMonthlyReward(reward){
   }
 }
 
+// ═══ TAP HANDLERS (prevent ghost touch) ═══
+function handleDailyTap(e){
+  if(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}
+  document.body.style.pointerEvents='none';
+  setTimeout(()=>{document.body.style.pointerEvents='';},400);
+  goScreen('rewards');renderRewardsScreen();
+}
+
 // ═══ REWARDS SCREEN ═══
 let activeRewardsTab='monthly';
 
@@ -116,7 +124,12 @@ function renderRewardsScreen(){
   // Close
   const closeBtn=document.createElement('button');
   closeBtn.style.cssText="position:absolute;top:12px;right:16px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);font-size:1rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;";
-  closeBtn.textContent='✕';closeBtn.onclick=(e)=>closeToStart(e);closeBtn.ontouchend=(e)=>closeToStart(e);
+  closeBtn.textContent='✕';
+  closeBtn.onclick=closeBtn.ontouchend=function(e){
+    if(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}
+    document.body.style.pointerEvents='none';
+    setTimeout(()=>{document.body.style.pointerEvents='';goScreen('start');},100);
+  };
   container.appendChild(closeBtn);
 
   // Tabs
