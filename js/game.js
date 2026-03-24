@@ -8,6 +8,7 @@ let settings={sfx:true,music:false,vibro:true,anim:true,volume:70,diff:'normal',
 let personalBest=[];
 let paused=false;
 let activeCandyTypes=TYPES; // how many candy colors active (3-6)
+let timeLeft=0,timerInterval=null,timerActive=false;
 
 // ═══════ THEME COLORS ═══════
 const themeColors={
@@ -425,11 +426,13 @@ function goGame(){
     targetScore=ms.targetScore;moves=ms.moves;level=ms.levelId||1;
     activeCandyTypes=ms.colors||TYPES;
     window._mapStarMult=ms.starMult||1.0;
+    window._mapTimeSeconds=ms.timeSeconds||0;
     window._mapLevelSettings=null;
   }else{
     moves=getDiffMoves();level=1;targetScore=getDiffTarget();
     activeCandyTypes=TYPES;
     window._mapStarMult=null;
+    window._mapTimeSeconds=0;
   }
   hideAllOverlays();
   initGrid();renderBoard();updateStats();
@@ -438,6 +441,16 @@ function goGame(){
   document.getElementById('best-val').textContent=bestScore;
   goScreen('game');
   updateIngameBoosterUI();
+  // Timer setup
+  const tb=document.getElementById('stat-timer');
+  if(window._mapTimeSeconds>0){
+    if(tb)tb.style.display='';
+    startGameTimer(window._mapTimeSeconds);
+  }else{
+    if(tb)tb.style.display='none';
+    stopGameTimer();
+  }
+  window._mapTimeSeconds=0;
   showPreGame();
 }
 
@@ -693,14 +706,41 @@ async function processMatches(){
 }
 function showCombo(c,pts){const el=document.getElementById('combo-display');if(c>=2){el.textContent=`🔥 x${c} COMBO! +${pts}`;el.style.color=c>=4?'var(--t-primary)':c>=3?'var(--t-accent)':'var(--t-secondary)';}else{el.textContent=pts>0?`+${pts}`:'';el.style.color='var(--t-text-muted)';}}
 function showBonusPopup(r,c,pts,icon){const bw=document.getElementById('board-wrap');if(!bw||!pts)return;const pop=document.createElement('div');pop.className='score-popup';pop.textContent=`${icon} +${pts}`;const cs=bw.offsetWidth/GRID;pop.style.cssText=`left:${Math.max(0,Math.min(c*cs+cs/2-30,bw.offsetWidth-70))}px;top:${Math.max(0,r*cs)}px;color:#ffe259;font-size:1.3rem;`;bw.appendChild(pop);setTimeout(()=>pop.remove(),1000);}
-function checkEnd(){if(score>=targetScore)setTimeout(()=>{savePersonalScore();showWin();},300);else if(moves<=0)setTimeout(()=>{savePersonalScore();showOver();},300);}
+// ═══ TIMER ═══
+function fmtGameTime(s){const m=Math.floor(s/60),sc=s%60;return m+':'+(sc<10?'0':'')+sc;}
+function updateTimerUI(){
+  const el=document.getElementById('stat-time-val');if(!el)return;
+  el.textContent=fmtGameTime(timeLeft);
+  if(timeLeft<=10){el.style.color='#ff2244';el.style.animation='timerPulse 0.5s ease infinite';}
+  else if(timeLeft<=20){el.style.color='#ff8800';el.style.animation='timerPulse 1s ease infinite';}
+  else if(timeLeft<=30){el.style.color='#ffe259';el.style.animation='none';}
+  else{el.style.color='#43e97b';el.style.animation='none';}
+}
+function startGameTimer(seconds){
+  stopGameTimer();timeLeft=seconds;timerActive=true;updateTimerUI();
+  const tb=document.getElementById('stat-timer');if(tb)tb.style.display='';
+  timerInterval=setInterval(()=>{
+    if(paused||busy)return;
+    timeLeft--;updateTimerUI();
+    if(timeLeft<=0){stopGameTimer();setTimeout(()=>{if(score>=targetScore)showWin();else showTimeUp();},300);}
+  },1000);
+}
+function stopGameTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}timerActive=false;}
+function showTimeUp(){stopGameTimer();loseLife();vibrate(200);
+  const el=document.getElementById('overlay-over');if(el){const t=el.querySelector('.ov-title');if(t)t.textContent="⏰ Time's Up!";document.getElementById('over-score').textContent=score.toLocaleString();el.classList.remove('hidden');}
+}
+function checkEnd(){
+  stopGameTimer();
+  if(score>=targetScore)setTimeout(()=>{savePersonalScore();showWin();},300);
+  else if(moves<=0)setTimeout(()=>{savePersonalScore();showOver();},300);
+}
 function calcStars(ls,ts){
   const sm=window._mapStarMult||1.0;
   if(ls>=ts*1.60*sm) return 3;
   if(ls>=ts*1.25*sm) return 2;
   return 1;
 }
-function showWin(){playWin();
+function showWin(){stopGameTimer();playWin();
   document.getElementById('win-score').textContent=levelScore.toLocaleString();
   const starCount=calcStars(levelScore,targetScore);
   const stars='⭐'.repeat(starCount)+'☆'.repeat(3-starCount);
@@ -712,7 +752,10 @@ function showWin(){playWin();
   if(mapData&&mapData.selectedLevel){completeLevel(mapData.selectedLevel,starCount,score);mapData.selectedLevel=null;}
   window._mapStarMult=null;
 }
-function showOver(){loseLife();playOver();document.getElementById('over-score').textContent=score.toLocaleString();document.getElementById('overlay-over').classList.remove('hidden');}
+function showOver(){stopGameTimer();loseLife();playOver();
+  const el=document.getElementById('overlay-over');if(el){const t=el.querySelector('.ov-title');if(t)t.textContent='Game Over 😢';}
+  document.getElementById('over-score').textContent=score.toLocaleString();document.getElementById('overlay-over').classList.remove('hidden');
+}
 function nextLevel(){document.getElementById('overlay-win').classList.add('hidden');
   // Go to next map level
   const nextId=level+1;

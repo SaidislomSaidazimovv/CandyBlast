@@ -7,26 +7,23 @@ const REGIONS = [
   { id:'africa', name:'Afrika', emoji:'🌅', levels:[81,100], theme:'theme-candy', color:'#ff5fa0', bgColor:'rgba(255,95,160,0.15)', border:'rgba(255,95,160,0.4)', description:'Rainbow candy paradise!' },
 ];
 
-// ═══ LEVEL GENERATION (balanced) ═══
+// ═══ LEVEL GENERATION (balanced + timer) ═══
 function generateLevels() {
   const levels = [];
   for (let i = 1; i <= 100; i++) {
-    // Moves: 34→18 gentle decrease
     const moves = Math.max(18, Math.round(34 - (i - 1) * 0.16));
-    // Target: based on achievable max (moves * ~100pts avg)
+    const baseTime = Math.round(120 - (i-1) * 0.75);
+    const timeSeconds = Math.max(45, baseTime);
     const achievable = moves * 100;
     const targetScore = Math.round(achievable * (0.38 + (i / 100) * 0.18));
-    // Star thresholds
     const star2 = Math.round(targetScore * 1.25);
     const star3 = Math.round(targetScore * 1.60);
-    // Colors: fewer = easier
     let colors;
     if (i <= 10) colors = 3;
     else if (i <= 30) colors = 4;
     else if (i <= 60) colors = 5;
     else colors = 6;
-
-    levels.push({ id:i, moves, targetScore, star2, star3, colors, stars:0, completed:false, locked:i>1 });
+    levels.push({ id:i, moves, timeSeconds, targetScore, star2, star3, colors, stars:0, completed:false, locked:i>1 });
   }
   return levels;
 }
@@ -35,6 +32,7 @@ function generateLevels() {
 let mapData = { currentLevel:1, levels:[], selectedRegion:null, selectedLevel:null };
 
 // ═══ SAVE / LOAD ═══
+const MAP_VERSION = 3; // bump when level formula changes
 function saveMapData() {
   localStorage.setItem('cb_map', JSON.stringify({
     version: MAP_VERSION,
@@ -42,15 +40,12 @@ function saveMapData() {
     levels: mapData.levels.map(l => ({ id:l.id, stars:l.stars, completed:l.completed, locked:l.locked }))
   }));
 }
-
-const MAP_VERSION = 2; // bump when level formula changes
 function loadMapData() {
   mapData.levels = generateLevels();
   try {
     const saved = localStorage.getItem('cb_map');
     if (saved) {
       const p = JSON.parse(saved);
-      // Reset if version changed (rebalanced levels)
       if (p.version !== MAP_VERSION) { localStorage.removeItem('cb_map'); mapData.levels[0].locked=false; return; }
       mapData.currentLevel = p.currentLevel || 1;
       p.levels.forEach(s => {
@@ -75,12 +70,25 @@ function completeLevel(levelId, starsCount, finalScore) {
 function getLevelSettings(levelId) {
   const lv = mapData.levels.find(l => l.id === levelId);
   if (!lv) return null;
-  return { targetScore:lv.targetScore, moves:lv.moves, colors:lv.colors, levelId:levelId };
+  return { targetScore:lv.targetScore, moves:lv.moves, timeSeconds:lv.timeSeconds, colors:lv.colors, levelId:levelId };
 }
 
 function getRegionForLevel(levelId) {
   return REGIONS.find(r => levelId >= r.levels[0] && levelId <= r.levels[1]);
 }
+
+function getTotalStars() {
+  return mapData.levels.reduce((sum, l) => sum + (l.stars || 0), 0);
+}
+
+function fmtTimeSt(s) { const m=Math.floor(s/60),sc=s%60; return m+':'+(sc<10?'0':'')+sc; }
+
+// ═══ DIFFICULTY CONFIG ═══
+const DIFF_CONFIG = {
+  easy:   { movMult:1.40, tarMult:0.70, timeMult:1.40, starMult:0.85, label:'Easy' },
+  normal: { movMult:1.00, tarMult:1.00, timeMult:1.00, starMult:1.00, label:'Normal' },
+  hard:   { movMult:0.65, tarMult:1.40, timeMult:0.65, starMult:1.20, label:'Hard' },
+};
 
 // ═══ MAP SCREEN ═══
 function renderMapScreen() {
@@ -90,22 +98,34 @@ function renderMapScreen() {
 
   // Header
   const h = document.createElement('div');
-  h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px;flex-shrink:0;position:sticky;top:0;z-index:10;background:rgba(0,0,0,0.7);';
-  h.innerHTML = `<button onclick="goScreen('start')" style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:1.1rem;cursor:pointer;">←</button><div style="font-family:'Fredoka One',cursive;font-size:1.3rem;color:#fff;">🗺️ World Map</div><div style="font-family:'Fredoka One',cursive;font-size:0.9rem;color:rgba(255,255,255,0.5);">Lvl ${mapData.currentLevel}</div>`;
+  h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;flex-shrink:0;background:linear-gradient(180deg,rgba(0,0,0,0.7) 0%,transparent 100%);position:relative;z-index:10;';
+  h.innerHTML = `<button onclick="goScreen('start')" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.2);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button><div style="text-align:center;"><div style="font-family:'Fredoka One',cursive;font-size:1.3rem;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.5);">🗺️ World Map</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.5);">Level ${mapData.currentLevel} of 100</div></div><div style="background:rgba(255,220,0,0.15);border:1.5px solid rgba(255,220,0,0.3);border-radius:20px;padding:6px 14px;font-family:'Fredoka One',cursive;font-size:0.85rem;color:#ffe259;">⭐ ${getTotalStars()}</div>`;
   c.appendChild(h);
 
   const scroll = document.createElement('div');
-  scroll.style.cssText = 'flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px;background:rgba(0,0,0,0.45);';
+  scroll.style.cssText = 'flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 16px 24px;scrollbar-width:none;';
 
   REGIONS.forEach(region => {
     const isUnlocked = !mapData.levels.find(l => l.id === region.levels[0])?.locked;
     const done = mapData.levels.filter(l => l.id >= region.levels[0] && l.id <= region.levels[1] && l.completed).length;
+    const regionStars = mapData.levels.filter(l => l.id >= region.levels[0] && l.id <= region.levels[1]).reduce((s,l) => s+(l.stars||0), 0);
     const pct = (done / 20) * 100;
 
     const card = document.createElement('div');
-    card.style.cssText = `border-radius:20px;background:${isUnlocked?region.bgColor:'rgba(255,255,255,0.04)'};border:2px solid ${isUnlocked?region.border:'rgba(255,255,255,0.08)'};padding:20px;opacity:${isUnlocked?'1':'0.5'};cursor:${isUnlocked?'pointer':'not-allowed'};transition:transform 0.15s,box-shadow 0.15s;position:relative;overflow:hidden;`;
-    card.innerHTML = `<div style="position:absolute;right:-10px;top:-10px;font-size:5rem;opacity:0.12;pointer-events:none;line-height:1;">${region.emoji}</div><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;"><div style="font-size:2.2rem;">${region.emoji}</div><div><div style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:#fff;">${region.name}</div><div style="font-size:0.75rem;color:${isUnlocked?region.color:'rgba(255,255,255,0.3)'};">${region.description}</div></div>${!isUnlocked?'<div style="font-size:1.5rem;margin-left:auto;">🔒</div>':''}</div><div style="background:rgba(255,255,255,0.1);border-radius:6px;height:6px;margin-bottom:8px;overflow:hidden;"><div style="height:100%;border-radius:6px;background:${region.color};width:${pct}%;transition:width 0.5s;box-shadow:0 0 8px ${region.color}60;"></div></div><div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span style="color:rgba(255,255,255,0.4);">Levels ${region.levels[0]}–${region.levels[1]}</span><span style="color:${region.color};">${done}/20 completed</span></div>`;
+    card.style.cssText = `border-radius:24px;background:${isUnlocked?`linear-gradient(135deg,${region.bgColor.replace('0.15','0.25')},rgba(0,0,0,0.4))`:'rgba(255,255,255,0.04)'};border:2px solid ${isUnlocked?region.border:'rgba(255,255,255,0.08)'};padding:0;margin-bottom:14px;opacity:${isUnlocked?'1':'0.55'};cursor:${isUnlocked?'pointer':'not-allowed'};overflow:hidden;transition:transform 0.15s,box-shadow 0.15s;position:relative;`;
 
+    // Banner
+    const banner = document.createElement('div');
+    banner.style.cssText = `height:90px;background:linear-gradient(135deg,${region.bgColor.replace('0.15','0.35')},${region.bgColor.replace('0.15','0.15')});display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:relative;overflow:hidden;`;
+    banner.innerHTML = `<div style="position:absolute;right:-10px;top:-15px;font-size:7rem;opacity:0.12;line-height:1;pointer-events:none;">${region.emoji}</div><div style="display:flex;align-items:center;gap:14px;"><div style="width:54px;height:54px;background:rgba(0,0,0,0.3);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:2rem;border:2px solid ${region.border};">${region.emoji}</div><div><div style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,0.5);">${region.name}</div><div style="font-size:0.7rem;color:${isUnlocked?region.color:'rgba(255,255,255,0.3)'};">${region.description}</div></div></div>${!isUnlocked?'<div style="font-size:2rem;opacity:0.7;">🔒</div>':`<div style="text-align:right;"><div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:#ffe259;">${regionStars}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);letter-spacing:0.5px;">/ 60 ⭐</div></div>`}`;
+
+    // Progress row
+    const prog = document.createElement('div');
+    prog.style.cssText = 'padding:12px 20px 14px;background:rgba(0,0,0,0.25);';
+    prog.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><div style="font-size:0.7rem;color:rgba(255,255,255,0.4);">Levels ${region.levels[0]}–${region.levels[1]}</div><div style="font-family:'Fredoka One',cursive;font-size:0.8rem;color:${region.color};">${done}/20</div></div><div style="height:6px;border-radius:6px;background:rgba(255,255,255,0.1);overflow:hidden;"><div style="height:100%;border-radius:6px;width:${pct}%;background:linear-gradient(90deg,${region.color},${region.border});box-shadow:0 0 8px ${region.color}80;transition:width 0.6s ease;"></div></div>`;
+
+    card.appendChild(banner);
+    card.appendChild(prog);
     if (isUnlocked) {
       card.onclick = () => { mapData.selectedRegion = region; renderLevelSelect(region); goScreen('levelselect'); };
       card.onmouseenter = () => { card.style.transform='scale(1.02)'; card.style.boxShadow=`0 8px 24px ${region.color}40`; };
@@ -121,63 +141,68 @@ function renderLevelSelect(region) {
   const c = document.getElementById('levelselect-container');
   if (!c) return;
   c.innerHTML = '';
+  applyThemeColors(region.theme);
 
+  // Header
   const h = document.createElement('div');
-  h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px;flex-shrink:0;background:linear-gradient(180deg,rgba(0,0,0,0.7),transparent);';
-  h.innerHTML = `<button onclick="goScreen('map');renderMapScreen();" style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:1.1rem;cursor:pointer;">←</button><div style="text-align:center;"><div style="font-size:1.5rem;">${region.emoji}</div><div style="font-family:'Fredoka One',cursive;font-size:1.1rem;color:#fff;">${region.name}</div></div><div style="width:40px;"></div>`;
+  h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;flex-shrink:0;background:linear-gradient(180deg,rgba(0,0,0,0.75) 0%,transparent 100%);position:relative;z-index:10;';
+  const regDone = mapData.levels.filter(l=>l.id>=region.levels[0]&&l.id<=region.levels[1]&&l.completed).length;
+  h.innerHTML = `<button onclick="goScreen('map');renderMapScreen();" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.2);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button><div style="text-align:center;"><div style="font-size:1.6rem;">${region.emoji}</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,0.5);">${region.name}</div></div><div style="font-family:'Fredoka One',cursive;font-size:0.8rem;color:${region.color};text-align:right;">${regDone}/20<br><span style="font-size:0.65rem;color:rgba(255,255,255,0.35);font-family:sans-serif;">done</span></div>`;
   c.appendChild(h);
 
   const scroll = document.createElement('div');
-  scroll.style.cssText = 'flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;';
-
+  scroll.style.cssText = 'flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 20px 40px;scrollbar-width:none;';
   const levels = mapData.levels.filter(l => l.id >= region.levels[0] && l.id <= region.levels[1]);
+  const positions = ['left','center','right','center'];
+
+  // Inject pulse animation
+  if (!document.getElementById('map-animations')) {
+    const st = document.createElement('style');
+    st.id = 'map-animations';
+    st.textContent = '@keyframes levelPulse{0%,100%{box-shadow:0 0 0 6px rgba(255,255,255,0.2),0 0 24px rgba(255,255,255,0.3),0 4px 16px rgba(0,0,0,0.5);}50%{box-shadow:0 0 0 10px rgba(255,255,255,0.08),0 0 40px rgba(255,255,255,0.15),0 4px 16px rgba(0,0,0,0.5);}}';
+    document.head.appendChild(st);
+  }
 
   levels.forEach((lv, idx) => {
-    const row = document.createElement('div');
-    const isLeft = idx % 2 === 0;
-    row.style.cssText = `display:flex;width:100%;justify-content:${isLeft?'flex-start':'flex-end'};position:relative;`;
-
+    const pos = positions[idx % 4];
     const isCurrent = lv.id === mapData.currentLevel;
     const isCompleted = lv.completed;
     const isLocked = lv.locked;
+    const dotSize = isCurrent ? 88 : 76;
 
-    const btn = document.createElement('div');
-    btn.style.cssText = `width:72px;height:72px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:${isLocked?'not-allowed':'pointer'};border:3px solid ${isCurrent?'#fff':isCompleted?region.color:isLocked?'rgba(255,255,255,0.1)':region.border};background:${isCompleted||isCurrent?region.bgColor:isLocked?'rgba(255,255,255,0.04)':'rgba(255,255,255,0.06)'};box-shadow:${isCurrent?`0 0 0 4px ${region.color}60,0 0 20px ${region.color}40`:isCompleted?`0 4px 12px ${region.color}30`:'none'};transition:transform 0.15s;position:relative;opacity:${isLocked?'0.4':'1'};`;
-
-    const starsHtml = isCompleted ? `<div style="font-size:0.55rem;letter-spacing:1px;margin-bottom:2px;">${'⭐'.repeat(lv.stars)}${'☆'.repeat(3-lv.stars)}</div>` : '';
-    btn.innerHTML = `${starsHtml}<div style="font-family:'Fredoka One',cursive;font-size:${isCurrent?'1.2rem':'1rem'};color:${isLocked?'rgba(255,255,255,0.3)':'#fff'};line-height:1;">${isLocked?'🔒':lv.id}</div>${isCurrent?`<div style="font-size:0.5rem;color:${region.color};font-family:'Fredoka One',cursive;margin-top:2px;">NOW</div>`:''}`;
-
-    if (!isLocked) {
-      btn.onclick = () => showLevelInfo(lv, region);
-      btn.onmouseenter = () => btn.style.transform='scale(1.1)';
-      btn.onmouseleave = () => btn.style.transform='';
-    }
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex;justify-content:${pos==='left'?'flex-start':pos==='right'?'flex-end':'center'};padding:0 10px;margin-bottom:4px;position:relative;`;
 
     // Connector
     if (idx < levels.length - 1) {
-      const conn = document.createElement('div');
-      conn.style.cssText = `position:absolute;width:3px;height:40px;background:${levels[idx+1].locked?'rgba(255,255,255,0.1)':region.color+'60'};bottom:-40px;${isLeft?'left:36px':'right:36px'};border-radius:2px;`;
-      btn.appendChild(conn);
+      const line = document.createElement('div');
+      line.style.cssText = `position:absolute;width:3px;height:52px;background:${levels[idx+1].locked?'rgba(255,255,255,0.08)':`linear-gradient(180deg,${region.color}80,${region.color}30)`};border-radius:2px;bottom:-52px;z-index:0;${pos==='left'?'left:52px':pos==='right'?'right:52px':'left:50%;transform:translateX(-50%)'};`;
+      row.appendChild(line);
     }
 
-    row.appendChild(btn);
+    const dot = document.createElement('div');
+    dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:${isLocked?'not-allowed':'pointer'};border:${isCurrent?'4px solid #ffffff':isCompleted?`3px solid ${region.color}`:isLocked?'2px solid rgba(255,255,255,0.12)':`2px solid ${region.border}`};background:${isCompleted?`radial-gradient(circle,${region.bgColor.replace('0.15','0.5')},rgba(0,0,0,0.6))`:isLocked?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.5)'};box-shadow:${isCurrent?`0 0 0 6px ${region.color}40,0 0 24px ${region.color}60,0 4px 16px rgba(0,0,0,0.5)`:isCompleted?`0 0 12px ${region.color}40,0 4px 12px rgba(0,0,0,0.4)`:'0 4px 12px rgba(0,0,0,0.3)'};position:relative;z-index:1;transition:transform 0.15s;opacity:${isLocked?'0.45':'1'};${isCurrent?'animation:levelPulse 2s ease-in-out infinite;':''}`;
+
+    const starsHtml = isCompleted ? `<div style="font-size:0.7rem;letter-spacing:1px;margin-bottom:3px;line-height:1;">${'⭐'.repeat(lv.stars)}${'☆'.repeat(3-lv.stars)}</div>` : '';
+    dot.innerHTML = `${starsHtml}<div style="font-family:'Fredoka One',cursive;font-size:${isCurrent?'1.3rem':'1.1rem'};color:${isLocked?'rgba(255,255,255,0.3)':'#fff'};line-height:1;text-shadow:0 2px 6px rgba(0,0,0,0.6);">${isLocked?'🔒':lv.id}</div>${isCurrent?`<div style="font-size:0.5rem;color:${region.color};font-family:'Fredoka One',cursive;margin-top:3px;letter-spacing:1px;">NOW</div>`:''}`;
+
+    if (!isLocked) {
+      dot.onclick = () => showLevelInfo(lv, region);
+      dot.onmouseenter = () => dot.style.transform='scale(1.1)';
+      dot.onmouseleave = () => dot.style.transform='';
+    }
+    row.appendChild(dot);
     scroll.appendChild(row);
   });
+
   c.appendChild(scroll);
 
-  // Auto-scroll
+  // Auto-scroll to current level
   setTimeout(() => {
     const ci = levels.findIndex(l => l.id === mapData.currentLevel);
-    if (ci > 0) scroll.scrollTop = Math.max(0, (ci - 2) * 80);
-  }, 100);
+    if (ci > 2) scroll.scrollTop = Math.max(0, (ci-2)*92);
+  }, 150);
 }
-
-// ═══ DIFFICULTY CONFIG ═══
-const DIFF_CONFIG = {
-  easy:   { movMult:1.40, tarMult:0.70, starMult:0.85, label:'Easy' },
-  normal: { movMult:1.00, tarMult:1.00, starMult:1.00, label:'Normal' },
-  hard:   { movMult:0.65, tarMult:1.40, starMult:1.20, label:'Hard' },
-};
 
 // ═══ START MAP LEVEL ═══
 function startMapLevel(levelId) {
@@ -192,6 +217,7 @@ function startMapLevel(levelId) {
     levelId: levelId,
     moves: Math.max(10, Math.round(base.moves * dc.movMult)),
     targetScore: Math.round(base.targetScore * dc.tarMult),
+    timeSeconds: Math.round(base.timeSeconds * dc.timeMult),
     colors: base.colors,
     starMult: dc.starMult,
   };
@@ -208,31 +234,21 @@ function showLevelInfo(lv, region) {
   const dc = DIFF_CONFIG[diff] || DIFF_CONFIG.normal;
   const adjMoves = Math.max(10, Math.round(lv.moves * dc.movMult));
   const adjTarget = Math.round(lv.targetScore * dc.tarMult);
+  const adjTime = Math.round(lv.timeSeconds * dc.timeMult);
   const adjStar3 = Math.round((lv.star3 || lv.targetScore * 1.6) * dc.tarMult * dc.starMult);
 
   const popup = document.createElement('div');
   popup.id = 'level-info-popup';
   popup.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);';
-  popup.innerHTML = `<div style="background:linear-gradient(135deg,rgba(30,10,60,0.97),rgba(15,5,30,0.98));border:2px solid ${region.border};border-radius:24px;padding:28px 24px;max-width:300px;width:88%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+  popup.innerHTML = `<div style="background:linear-gradient(135deg,rgba(30,10,60,0.97),rgba(15,5,30,0.98));border:2px solid ${region.border};border-radius:24px;padding:28px 24px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
     <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:${region.color};margin-bottom:4px;letter-spacing:1px;">LEVEL ${lv.id}</div>
     <div style="font-size:1.6rem;margin-bottom:4px;">${'⭐'.repeat(lv.stars)}${'☆'.repeat(3-lv.stars)}</div>
     <div style="display:inline-block;background:rgba(255,255,255,0.1);border-radius:20px;padding:3px 12px;font-size:0.75rem;color:rgba(255,255,255,0.6);margin-bottom:16px;">${dc.label}</div>
-    <div style="display:flex;gap:10px;margin-bottom:20px;">
-      <div style="flex:1;background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;">
-        <div style="font-size:1.3rem;">🎯</div>
-        <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;">${adjTarget.toLocaleString()}</div>
-        <div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">TARGET</div>
-      </div>
-      <div style="flex:1;background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;">
-        <div style="font-size:1.3rem;">👣</div>
-        <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;">${adjMoves}</div>
-        <div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">MOVES</div>
-      </div>
-      <div style="flex:1;background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;">
-        <div style="font-size:1.3rem;">⭐</div>
-        <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#ffe259;">${adjStar3.toLocaleString()}</div>
-        <div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">3 STARS</div>
-      </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;">
+      <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;"><div style="font-size:1.3rem;">🎯</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;">${adjTarget.toLocaleString()}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">TARGET</div></div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;"><div style="font-size:1.3rem;">👣</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;">${adjMoves}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">MOVES</div></div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;"><div style="font-size:1.3rem;">⏱️</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#43e97b;">${fmtTimeSt(adjTime)}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">TIME</div></div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;"><div style="font-size:1.3rem;">⭐</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#ffe259;">${adjStar3.toLocaleString()}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">3 STARS</div></div>
     </div>
     <button onclick="document.getElementById('level-info-popup').remove();startMapLevel(${lv.id});" style="width:100%;padding:14px;background:linear-gradient(135deg,${region.color},${region.border});border:none;border-radius:50px;font-family:'Fredoka One',cursive;font-size:1.1rem;color:#fff;cursor:pointer;">▶ Play</button>
     <button onclick="document.getElementById('level-info-popup').remove();" style="margin-top:10px;width:100%;background:transparent;border:none;color:rgba(255,255,255,0.3);font-size:0.8rem;cursor:pointer;padding:6px;">Close</button>
