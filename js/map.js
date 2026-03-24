@@ -7,19 +7,26 @@ const REGIONS = [
   { id:'africa', name:'Afrika', emoji:'🌅', levels:[81,100], theme:'theme-candy', color:'#ff5fa0', bgColor:'rgba(255,95,160,0.15)', border:'rgba(255,95,160,0.4)', description:'Rainbow candy paradise!' },
 ];
 
-// ═══ LEVEL GENERATION ═══
+// ═══ LEVEL GENERATION (balanced) ═══
 function generateLevels() {
   const levels = [];
   for (let i = 1; i <= 100; i++) {
-    levels.push({
-      id: i,
-      targetScore: 300 + (i * 50) + (Math.floor((i-1)/10) * 100),
-      moves: Math.max(15, 35 - Math.floor(i / 5)),
-      colors: Math.min(6, 4 + Math.floor(i / 25)),
-      stars: 0,
-      completed: false,
-      locked: i > 1,
-    });
+    // Moves: 34→18 gentle decrease
+    const moves = Math.max(18, Math.round(34 - (i - 1) * 0.16));
+    // Target: based on achievable max (moves * ~100pts avg)
+    const achievable = moves * 100;
+    const targetScore = Math.round(achievable * (0.38 + (i / 100) * 0.18));
+    // Star thresholds
+    const star2 = Math.round(targetScore * 1.25);
+    const star3 = Math.round(targetScore * 1.60);
+    // Colors: fewer = easier
+    let colors;
+    if (i <= 10) colors = 3;
+    else if (i <= 30) colors = 4;
+    else if (i <= 60) colors = 5;
+    else colors = 6;
+
+    levels.push({ id:i, moves, targetScore, star2, star3, colors, stars:0, completed:false, locked:i>1 });
   }
   return levels;
 }
@@ -30,17 +37,21 @@ let mapData = { currentLevel:1, levels:[], selectedRegion:null, selectedLevel:nu
 // ═══ SAVE / LOAD ═══
 function saveMapData() {
   localStorage.setItem('cb_map', JSON.stringify({
+    version: MAP_VERSION,
     currentLevel: mapData.currentLevel,
     levels: mapData.levels.map(l => ({ id:l.id, stars:l.stars, completed:l.completed, locked:l.locked }))
   }));
 }
 
+const MAP_VERSION = 2; // bump when level formula changes
 function loadMapData() {
   mapData.levels = generateLevels();
   try {
     const saved = localStorage.getItem('cb_map');
     if (saved) {
       const p = JSON.parse(saved);
+      // Reset if version changed (rebalanced levels)
+      if (p.version !== MAP_VERSION) { localStorage.removeItem('cb_map'); mapData.levels[0].locked=false; return; }
       mapData.currentLevel = p.currentLevel || 1;
       p.levels.forEach(s => {
         const lv = mapData.levels.find(l => l.id === s.id);
@@ -137,7 +148,7 @@ function renderLevelSelect(region) {
     btn.innerHTML = `${starsHtml}<div style="font-family:'Fredoka One',cursive;font-size:${isCurrent?'1.2rem':'1rem'};color:${isLocked?'rgba(255,255,255,0.3)':'#fff'};line-height:1;">${isLocked?'🔒':lv.id}</div>${isCurrent?`<div style="font-size:0.5rem;color:${region.color};font-family:'Fredoka One',cursive;margin-top:2px;">NOW</div>`:''}`;
 
     if (!isLocked) {
-      btn.onclick = () => startMapLevel(lv.id);
+      btn.onclick = () => showLevelInfo(lv, region);
       btn.onmouseenter = () => btn.style.transform='scale(1.1)';
       btn.onmouseleave = () => btn.style.transform='';
     }
@@ -161,14 +172,72 @@ function renderLevelSelect(region) {
   }, 100);
 }
 
+// ═══ DIFFICULTY CONFIG ═══
+const DIFF_CONFIG = {
+  easy:   { movMult:1.40, tarMult:0.70, starMult:0.85, label:'Easy' },
+  normal: { movMult:1.00, tarMult:1.00, starMult:1.00, label:'Normal' },
+  hard:   { movMult:0.65, tarMult:1.40, starMult:1.20, label:'Hard' },
+};
+
 // ═══ START MAP LEVEL ═══
 function startMapLevel(levelId) {
   mapData.selectedLevel = levelId;
-  window._mapLevelSettings = getLevelSettings(levelId);
+  const base = getLevelSettings(levelId);
+  if (!base) return;
   const region = getRegionForLevel(levelId);
+  const diff = (typeof settings !== 'undefined' && settings.diff) || 'normal';
+  const dc = DIFF_CONFIG[diff] || DIFF_CONFIG.normal;
+
+  window._mapLevelSettings = {
+    levelId: levelId,
+    moves: Math.max(10, Math.round(base.moves * dc.movMult)),
+    targetScore: Math.round(base.targetScore * dc.tarMult),
+    colors: base.colors,
+    starMult: dc.starMult,
+  };
+
   if (region) { applyThemeColors(region.theme); document.body.className = region.theme; }
   _goGameIntentional=true;
   goGame();
+}
+
+// ═══ LEVEL INFO POPUP ═══
+function showLevelInfo(lv, region) {
+  document.getElementById('level-info-popup')?.remove();
+  const diff = (typeof settings !== 'undefined' && settings.diff) || 'normal';
+  const dc = DIFF_CONFIG[diff] || DIFF_CONFIG.normal;
+  const adjMoves = Math.max(10, Math.round(lv.moves * dc.movMult));
+  const adjTarget = Math.round(lv.targetScore * dc.tarMult);
+  const adjStar3 = Math.round((lv.star3 || lv.targetScore * 1.6) * dc.tarMult * dc.starMult);
+
+  const popup = document.createElement('div');
+  popup.id = 'level-info-popup';
+  popup.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);';
+  popup.innerHTML = `<div style="background:linear-gradient(135deg,rgba(30,10,60,0.97),rgba(15,5,30,0.98));border:2px solid ${region.border};border-radius:24px;padding:28px 24px;max-width:300px;width:88%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+    <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:${region.color};margin-bottom:4px;letter-spacing:1px;">LEVEL ${lv.id}</div>
+    <div style="font-size:1.6rem;margin-bottom:4px;">${'⭐'.repeat(lv.stars)}${'☆'.repeat(3-lv.stars)}</div>
+    <div style="display:inline-block;background:rgba(255,255,255,0.1);border-radius:20px;padding:3px 12px;font-size:0.75rem;color:rgba(255,255,255,0.6);margin-bottom:16px;">${dc.label}</div>
+    <div style="display:flex;gap:10px;margin-bottom:20px;">
+      <div style="flex:1;background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;">
+        <div style="font-size:1.3rem;">🎯</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;">${adjTarget.toLocaleString()}</div>
+        <div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">TARGET</div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;">
+        <div style="font-size:1.3rem;">👣</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;">${adjMoves}</div>
+        <div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">MOVES</div>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;">
+        <div style="font-size:1.3rem;">⭐</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#ffe259;">${adjStar3.toLocaleString()}</div>
+        <div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">3 STARS</div>
+      </div>
+    </div>
+    <button onclick="document.getElementById('level-info-popup').remove();startMapLevel(${lv.id});" style="width:100%;padding:14px;background:linear-gradient(135deg,${region.color},${region.border});border:none;border-radius:50px;font-family:'Fredoka One',cursive;font-size:1.1rem;color:#fff;cursor:pointer;">▶ Play</button>
+    <button onclick="document.getElementById('level-info-popup').remove();" style="margin-top:10px;width:100%;background:transparent;border:none;color:rgba(255,255,255,0.3);font-size:0.8rem;cursor:pointer;padding:6px;">Close</button>
+  </div>`;
+  document.body.appendChild(popup);
 }
 
 // ═══ INIT ═══

@@ -7,6 +7,7 @@ let bestScore=+localStorage.getItem('cb_best')||0;
 let settings={sfx:true,music:false,vibro:true,anim:true,volume:70,diff:'normal',theme:''};
 let personalBest=[];
 let paused=false;
+let activeCandyTypes=TYPES; // how many candy colors active (3-6)
 
 // ═══════ THEME COLORS ═══════
 const themeColors={
@@ -422,9 +423,13 @@ function goGame(){
   if(window._mapLevelSettings){
     const ms=window._mapLevelSettings;
     targetScore=ms.targetScore;moves=ms.moves;level=ms.levelId||1;
+    activeCandyTypes=ms.colors||TYPES;
+    window._mapStarMult=ms.starMult||1.0;
     window._mapLevelSettings=null;
   }else{
     moves=getDiffMoves();level=1;targetScore=getDiffTarget();
+    activeCandyTypes=TYPES;
+    window._mapStarMult=null;
   }
   hideAllOverlays();
   initGrid();renderBoard();updateStats();
@@ -535,7 +540,7 @@ function scheduleMusicLoop(){
 }
 
 // ═══════ GAME LOGIC ═══════
-function randType(){return Math.floor(Math.random()*TYPES);}
+function randType(){return Math.floor(Math.random()*activeCandyTypes);}
 function initGrid(){grid=[];for(let r=0;r<GRID;r++){grid[r]=[];for(let c=0;c<GRID;c++){let t;do{t=randType();}while((c>=2&&getType(r,c-1)===t&&getType(r,c-2)===t)||(r>=2&&getType(r-1,c)===t&&getType(r-2,c)===t));grid[r][c]=t;}}}
 function renderBoard(){const board=document.getElementById('board');board.innerHTML='';for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){const type=getType(r,c);const special=getSpecial(r,c);const cell=document.createElement('div');cell.className='cell '+(type>=0&&type<COLORS.length?COLORS[type]:'');cell.dataset.r=r;cell.dataset.c=c;if(special){cell.classList.add('special-'+special);if(special===SPECIAL.BOMB){cell.dataset.icon='🌈';}else if(special===SPECIAL.WRAPPED){cell.dataset.icon=type>=0?ICONS[type]:'';const badge=document.createElement('span');badge.className='special-badge';badge.textContent='✨';cell.appendChild(badge);}else{cell.dataset.icon=type>=0?ICONS[type]:'';}}else{cell.dataset.icon=type>=0?ICONS[type]:'';}cell.addEventListener('click',onCellClick);cell.addEventListener('touchstart',onTouchStart,{passive:true});cell.addEventListener('touchend',onTouchEnd,{passive:true});board.appendChild(cell);}}
 function getCell(r,c){return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);}
@@ -689,9 +694,24 @@ async function processMatches(){
 function showCombo(c,pts){const el=document.getElementById('combo-display');if(c>=2){el.textContent=`🔥 x${c} COMBO! +${pts}`;el.style.color=c>=4?'var(--t-primary)':c>=3?'var(--t-accent)':'var(--t-secondary)';}else{el.textContent=pts>0?`+${pts}`:'';el.style.color='var(--t-text-muted)';}}
 function showBonusPopup(r,c,pts,icon){const bw=document.getElementById('board-wrap');if(!bw||!pts)return;const pop=document.createElement('div');pop.className='score-popup';pop.textContent=`${icon} +${pts}`;const cs=bw.offsetWidth/GRID;pop.style.cssText=`left:${Math.max(0,Math.min(c*cs+cs/2-30,bw.offsetWidth-70))}px;top:${Math.max(0,r*cs)}px;color:#ffe259;font-size:1.3rem;`;bw.appendChild(pop);setTimeout(()=>pop.remove(),1000);}
 function checkEnd(){if(score>=targetScore)setTimeout(()=>{savePersonalScore();showWin();},300);else if(moves<=0)setTimeout(()=>{savePersonalScore();showOver();},300);}
-function showWin(){playWin();document.getElementById('win-score').textContent=levelScore.toLocaleString();const stars=levelScore>=targetScore*1.5?'⭐⭐⭐':levelScore>=targetScore*1.1?'⭐⭐':'⭐';document.getElementById('win-stars').textContent=stars;document.getElementById('win-level-score').textContent='This level: +'+levelScore.toLocaleString()+' pts';document.getElementById('overlay-win').classList.remove('hidden');if(stars==='⭐⭐⭐'){const bt=['extraMoves','hammer','bomb'];setTimeout(()=>earnBooster(bt[Math.floor(Math.random()*3)]),800);}
+function calcStars(ls,ts){
+  const sm=window._mapStarMult||1.0;
+  if(ls>=ts*1.60*sm) return 3;
+  if(ls>=ts*1.25*sm) return 2;
+  return 1;
+}
+function showWin(){playWin();
+  document.getElementById('win-score').textContent=levelScore.toLocaleString();
+  const starCount=calcStars(levelScore,targetScore);
+  const stars='⭐'.repeat(starCount)+'☆'.repeat(3-starCount);
+  document.getElementById('win-stars').textContent=stars;
+  document.getElementById('win-level-score').textContent='This level: +'+levelScore.toLocaleString()+' pts';
+  document.getElementById('overlay-win').classList.remove('hidden');
+  if(starCount===3){const bt=['extraMoves','hammer','bomb'];setTimeout(()=>earnBooster(bt[Math.floor(Math.random()*3)]),800);}
   // Complete map level
-  if(mapData&&mapData.selectedLevel){const sc=stars==='⭐⭐⭐'?3:stars==='⭐⭐'?2:1;completeLevel(mapData.selectedLevel,sc,score);mapData.selectedLevel=null;}}
+  if(mapData&&mapData.selectedLevel){completeLevel(mapData.selectedLevel,starCount,score);mapData.selectedLevel=null;}
+  window._mapStarMult=null;
+}
 function showOver(){loseLife();playOver();document.getElementById('over-score').textContent=score.toLocaleString();document.getElementById('overlay-over').classList.remove('hidden');}
 function nextLevel(){document.getElementById('overlay-win').classList.add('hidden');
   // Go to next map level
