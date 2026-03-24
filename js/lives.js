@@ -161,7 +161,14 @@ function activateBomb(){
 
 // ═══ PRE-GAME ═══
 function showPreGame(){const ov=document.getElementById('overlay-pregame');if(ov)ov.classList.remove('hidden');}
-function hidePreGame(){const ov=document.getElementById('overlay-pregame');if(ov)ov.classList.add('hidden');}
+function hidePreGame(){
+  const ov=document.getElementById('overlay-pregame');if(ov)ov.classList.add('hidden');
+  // Start timer now that pregame is dismissed
+  if(window._pendingTimer&&window._pendingTimer>0){
+    if(typeof startGameTimer==='function')startGameTimer(window._pendingTimer);
+    window._pendingTimer=0;
+  }
+}
 
 // ═══ NO LIVES POPUP ═══
 function showNoLivesPopup(){

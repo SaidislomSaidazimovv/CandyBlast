@@ -1,4 +1,4 @@
-const CACHE_NAME = 'candy-blast-v1';
+const CACHE_NAME = 'candy-blast-v2';
 const ASSETS = [
   '/',
   '/index.html',

@@ -441,13 +441,15 @@ function goGame(){
   document.getElementById('best-val').textContent=bestScore;
   goScreen('game');
   updateIngameBoosterUI();
-  // Timer setup
+  // Timer: show box but start ticking only after pregame dismissed
   const tb=document.getElementById('stat-timer');
   if(window._mapTimeSeconds>0){
-    if(tb)tb.style.display='';
-    startGameTimer(window._mapTimeSeconds);
+    if(tb)tb.style.display='flex';
+    window._pendingTimer=window._mapTimeSeconds;
+    timeLeft=window._mapTimeSeconds;updateTimerUI();
   }else{
     if(tb)tb.style.display='none';
+    window._pendingTimer=0;
     stopGameTimer();
   }
   window._mapTimeSeconds=0;
@@ -718,7 +720,7 @@ function updateTimerUI(){
 }
 function startGameTimer(seconds){
   stopGameTimer();timeLeft=seconds;timerActive=true;updateTimerUI();
-  const tb=document.getElementById('stat-timer');if(tb)tb.style.display='';
+  const tb=document.getElementById('stat-timer');if(tb)tb.style.display='flex';
   timerInterval=setInterval(()=>{
     if(paused||busy)return;
     timeLeft--;updateTimerUI();
