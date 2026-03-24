@@ -616,7 +616,7 @@ async function trySwap(r1,c1,r2,c2){
     score+=bombPts;levelScore+=bombPts;updateStats();
     showBonusPopup(bombR,bombC,bombPts,'🌈');
     applyGravity();renderBoard();await processMatches();
-    if(score>=targetScore||moves<=0){checkEnd();}else{busy=false;}
+    if(score>=targetScore||moves<=0){checkEnd();clearGameState();}else{busy=false;saveGameState();}
     return;
   }
 
@@ -630,7 +630,7 @@ async function trySwap(r1,c1,r2,c2){
     if(comboPts>0){score+=comboPts;levelScore+=comboPts;updateStats();showBonusPopup(r1,c1,comboPts,'💥');}
     await delay(settings.anim?400:0);
     applyGravity();renderBoard();await processMatches();
-    if(score>=targetScore||moves<=0){checkEnd();}else{busy=false;}
+    if(score>=targetScore||moves<=0){checkEnd();clearGameState();}else{busy=false;saveGameState();}
     return;
   }
   [grid[r1][c1],grid[r2][c2]]=[grid[r2][c2],grid[r1][c1]];renderBoard();
@@ -641,11 +641,11 @@ async function trySwap(r1,c1,r2,c2){
     if(cell1){cell1.classList.add('invalid');setTimeout(()=>cell1.classList.remove('invalid'),420);}
     if(cell2){cell2.classList.add('invalid');setTimeout(()=>cell2.classList.remove('invalid'),420);}
     const flash=document.createElement('div');flash.className='board-flash';document.getElementById('board-wrap').appendChild(flash);setTimeout(()=>flash.remove(),380);
-    if(settings.diff==='normal'||settings.diff==='hard'){moves--;updateStats();const bw=document.getElementById('board-wrap');if(bw){const pop=document.createElement('div');pop.className='score-popup';pop.textContent='-1 move';pop.style.cssText+='color:#ff4444;left:50%;top:50%;transform:translateX(-50%);font-size:1rem;';bw.appendChild(pop);setTimeout(()=>pop.remove(),900);}if(moves<=0){setTimeout(()=>checkEnd(),300);return;}}
-    busy=false;return;
+    if(settings.diff==='normal'||settings.diff==='hard'){moves--;updateStats();const bw=document.getElementById('board-wrap');if(bw){const pop=document.createElement('div');pop.className='score-popup';pop.textContent='-1 move';pop.style.cssText+='color:#ff4444;left:50%;top:50%;transform:translateX(-50%);font-size:1rem;';bw.appendChild(pop);setTimeout(()=>pop.remove(),900);}if(moves<=0){setTimeout(()=>{checkEnd();clearGameState();},300);return;}}
+    busy=false;saveGameState();return;
   }
   moves--;combo=0;updateStats();await processMatches();
-  if(score>=targetScore||moves<=0){checkEnd();}else{busy=false;}
+  if(score>=targetScore||moves<=0){checkEnd();clearGameState();}else{busy=false;saveGameState();}
 }
 function findMatches(){
   return findMatchesNew().matched;
@@ -722,13 +722,13 @@ function startGameTimer(seconds){
   stopGameTimer();timeLeft=seconds;timerActive=true;updateTimerUI();
   const tb=document.getElementById('stat-timer');if(tb)tb.style.display='flex';
   timerInterval=setInterval(()=>{
-    if(paused||busy)return;
+    if(paused)return;
     timeLeft--;updateTimerUI();
     if(timeLeft<=0){stopGameTimer();setTimeout(()=>{if(score>=targetScore)showWin();else showTimeUp();},300);}
   },1000);
 }
 function stopGameTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}timerActive=false;}
-function showTimeUp(){stopGameTimer();loseLife();vibrate(200);
+function showTimeUp(){stopGameTimer();clearGameState();loseLife();vibrate(200);
   const el=document.getElementById('overlay-over');if(el){const t=el.querySelector('.ov-title');if(t)t.textContent="⏰ Time's Up!";document.getElementById('over-score').textContent=score.toLocaleString();el.classList.remove('hidden');}
 }
 function checkEnd(){
@@ -742,7 +742,7 @@ function calcStars(ls,ts){
   if(ls>=ts*1.25*sm) return 2;
   return 1;
 }
-function showWin(){stopGameTimer();playWin();
+function showWin(){stopGameTimer();clearGameState();playWin();
   document.getElementById('win-score').textContent=levelScore.toLocaleString();
   const starCount=calcStars(levelScore,targetScore);
   const stars='⭐'.repeat(starCount)+'☆'.repeat(3-starCount);
@@ -754,7 +754,7 @@ function showWin(){stopGameTimer();playWin();
   if(mapData&&mapData.selectedLevel){completeLevel(mapData.selectedLevel,starCount,score);mapData.selectedLevel=null;}
   window._mapStarMult=null;
 }
-function showOver(){stopGameTimer();loseLife();playOver();
+function showOver(){stopGameTimer();clearGameState();loseLife();playOver();
   const el=document.getElementById('overlay-over');if(el){const t=el.querySelector('.ov-title');if(t)t.textContent='Game Over 😢';}
   document.getElementById('over-score').textContent=score.toLocaleString();document.getElementById('overlay-over').classList.remove('hidden');
 }
@@ -787,7 +787,7 @@ function showQuitDialog(){
 }
 function confirmQuit(){
   document.getElementById('overlay-quit').classList.add('hidden');
-  savePersonalScore();loseLife();paused=false;busy=false;
+  clearGameState();savePersonalScore();loseLife();paused=false;busy=false;
   mapData.selectedLevel=null;window._mapLevelSettings=null;
   // Toast
   const toast=document.createElement('div');toast.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);color:#ff5fa0;font-family:\"Fredoka One\",cursive;padding:10px 24px;border-radius:20px;font-size:0.95rem;z-index:1000;white-space:nowrap;animation:scoreFloat 2s ease forwards;border:1px solid rgba(255,95,160,0.3);';
@@ -798,6 +798,82 @@ function cancelQuit(){document.getElementById('overlay-quit').classList.add('hid
 function delay(ms){return new Promise(r=>setTimeout(r,ms)).then(()=>waitIfPaused());}
 function waitIfPaused(){return new Promise(resolve=>{(function check(){if(!paused)return resolve();setTimeout(check,100);})();});}
 
+// ═══════ GAME STATE PERSISTENCE ═══════
+function saveGameState(){
+  // Only save if actively in a game
+  if(currentScreen!=='game')return;
+  const state={
+    grid:grid.map(row=>row.map(cell=>{
+      if(cell===null||cell===undefined||cell===-1)return -1;
+      if(typeof cell==='object')return{type:cell.type,special:cell.special};
+      return cell;
+    })),
+    score,levelScore,moves,level,targetScore,combo,
+    activeCandyTypes,
+    timeLeft:timeLeft||0,
+    timerWasActive:timerActive||false,
+    mapSelectedLevel:mapData.selectedLevel||null,
+    mapStarMult:window._mapStarMult||null,
+    savedAt:Date.now()
+  };
+  try{localStorage.setItem('cb_gamestate',JSON.stringify(state));}catch(e){}
+}
+function clearGameState(){
+  localStorage.removeItem('cb_gamestate');
+}
+function restoreGameState(){
+  try{
+    const raw=localStorage.getItem('cb_gamestate');
+    if(!raw)return false;
+    const state=JSON.parse(raw);
+    // Don't restore if saved more than 24h ago (stale)
+    if(Date.now()-state.savedAt>24*60*60*1000){clearGameState();return false;}
+    // Restore grid
+    grid=state.grid.map(row=>row.map(cell=>{
+      if(cell===-1||cell===null)return -1;
+      if(typeof cell==='object'&&cell.special)return{type:cell.type,special:cell.special};
+      return cell;
+    }));
+    score=state.score||0;
+    levelScore=state.levelScore||0;
+    moves=state.moves||30;
+    level=state.level||1;
+    targetScore=state.targetScore||500;
+    combo=state.combo||0;
+    activeCandyTypes=state.activeCandyTypes||TYPES;
+    timeLeft=state.timeLeft||0;
+    if(state.mapSelectedLevel)mapData.selectedLevel=state.mapSelectedLevel;
+    if(state.mapStarMult)window._mapStarMult=state.mapStarMult;
+    // Restore region theme
+    const region=getRegionForLevel(level);
+    if(region){applyThemeColors(region.theme);document.body.className=region.theme;}
+    paused=false;busy=false;
+    renderBoard();updateStats();
+    document.getElementById('best-val').textContent=bestScore;
+    const pct=Math.min(100,Math.round(score/targetScore*100));
+    document.getElementById('progress-fill').style.width=pct+'%';
+    document.getElementById('combo-display').textContent='';
+    goScreen('game');
+    updateIngameBoosterUI();
+    // Restore timer
+    const tb=document.getElementById('stat-timer');
+    if(state.timerWasActive&&timeLeft>0){
+      if(tb)tb.style.display='flex';
+      startGameTimer(timeLeft);
+    }else if(timeLeft>0){
+      if(tb)tb.style.display='flex';
+      updateTimerUI();
+    }else{
+      if(tb)tb.style.display='none';
+    }
+    clearGameState();
+    return true;
+  }catch(e){clearGameState();return false;}
+}
+
 // ═══════ INIT ═══════
 loadSettings();
-goScreen('start');
+// Try to restore game in progress, otherwise go to start
+if(!restoreGameState()){
+  goScreen('start');
+}

@@ -12,8 +12,7 @@ function generateLevels() {
   const levels = [];
   for (let i = 1; i <= 100; i++) {
     const moves = Math.max(18, Math.round(34 - (i - 1) * 0.16));
-    const baseTime = Math.round(120 - (i-1) * 0.75);
-    const timeSeconds = Math.max(45, baseTime);
+    const timeSeconds = 120; // all levels: 2:00
     const achievable = moves * 100;
     const targetScore = Math.round(achievable * (0.38 + (i / 100) * 0.18));
     const star2 = Math.round(targetScore * 1.25);
@@ -32,7 +31,7 @@ function generateLevels() {
 let mapData = { currentLevel:1, levels:[], selectedRegion:null, selectedLevel:null };
 
 // ═══ SAVE / LOAD ═══
-const MAP_VERSION = 3; // bump when level formula changes
+const MAP_VERSION = 4; // bump when level formula changes
 function saveMapData() {
   localStorage.setItem('cb_map', JSON.stringify({
     version: MAP_VERSION,
