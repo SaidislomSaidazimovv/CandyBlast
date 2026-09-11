@@ -1,4 +1,4 @@
-const CACHE_NAME = 'candy-blast-v4';
+const CACHE_NAME = 'candy-blast-v11';
 const ASSETS = [
   '/',
   '/index.html',
@@ -15,6 +15,21 @@ const ASSETS = [
   '/js/map.js',
   '/js/backgrounds.js',
   '/js/game.js',
+  '/js/render-bridge.js',
+  '/js/renderer3d.mjs',
+  '/css/mobile-game.css',
+  '/vendor/three/three.module.min.js',
+  '/vendor/three/three.core.js',
+  '/js/performance.js',
+  '/css/adventure.css',
+  '/js/adventure.js',
+  '/images/candies/berry.svg',
+  '/images/candies/diamond.svg',
+  '/images/candies/mint.svg',
+  '/images/candies/star.svg',
+  '/images/candies/grape.svg',
+  '/images/candies/orange.svg',
+  '/images/candies/prism.svg',
   '/manifest.json'
 ];
 
@@ -29,12 +44,14 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k.startsWith('candy-blast-') && k !== CACHE_NAME).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', e => {
+  // Local development must show edits immediately; deployed builds stay offline-first.
+  if(['localhost','127.0.0.1','[::1]'].includes(self.location.hostname))return;
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;

@@ -17,6 +17,8 @@
 <link rel="stylesheet" href="css/spin.css">
 <link rel="stylesheet" href="css/specials.css">
 <link rel="stylesheet" href="css/map.css">
+<link rel="stylesheet" href="css/adventure.css">
+<link rel="stylesheet" href="css/mobile-game.css">
 </head>
 <body>
 
@@ -118,6 +120,7 @@
 </div>
 
 <div class="screen hidden" id="screen-game">
+  <div class="mobile-hud">
   <div class="game-header">
     <button class="header-btn" onclick="pauseGame()">⏸</button>
     <span class="game-title-small">🍭 Candy Blast</span>
@@ -130,9 +133,13 @@
     <div class="stat-box" id="stat-timer" style="display:none;"><div class="stat-label">Time</div><div class="stat-value" id="stat-time-val" style="color:#43e97b;">2:00</div></div>
     <div class="stat-box"><div class="stat-label">Best</div><div class="stat-value" id="best-val" style="opacity:.6">0</div></div>
   </div>
+  <div class="objective-panel"><div class="objective-heading"><span id="objective-title">Score challenge</span><button class="hint-btn" onclick="showHint()" aria-label="Show a possible move">✧ Hint</button></div><div id="objective-goals"></div></div>
   <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
   <div id="combo-display"></div>
-  <div id="board-wrap"><div id="board"></div></div>
+  <div id="board-wrap"><div id="game-scene"></div><div id="board" role="group" aria-label="Candy board"></div></div>
+  <div class="mobile-controls">
+  <div id="board-message" role="status">Swap adjacent candies to match 3</div>
   <div id="ingame-boosters" style="display:flex;gap:10px;justify-content:center;width:100%;max-width:420px;margin-top:10px;padding:0 4px;">
     <div class="ingame-booster-btn" id="ingame-btn-extraMoves" onclick="useIngameBooster('extraMoves')" style="border-color:rgba(255,220,0,0.3);">
       <span class="ingame-booster-icon">⚡</span>
@@ -152,6 +159,7 @@
   </div>
 </div>
 
+</div>
 <div class="overlay hidden" id="overlay-pause"><div class="overlay-card"><div class="ov-title">⏸ Paused</div><div class="ov-btns">
   <button class="btn btn-play" onclick="resumeGame()">▶ Resume</button>
   <button class="btn btn-settings" onclick="document.getElementById('overlay-pause').classList.add('hidden');goScreen('settings')">⚙️ Settings</button>
@@ -196,7 +204,8 @@
 </div></div>
 
 <div class="overlay hidden" id="overlay-pregame"><div class="overlay-card" style="max-width:320px;">
-  <div class="ov-title">Ready? 🎮</div>
+  <div class="ov-title" id="pregame-title">Ready? 🎮</div>
+  <div id="pregame-objective" class="pregame-objective"></div>
   <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-bottom:20px;">Use a booster before you start!</div>
   <div style="display:flex;gap:10px;margin-bottom:20px;">
     <div class="booster-card" id="booster-btn-extraMoves" onclick="useBooster('extraMoves')">
@@ -217,7 +226,7 @@
   </div>
   <div style="display:flex;flex-direction:column;gap:10px;">
     <button class="btn btn-play" onclick="hidePreGame()" style="padding:14px;">▶ Play Now!</button>
-    <button class="btn btn-secondary" onclick="hidePreGame();if(mapData&&mapData.selectedRegion){goScreen('levelselect');renderLevelSelect(mapData.selectedRegion);}else{goScreen('map');renderMapScreen();}" style="padding:10px;font-size:0.9rem;">← Back</button>
+    <button class="btn btn-secondary" onclick="cancelPreGame()" style="padding:10px;font-size:0.9rem;">← Back</button>
   </div>
 </div></div>
 
@@ -256,7 +265,11 @@
 <script src="js/specials.js"></script>
 <script src="js/map.js"></script>
 <script src="js/backgrounds.js"></script>
+<script src="js/adventure.js"></script>
 <script src="js/game.js"></script>
+<script src="js/render-bridge.js"></script>
+<script type="module" src="js/renderer3d.mjs"></script>
+<script src="js/performance.js"></script>
 <script>
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
 </script>

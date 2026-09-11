@@ -7,6 +7,8 @@ let bestScore=+localStorage.getItem('cb_best')||0;
 let settings={sfx:true,music:false,vibro:true,anim:true,volume:70,diff:'normal',theme:''};
 let personalBest=[];
 let paused=false;
+let gameSession=0;
+let gameEnded=true, timeExpired=false, pregame=false;
 let activeCandyTypes=TYPES; // how many candy colors active (3-6)
 let timeLeft=0,timerInterval=null,timerActive=false;
 
@@ -71,6 +73,7 @@ const themeColors={
 };
 
 function applyThemeColors(theme){
+  document.documentElement.classList.toggle('no-animations',!settings.anim);
   const root=document.documentElement;
   const t=themeColors[theme]||themeColors[''];
   Object.entries(t).forEach(([k,v])=>root.style.setProperty(k,v));
@@ -390,7 +393,11 @@ function closeToStart(e){
   setTimeout(()=>goScreen('start'),50);
 }
 function goScreen(name){
-  if(currentScreen==='game'&&name!=='game')stopPlayTimer();
+  if(currentScreen==='game'&&name!=='game'){
+    stopPlayTimer();
+    if(name==='settings'){paused=true;saveGameState();}
+    else{stopGameTimer();gameSession++;gameEnded=true;window._pendingTimer=0;clearGameState();showHammerHint(false);}
+  }
   if(name!=='game')hideAllOverlays();
   document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
   document.getElementById('screen-'+name).classList.remove('hidden');
@@ -402,7 +409,7 @@ function goScreen(name){
     if(ss){ss.style.pointerEvents='none';setTimeout(()=>{ss.style.pointerEvents='all';},200);}
   }
   if(name==='tutorial'){tutSlide=0;renderTutSlide(0);}
-  if(name==='game')setTimeout(startPlayTimer,100);
+  if(name==='game'&&!pregame&&!paused&&!gameEnded)startPlayTimer();
 }
 let _goGameIntentional=false;
 function goGame(){
@@ -418,24 +425,26 @@ function goGame(){
     if(document.getElementById('spin-popup'))return;
   }
   _goGameIntentional=false;
-  paused=false;busy=false;
   if(!hasLives()){showNoLivesPopup();return;}
+  stopGameTimer();clearGameState();gameSession++;
+  paused=false;busy=false;gameEnded=false;timeExpired=false;pregame=true;
+  selected=null;touchStartPos=null;showHammerHint(false);
   score=0;levelScore=0;combo=0;
   if(window._mapLevelSettings){
     const ms=window._mapLevelSettings;
     targetScore=ms.targetScore;moves=ms.moves;level=ms.levelId||1;
-    activeCandyTypes=ms.colors||TYPES;
+    activeCandyTypes=ms.colors||TYPES;startObjective(ms.objective);
     window._mapStarMult=ms.starMult||1.0;
     window._mapTimeSeconds=ms.timeSeconds||0;
     window._mapLevelSettings=null;
   }else{
     moves=getDiffMoves();level=1;targetScore=getDiffTarget();
-    activeCandyTypes=TYPES;
+    activeCandyTypes=TYPES;startObjective();
     window._mapStarMult=null;
     window._mapTimeSeconds=0;
   }
   hideAllOverlays();
-  initGrid();renderBoard();updateStats();
+  initGrid();renderBoard();updateStats();document.getElementById('board-message').textContent=boardInstruction();
   document.getElementById('progress-fill').style.width='0%';
   document.getElementById('combo-display').textContent='';
   document.getElementById('best-val').textContent=bestScore;
@@ -450,10 +459,12 @@ function goGame(){
   }else{
     if(tb)tb.style.display='none';
     window._pendingTimer=0;
-    stopGameTimer();
+    stopGameTimer();timeLeft=0;
   }
   window._mapTimeSeconds=0;
-  showPreGame();
+  document.getElementById('pregame-title').textContent='Level '+level;
+  document.getElementById('pregame-objective').textContent=objectiveDescription(window._activeObjectiveSpec);
+  showPreGame();saveGameState();
 }
 
 // ═══════ SETTINGS ═══════
@@ -499,10 +510,14 @@ function loadSettings(){
 document.getElementById('set-sfx').onchange=e=>{settings.sfx=e.target.checked;saveSettings();};
 document.getElementById('set-music').onchange=e=>{settings.music=e.target.checked;saveSettings();if(settings.music)startBgMusic();else stopBgMusic();};
 document.getElementById('set-vibro').onchange=e=>{settings.vibro=e.target.checked;saveSettings();};
-document.getElementById('set-anim').onchange=e=>{settings.anim=e.target.checked;saveSettings();};
+document.getElementById('set-anim').onchange=e=>{settings.anim=e.target.checked;document.documentElement.classList.toggle('no-animations',!settings.anim);saveSettings();};
 function resetProgress(){document.getElementById('overlay-reset').classList.remove('hidden');}
 function confirmReset(){
   document.getElementById('overlay-reset').classList.add('hidden');
+  stopGameTimer();stopPlayTimer();gameSession++;gameEnded=true;busy=false;paused=false;pregame=false;window._pendingTimer=0;showHammerHint(false);
+  localStorage.removeItem('cb_gamestate');localStorage.removeItem('cb_spin_given');
+  livesData={lives:5,lastLostAt:null,boosters:{extraMoves:2,hammer:1,bomb:1}};
+  dailyData=createDailyData();mapData.currentLevel=1;mapData.selectedLevel=null;mapData.selectedRegion=null;
   localStorage.removeItem('cb_best');localStorage.removeItem('cb_settings');localStorage.removeItem('cb_personal');localStorage.removeItem('cb_tutorial_done');localStorage.removeItem('cb_lives');localStorage.removeItem('cb_daily');localStorage.removeItem('cb_daily_done');localStorage.removeItem('cb_map');
   bestScore=0;score=0;level=1;
   settings={sfx:true,music:false,vibro:true,anim:true,volume:70,diff:'normal',theme:''};
@@ -524,8 +539,9 @@ function renderLB(type){
     list.appendChild(div);
   });
 }
-function getPersonalLB(){const pb=JSON.parse(localStorage.getItem('cb_personal')||'[]');pb.push({name:'You (Current)',score:bestScore,level:level,avatar:'🎮',me:true});return pb;}
-function savePersonalScore(){const pb=JSON.parse(localStorage.getItem('cb_personal')||'[]');pb.push({name:'You',score,level,avatar:'🎮',me:false,date:new Date().toLocaleDateString()});pb.sort((a,b)=>b.score-a.score);localStorage.setItem('cb_personal',JSON.stringify(pb.slice(0,10)));}
+function readPersonalScores(){try{const value=JSON.parse(localStorage.getItem('cb_personal')||'[]');return Array.isArray(value)?value.filter(row=>row&&Number.isFinite(row.score)):[];}catch{return [];}}
+function getPersonalLB(){const pb=readPersonalScores();pb.push({name:'You (Current)',score:bestScore,level:level,avatar:'🎮',me:true});return pb;}
+function savePersonalScore(){const pb=readPersonalScores();pb.push({name:'You',score,level,avatar:'🎮',me:false,date:new Date().toLocaleDateString()});pb.sort((a,b)=>b.score-a.score);localStorage.setItem('cb_personal',JSON.stringify(pb.slice(0,10)));}
 
 // ═══════ AUDIO ═══════
 let audioCtx=null;
@@ -556,10 +572,45 @@ function scheduleMusicLoop(){
 
 // ═══════ GAME LOGIC ═══════
 function randType(){return Math.floor(Math.random()*activeCandyTypes);}
-function initGrid(){grid=[];for(let r=0;r<GRID;r++){grid[r]=[];for(let c=0;c<GRID;c++){let t;do{t=randType();}while((c>=2&&getType(r,c-1)===t&&getType(r,c-2)===t)||(r>=2&&getType(r-1,c)===t&&getType(r-2,c)===t));grid[r][c]=t;}}}
-function renderBoard(){const board=document.getElementById('board');board.innerHTML='';for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){const type=getType(r,c);const special=getSpecial(r,c);const cell=document.createElement('div');cell.className='cell '+(type>=0&&type<COLORS.length?COLORS[type]:'');cell.dataset.r=r;cell.dataset.c=c;if(special){cell.classList.add('special-'+special);if(special===SPECIAL.BOMB){cell.dataset.icon='🌈';}else if(special===SPECIAL.WRAPPED){cell.dataset.icon=type>=0?ICONS[type]:'';const badge=document.createElement('span');badge.className='special-badge';badge.textContent='✨';cell.appendChild(badge);}else{cell.dataset.icon=type>=0?ICONS[type]:'';}}else{cell.dataset.icon=type>=0?ICONS[type]:'';}cell.addEventListener('click',onCellClick);cell.addEventListener('touchstart',onTouchStart,{passive:true});cell.addEventListener('touchend',onTouchEnd,{passive:true});board.appendChild(cell);}}
+function initGrid(){
+  for(let attempt=0;attempt<100;attempt++){
+    grid=[];
+    for(let r=0;r<GRID;r++){grid[r]=[];for(let c=0;c<GRID;c++){
+      let t;do{t=randType();}while((c>=2&&getType(r,c-1)===t&&getType(r,c-2)===t)||(r>=2&&getType(r-1,c)===t&&getType(r-2,c)===t));grid[r][c]=t;
+    }}
+    if(findAvailableMove())return;
+  }
+  grid=Array.from({length:GRID},(_,r)=>Array.from({length:GRID},(_,c)=>(r+c)%activeCandyTypes));
+  grid[0][0]=0;grid[0][1]=1;grid[0][2]=0;grid[1][1]=0;
+}
+function renderBoard(drops=[]){
+  const board=document.getElementById('board');
+  if(board.children.length!==GRID*GRID){
+    board.innerHTML='';
+    for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
+      const cell=document.createElement('button');cell.type='button';cell.dataset.r=r;cell.dataset.c=c;
+      cell.innerHTML='<span class="candy-art" aria-hidden="true"></span><span class="special-mark" aria-hidden="true"></span>';
+      cell.addEventListener('click',onCellClick);
+      cell.addEventListener('touchstart',onTouchStart,{passive:true});
+      cell.addEventListener('touchend',onTouchEnd,{passive:false});
+      board.appendChild(cell);
+    }
+  }
+  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
+    const cell=board.children[r*GRID+c],type=getType(r,c),sp=getSpecial(r,c),ice=objective.ice.includes(r*GRID+c);
+    cell.className='cell'+(ice?' iced':'')+(sp?' special-'+sp:'');
+    cell.dataset.icon=type>=0?ICONS[type]:'';
+    cell.setAttribute('aria-label',(type>=0?CANDY_NAMES[type]:'Empty')+(sp?', '+sp:'')+(ice?', ice tile':'')+', row '+(r+1)+', column '+(c+1));
+    const art=cell.querySelector('.candy-art');art.className='candy-art'+(type>=0?' c'+type:' empty-candy');art.style.transform='';
+    cell.querySelector('.special-mark').textContent=sp===SPECIAL.WRAPPED?'✦':sp===SPECIAL.BOMB?'✧':'';
+    const fall=drops.find(d=>d.r===r&&d.c===c);
+    if(fall&&settings.anim){cell.style.setProperty('--fall-distance',(-fall.distance*(board.clientHeight/GRID))+'px');cell.classList.add('falling');}
+  }
+  window.Candy3D?.sync(drops);
+}
 function getCell(r,c){return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);}
 function updateStats(){
+  updateObjectiveUI();
   document.getElementById('score-val').textContent=score.toLocaleString();
   document.getElementById('level-val').textContent=level;
   document.getElementById('moves-val').textContent=moves;
@@ -568,16 +619,18 @@ function updateStats(){
   if(score>bestScore){bestScore=score;localStorage.setItem('cb_best',bestScore);document.getElementById('best-val').textContent=bestScore;}
 }
 function onCellClick(e){
-  if(busy||paused)return;
+  if(busy||paused||pregame||gameEnded)return;
   if(hammerMode){
     const hr=+e.currentTarget.dataset.r,hc=+e.currentTarget.dataset.c;
-    grid[hr][hc]=-1;showHammerHint(false);busy=true;
+    removeCandy(hr,hc);showHammerHint(false);busy=true;
     const hb=document.getElementById('ingame-btn-hammer');if(hb)hb.classList.remove('active-hammer');
     const hcell=getCell(hr,hc);
     if(hcell){hcell.classList.add('matched');
+      const session=gameSession;
       setTimeout(async()=>{
-        for(let col=0;col<GRID;col++){let empty=0;for(let row=GRID-1;row>=0;row--){if(grid[row][col]===-1)empty++;else if(empty>0){grid[row+empty][col]=grid[row][col];grid[row][col]=-1;}}for(let row=0;row<empty;row++)grid[row][col]=randType();}
-        renderBoard();await processMatches();if(score>=targetScore||moves<=0){checkEnd();}else{busy=false;}
+        if(session!==gameSession)return;
+        await dropCandies();if(session!==gameSession)return;
+        await processMatches();if(session!==gameSession)return;finishMove();
       },350);
     }
     return;
@@ -588,9 +641,11 @@ function onCellClick(e){
 }
 let touchStartPos=null;
 function onTouchStart(e){const t=e.touches[0];touchStartPos={x:t.clientX,y:t.clientY,r:+e.currentTarget.dataset.r,c:+e.currentTarget.dataset.c};}
-function onTouchEnd(e){if(!touchStartPos||busy||paused)return;const t=e.changedTouches[0];const dx=t.clientX-touchStartPos.x,dy=t.clientY-touchStartPos.y;const absDx=Math.abs(dx),absDy=Math.abs(dy);const{r,c}=touchStartPos;touchStartPos=null;if(absDx<15&&absDy<15)return;e.preventDefault();let tr=r,tc=c;if(absDx>absDy){tc+=dx>0?1:-1;}else{tr+=dy>0?1:-1;}if(tr<0||tr>=GRID||tc<0||tc>=GRID)return;if(selected){const el=getCell(selected.r,selected.c);if(el)el.classList.remove('selected');selected=null;}trySwap(r,c,tr,tc);}
+function onTouchEnd(e){if(!touchStartPos||busy||paused||pregame||gameEnded||hammerMode)return;const t=e.changedTouches[0];const dx=t.clientX-touchStartPos.x,dy=t.clientY-touchStartPos.y;const absDx=Math.abs(dx),absDy=Math.abs(dy);const{r,c}=touchStartPos;touchStartPos=null;if(absDx<15&&absDy<15)return;e.preventDefault();let tr=r,tc=c;if(absDx>absDy){tc+=dx>0?1:-1;}else{tr+=dy>0?1:-1;}if(tr<0||tr>=GRID||tc<0||tc>=GRID)return;if(selected){const el=getCell(selected.r,selected.c);if(el)el.classList.remove('selected');selected=null;}trySwap(r,c,tr,tc);}
 async function trySwap(r1,c1,r2,c2){
+  if(busy||paused||pregame||gameEnded)return;
   busy=true;
+  const session=gameSession;
   const sp1=getSpecial(r1,c1),sp2=getSpecial(r2,c2);
   const mult=settings.diff==='hard'?1.5:settings.diff==='easy'?.8:1;
 
@@ -600,60 +655,73 @@ async function trySwap(r1,c1,r2,c2){
     const bombR=sp1===SPECIAL.BOMB?r1:r2,bombC=sp1===SPECIAL.BOMB?c1:c2;
     const targetR=sp1===SPECIAL.BOMB?r2:r1,targetC=sp1===SPECIAL.BOMB?c2:c1;
     const targetType=getType(targetR,targetC);
-    moves--;combo++;updateStats();
+    moves--;combo=1;updateStats();
     let removed=0;
     for(let row=0;row<GRID;row++)for(let col=0;col<GRID;col++){
       if(getType(row,col)===targetType){
         const el=getCell(row,col);if(el&&settings.anim)el.classList.add('matched');
-        grid[row][col]=-1;removed++;
+        removeCandy(row,col);removed++;
       }
     }
-    grid[bombR][bombC]=-1;removed++;
+    removeCandy(bombR,bombC);removed++;
     const bEl=getCell(bombR,bombC);if(bEl&&settings.anim)bEl.classList.add('matched');
     showBombEffect(bombR,bombC);playMatch(removed);vibrate(60);
-    await delay(settings.anim?380:0);
+    await delay(settings.anim?380:0);if(session!==gameSession)return;
     const bombPts=Math.round(removed*45*combo*mult);
     score+=bombPts;levelScore+=bombPts;updateStats();
     showBonusPopup(bombR,bombC,bombPts,'🌈');
-    applyGravity();renderBoard();await processMatches();
-    if(score>=targetScore||moves<=0){checkEnd();clearGameState();}else{busy=false;saveGameState();}
+    await dropCandies();if(session!==gameSession)return;await processMatches();if(session!==gameSession)return;
+    finishMove();
     return;
   }
 
   // Special combo: both cells are special
   if(sp1&&sp2){
-    moves--;combo++;updateStats();
+    moves--;combo=1;updateStats();
+    await animateSwap(r1,c1,r2,c2);if(session!==gameSession)return;
     [grid[r1][c1],grid[r2][c2]]=[grid[r2][c2],grid[r1][c1]];
     renderBoard();
     const triggered=handleSpecialCombo(r1,c1,r2,c2);
     const comboPts=Math.round(triggered.size*COMBO_PTS*combo*mult);
     if(comboPts>0){score+=comboPts;levelScore+=comboPts;updateStats();showBonusPopup(r1,c1,comboPts,'💥');}
-    await delay(settings.anim?400:0);
-    applyGravity();renderBoard();await processMatches();
-    if(score>=targetScore||moves<=0){checkEnd();clearGameState();}else{busy=false;saveGameState();}
+    await delay(settings.anim?400:0);if(session!==gameSession)return;
+    await dropCandies();if(session!==gameSession)return;await processMatches();if(session!==gameSession)return;
+    finishMove();
     return;
   }
+  await animateSwap(r1,c1,r2,c2);if(session!==gameSession)return;
   [grid[r1][c1],grid[r2][c2]]=[grid[r2][c2],grid[r1][c1]];renderBoard();
   const matches=findMatches();
   if(!matches.length){
-    [grid[r1][c1],grid[r2][c2]]=[grid[r2][c2],grid[r1][c1]];renderBoard();playInvalid();
+    await animateSwap(r1,c1,r2,c2);if(session!==gameSession)return;
+  [grid[r1][c1],grid[r2][c2]]=[grid[r2][c2],grid[r1][c1]];renderBoard();playInvalid();
     const cell1=getCell(r1,c1),cell2=getCell(r2,c2);
     if(cell1){cell1.classList.add('invalid');setTimeout(()=>cell1.classList.remove('invalid'),420);}
     if(cell2){cell2.classList.add('invalid');setTimeout(()=>cell2.classList.remove('invalid'),420);}
     const flash=document.createElement('div');flash.className='board-flash';document.getElementById('board-wrap').appendChild(flash);setTimeout(()=>flash.remove(),380);
-    if(settings.diff==='normal'||settings.diff==='hard'){moves--;updateStats();const bw=document.getElementById('board-wrap');if(bw){const pop=document.createElement('div');pop.className='score-popup';pop.textContent='-1 move';pop.style.cssText+='color:#ff4444;left:50%;top:50%;transform:translateX(-50%);font-size:1rem;';bw.appendChild(pop);setTimeout(()=>pop.remove(),900);}if(moves<=0){setTimeout(()=>{checkEnd();clearGameState();},300);return;}}
-    busy=false;saveGameState();return;
+    if(settings.diff==='normal'||settings.diff==='hard'){moves--;updateStats();const bw=document.getElementById('board-wrap');if(bw){const pop=document.createElement('div');pop.className='score-popup';pop.textContent='-1 move';pop.style.cssText+='color:#ff4444;left:50%;top:50%;transform:translateX(-50%);font-size:1rem;';bw.appendChild(pop);setTimeout(()=>pop.remove(),900);}if(moves<=0){finishMove();return;}}
+    finishMove();return;
   }
-  moves--;combo=0;updateStats();await processMatches();
-  if(score>=targetScore||moves<=0){checkEnd();clearGameState();}else{busy=false;saveGameState();}
+  moves--;combo=0;updateStats();await processMatches();if(session!==gameSession)return;
+  finishMove();
 }
 function findMatches(){
   return findMatchesNew().matched;
 }
 function applyGravity(){
-  for(let c=0;c<GRID;c++){let empty=0;for(let r=GRID-1;r>=0;r--){if(isEmpty(r,c))empty++;else if(empty>0){grid[r+empty][c]=grid[r][c];grid[r][c]=-1;}}for(let r=0;r<empty;r++)grid[r][c]=randType();}
+  const drops=[];
+  for(let c=0;c<GRID;c++){
+    let empty=0;
+    for(let r=GRID-1;r>=0;r--){
+      if(isEmpty(r,c))empty++;
+      else if(empty>0){grid[r+empty][c]=grid[r][c];grid[r][c]=-1;drops.push({r:r+empty,c,distance:empty});}
+    }
+    for(let r=0;r<empty;r++){grid[r][c]=randType();drops.push({r,c,distance:empty});}
+  }
+  return drops;
 }
 async function processMatches(){
+  const session=gameSession;
   let result=findMatchesNew();
   let matches=result.matched;
   while(matches.length){
@@ -672,15 +740,15 @@ async function processMatches(){
     const triggered=new Set();
     matches.forEach(({r,c})=>triggered.add(r*GRID+c));
     const specialsInMatch=matches.filter(({r,c})=>getSpecial(r,c));
-    if(settings.anim){matches.forEach(({r,c})=>{const el=getCell(r,c);if(el)el.classList.add('matched');});await delay(340);}else{await delay(0);}
+    if(settings.anim){matches.forEach(({r,c})=>{const el=getCell(r,c);if(el)el.classList.add('matched');});await delay(340);if(session!==gameSession)return;}else{await delay(0);if(session!==gameSession)return;}
     // Remove normal matched cells
     matches.forEach(({r,c})=>{
-      if(!specialsInMatch.some(s=>s.r===r&&s.c===c)){grid[r][c]=-1;}
+      if(!specialsInMatch.some(s=>s.r===r&&s.c===c)){removeCandy(r,c);}
     });
     // Activate specials and score their extra cells
     for(const {r,c} of specialsInMatch){
       const extraCells=activateSpecial(r,c,triggered);
-      grid[r][c]=-1;
+      removeCandy(r,c);
       if(extraCells>0){
         const bonusPts=Math.round(extraCells*SPECIAL_PTS*combo*mult);
         score+=bonusPts;levelScore+=bonusPts;updateStats();
@@ -696,11 +764,9 @@ async function processMatches(){
         }
       });
     }
-    if(specialsInMatch.length&&settings.anim) await delay(300);
+    if(specialsInMatch.length&&settings.anim) await delay(300);if(session!==gameSession)return;
     // Gravity
-    const fc=[];for(let c=0;c<GRID;c++){let empty=0;for(let r=GRID-1;r>=0;r--){if(isEmpty(r,c))empty++;else if(empty>0){grid[r+empty][c]=grid[r][c];grid[r][c]=-1;fc.push({r:r+empty,c});}}for(let r=0;r<empty;r++){grid[r][c]=randType();fc.push({r,c});}}
-    renderBoard();
-    if(settings.anim){fc.forEach(({r,c})=>{const el=getCell(r,c);if(el)el.classList.add('falling');});await delay(250);fc.forEach(({r,c})=>{const el=getCell(r,c);if(el)el.classList.remove('falling');});}
+    await dropCandies();if(session!==gameSession)return;
     result=findMatchesNew();
     matches=result.matched;
   }
@@ -719,22 +785,46 @@ function updateTimerUI(){
   else{el.style.color='#43e97b';el.style.animation='none';}
 }
 function startGameTimer(seconds){
-  stopGameTimer();timeLeft=seconds;timerActive=true;updateTimerUI();
+  stopGameTimer();timeLeft=seconds;timerActive=true;timeExpired=false;updateTimerUI();
   const tb=document.getElementById('stat-timer');if(tb)tb.style.display='flex';
   timerInterval=setInterval(()=>{
-    if(paused)return;
-    timeLeft--;updateTimerUI();
-    if(timeLeft<=0){stopGameTimer();setTimeout(()=>{if(score>=targetScore)showWin();else showTimeUp();},300);}
+    if(paused||pregame||gameEnded||currentScreen!=='game')return;
+    timeLeft=Math.max(0,timeLeft-1);updateTimerUI();
+    if(timeLeft===0){
+      stopGameTimer();timeExpired=true;
+      // Let the current cascade finish before deciding its result.
+      if(!busy)checkEnd();
+    }else if(!busy){saveGameState();}
   },1000);
 }
 function stopGameTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}timerActive=false;}
-function showTimeUp(){stopGameTimer();clearGameState();loseLife();vibrate(200);
-  const el=document.getElementById('overlay-over');if(el){const t=el.querySelector('.ov-title');if(t)t.textContent="⏰ Time's Up!";document.getElementById('over-score').textContent=score.toLocaleString();el.classList.remove('hidden');}
+function beginResult(){
+  if(gameEnded)return false;
+  gameEnded=true;busy=true;pregame=false;paused=false;
+  stopGameTimer();stopPlayTimer();clearGameState();showHammerHint(false);
+  savePersonalScore();return true;
+}
+function showTimeUp(){
+  if(!beginResult())return;
+  loseLife();vibrate(200);
+  const el=document.getElementById('overlay-over');
+  el.querySelector('.ov-title').textContent="⏰ Time's Up!";
+  el.querySelector('.ov-sub').textContent='Try again — you can do it!';
+  document.getElementById('over-score').textContent=score.toLocaleString();el.classList.remove('hidden');
 }
 function checkEnd(){
-  stopGameTimer();
-  if(score>=targetScore)setTimeout(()=>{savePersonalScore();showWin();},300);
-  else if(moves<=0)setTimeout(()=>{savePersonalScore();showOver();},300);
+  if(gameEnded)return true;
+  if(objectiveComplete()){showWin();return true;}
+  if(timeExpired){showTimeUp();return true;}
+  if(moves<=0){showOver();return true;}
+  return false;
+}
+function finishMove(){
+  if(checkEnd())return;
+  const shuffled=ensurePlayableBoard();
+  if(shuffled)renderBoard();
+  document.getElementById('board-message').textContent=shuffled?'No moves — candies reshuffled for free':boardInstruction();
+  busy=false;updateStats();saveGameState();
 }
 function calcStars(ls,ts){
   const sm=window._mapStarMult||1.0;
@@ -742,20 +832,20 @@ function calcStars(ls,ts){
   if(ls>=ts*1.25*sm) return 2;
   return 1;
 }
-function showWin(){stopGameTimer();clearGameState();playWin();
+function showWin(){if(!beginResult())return;playWin();
   document.getElementById('win-score').textContent=levelScore.toLocaleString();
   const starCount=calcStars(levelScore,targetScore);
   const stars='⭐'.repeat(starCount)+'☆'.repeat(3-starCount);
   document.getElementById('win-stars').textContent=stars;
   document.getElementById('win-level-score').textContent='This level: +'+levelScore.toLocaleString()+' pts';
   document.getElementById('overlay-win').classList.remove('hidden');
-  if(starCount===3){const bt=['extraMoves','hammer','bomb'];setTimeout(()=>earnBooster(bt[Math.floor(Math.random()*3)]),800);}
+  if(starCount===3){const bt=['extraMoves','hammer','bomb'];earnBooster(bt[Math.floor(Math.random()*3)]);}
   // Complete map level
   if(mapData&&mapData.selectedLevel){completeLevel(mapData.selectedLevel,starCount,score);mapData.selectedLevel=null;}
   window._mapStarMult=null;
 }
-function showOver(){stopGameTimer();clearGameState();loseLife();playOver();
-  const el=document.getElementById('overlay-over');if(el){const t=el.querySelector('.ov-title');if(t)t.textContent='Game Over 😢';}
+function showOver(){if(!beginResult())return;loseLife();playOver();
+  const el=document.getElementById('overlay-over');if(el){const t=el.querySelector('.ov-title');if(t)t.textContent='Game Over 😢';el.querySelector('.ov-sub').textContent='No more moves!';}
   document.getElementById('over-score').textContent=score.toLocaleString();document.getElementById('overlay-over').classList.remove('hidden');
 }
 function nextLevel(){document.getElementById('overlay-win').classList.add('hidden');
@@ -766,16 +856,12 @@ function nextLevel(){document.getElementById('overlay-win').classList.add('hidde
   else{goScreen('map');renderMapScreen();}
 }
 function retryLevel(){
-  if(!hasLives()){document.getElementById('overlay-over').classList.add('hidden');showNoLivesPopup();return;}
-  document.getElementById('overlay-over').classList.add('hidden');score=0;levelScore=0;combo=0;busy=false;
-  // Use map level settings if available for this level
-  const lvl=mapData.levels.find(l=>l.id===level);
-  if(lvl){moves=lvl.moves;targetScore=lvl.targetScore;}else{moves=getDiffMoves();targetScore=getDiffTarget()*level;}
-  initGrid();renderBoard();updateStats();document.getElementById('progress-fill').style.width='0%';document.getElementById('combo-display').textContent='';
-  showPreGame();
+  if(!hasLives()){showNoLivesPopup();return;}
+  if(mapData.levels.some(l=>l.id===level)){startMapLevel(level);}
+  else{_goGameIntentional=true;goGame();}
 }
-function pauseGame(){paused=true;document.getElementById('overlay-pause').classList.remove('hidden');}
-function resumeGame(){paused=false;document.getElementById('overlay-pause').classList.add('hidden');}
+function pauseGame(){if(gameEnded||pregame)return;paused=true;stopPlayTimer();saveGameState();document.getElementById('overlay-pause').classList.remove('hidden');}
+function resumeGame(){if(gameEnded)return;paused=false;startPlayTimer();document.getElementById('overlay-pause').classList.add('hidden');}
 function goBack(){if(prevScreen==='game'){paused=false;goScreen('game');}else{goScreen('start');}}
 function showQuitDialog(){
   // If win/loss overlay already showing, just go home
@@ -787,7 +873,9 @@ function showQuitDialog(){
 }
 function confirmQuit(){
   document.getElementById('overlay-quit').classList.add('hidden');
-  clearGameState();savePersonalScore();loseLife();paused=false;busy=false;
+  if(gameEnded)return;
+  gameEnded=true;stopGameTimer();window._pendingTimer=0;pregame=false;
+  clearGameState();savePersonalScore();loseLife();paused=false;busy=false;showHammerHint(false);
   mapData.selectedLevel=null;window._mapLevelSettings=null;
   // Toast
   const toast=document.createElement('div');toast.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);color:#ff5fa0;font-family:\"Fredoka One\",cursive;padding:10px 24px;border-radius:20px;font-size:0.95rem;z-index:1000;white-space:nowrap;animation:scoreFloat 2s ease forwards;border:1px solid rgba(255,95,160,0.3);';
@@ -801,7 +889,7 @@ function waitIfPaused(){return new Promise(resolve=>{(function check(){if(!pause
 // ═══════ GAME STATE PERSISTENCE ═══════
 function saveGameState(){
   // Only save if actively in a game
-  if(currentScreen!=='game')return;
+  if(gameEnded||busy||!grid.length)return;
   const state={
     grid:grid.map(row=>row.map(cell=>{
       if(cell===null||cell===undefined||cell===-1)return -1;
@@ -809,6 +897,7 @@ function saveGameState(){
       return cell;
     })),
     score,levelScore,moves,level,targetScore,combo,
+    pregame,pendingTimer:window._pendingTimer||0,hammerMode,objective,
     activeCandyTypes,
     timeLeft:timeLeft||0,
     timerWasActive:timerActive||false,
@@ -828,6 +917,10 @@ function restoreGameState(){
     const state=JSON.parse(raw);
     // Don't restore if saved more than 24h ago (stale)
     if(Date.now()-state.savedAt>24*60*60*1000){clearGameState();return false;}
+    if(!Array.isArray(state.grid)||state.grid.length!==GRID||state.grid.some(row=>!Array.isArray(row)||row.length!==GRID||row.some(cell=>{const t=typeof cell==='object'&&cell!==null?cell.type:cell;return !Number.isInteger(t)||t<0||t>=TYPES;})))throw new Error('Invalid board');
+    if(!Number.isInteger(state.moves)||state.moves<=0||!Number.isFinite(state.targetScore)||state.targetScore<=0)throw new Error('Invalid game');
+    if(!Number.isFinite(state.score)||state.score<0||!Number.isFinite(state.levelScore)||state.levelScore<0||!Number.isInteger(state.activeCandyTypes)||state.activeCandyTypes<3||state.activeCandyTypes>TYPES)throw new Error('Invalid score');
+    restoreObjective(state.objective);
     // Restore grid
     grid=state.grid.map(row=>row.map(cell=>{
       if(cell===-1||cell===null)return -1;
@@ -847,8 +940,9 @@ function restoreGameState(){
     // Restore region theme
     const region=getRegionForLevel(level);
     if(region){applyThemeColors(region.theme);document.body.className=region.theme;}
-    paused=false;busy=false;
-    renderBoard();updateStats();
+    paused=false;busy=false;gameEnded=false;timeExpired=false;
+    pregame=!!state.pregame;window._pendingTimer=state.pendingTimer||0;
+    renderBoard();updateStats();document.getElementById('board-message').textContent=boardInstruction();
     document.getElementById('best-val').textContent=bestScore;
     const pct=Math.min(100,Math.round(score/targetScore*100));
     document.getElementById('progress-fill').style.width=pct+'%';
@@ -866,7 +960,8 @@ function restoreGameState(){
     }else{
       if(tb)tb.style.display='none';
     }
-    clearGameState();
+    if(pregame)showPreGame();
+    if(state.hammerMode){hammerMode=true;showHammerHint(true);}
     return true;
   }catch(e){clearGameState();return false;}
 }

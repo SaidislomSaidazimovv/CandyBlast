@@ -154,7 +154,7 @@ function activateSpecial(r, c, triggeredCells) {
       }
       const el = getCell(rr, cc);
       if (el && settings.anim) el.classList.add('matched');
-      grid[rr][cc] = -1;
+      removeCandy(rr,cc);
     }
   });
 
@@ -181,7 +181,7 @@ function handleSpecialCombo(r1, c1, r2, c2) {
       if (ct === t1 || ct === t2) {
         triggered.add(r * GRID + c);
         const el = getCell(r, c); if (el && settings.anim) el.classList.add('matched');
-        grid[r][c] = -1;
+        removeCandy(r,c);
       }
     }
     showBombEffect(r1, c1);
@@ -189,15 +189,15 @@ function handleSpecialCombo(r1, c1, r2, c2) {
     const cr = r1, cc = c1;
     for (let i = -1; i <= 1; i++) {
       const row = cr + i;
-      if (row >= 0 && row < GRID) for (let c = 0; c < GRID; c++) { triggered.add(row * GRID + c); grid[row][c] = -1; }
+      if (row >= 0 && row < GRID) for (let c = 0; c < GRID; c++) { triggered.add(row * GRID + c); removeCandy(row,c); }
       const col = cc + i;
-      if (col >= 0 && col < GRID) for (let r = 0; r < GRID; r++) { triggered.add(r * GRID + col); grid[r][col] = -1; }
+      if (col >= 0 && col < GRID) for (let r = 0; r < GRID; r++) { triggered.add(r * GRID + col); removeCandy(r,col); }
     }
     showLaserH(cr); showLaserV(cc);
     triggered.forEach(idx => { const el = getCell(Math.floor(idx / GRID), idx % GRID); if (el && settings.anim) el.classList.add('matched'); });
   } else if (isStripe(sp1) && isStripe(sp2)) {
-    for (let c = 0; c < GRID; c++) { triggered.add(r1 * GRID + c); grid[r1][c] = -1; }
-    for (let r = 0; r < GRID; r++) { triggered.add(r * GRID + c2); grid[r][c2] = -1; }
+    for (let c = 0; c < GRID; c++) { triggered.add(r1 * GRID + c); removeCandy(r1,c); }
+    for (let r = 0; r < GRID; r++) { triggered.add(r * GRID + c2); removeCandy(r,c2); }
     showLaserH(r1); showLaserV(c2);
     triggered.forEach(idx => { const el = getCell(Math.floor(idx / GRID), idx % GRID); if (el && settings.anim) el.classList.add('matched'); });
   } else if (sp1 === SPECIAL.WRAPPED && sp2 === SPECIAL.WRAPPED) {
@@ -206,15 +206,15 @@ function handleSpecialCombo(r1, c1, r2, c2) {
       if (nr >= 0 && nr < GRID && nc >= 0 && nc < GRID) {
         triggered.add(nr * GRID + nc);
         const el = getCell(nr, nc); if (el && settings.anim) el.classList.add('matched');
-        grid[nr][nc] = -1;
+        removeCandy(nr,nc);
       }
     }
     showWrappedEffect(r1, c1);
   } else {
-    grid[r1][c1] = -1; grid[r2][c2] = -1;
     triggered.add(r1 * GRID + c1); triggered.add(r2 * GRID + c2);
     activateSpecial(r1, c1, triggered);
     activateSpecial(r2, c2, triggered);
+    removeCandy(r1,c1); removeCandy(r2,c2);
   }
 
   return triggered;

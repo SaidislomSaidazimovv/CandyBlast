@@ -7,22 +7,37 @@ const REGIONS = [
   { id:'africa', name:'Afrika', emoji:'🌅', levels:[81,100], theme:'theme-candy', color:'#ff5fa0', bgColor:'rgba(255,95,160,0.15)', border:'rgba(255,95,160,0.4)', description:'Rainbow candy paradise!' },
 ];
 
-// ═══ LEVEL GENERATION (balanced + timer) ═══
-function generateLevels() {
-  const levels = [];
-  for (let i = 1; i <= 100; i++) {
-    const moves = Math.max(18, Math.round(34 - (i - 1) * 0.16));
-    const timeSeconds = 120; // all levels: 2:00
-    const achievable = moves * 100;
-    const targetScore = Math.round(achievable * (0.38 + (i / 100) * 0.18));
-    const star2 = Math.round(targetScore * 1.25);
-    const star3 = Math.round(targetScore * 1.60);
-    let colors;
-    if (i <= 10) colors = 3;
-    else if (i <= 30) colors = 4;
-    else if (i <= 60) colors = 5;
-    else colors = 6;
-    levels.push({ id:i, moves, timeSeconds, targetScore, star2, star3, colors, stars:0, completed:false, locked:i>1 });
+// The opening chapter teaches one mechanic at a time.
+const OPENING_LEVELS=[
+  {title:'First sweets',kind:'score',time:120},
+  {title:'Berry basket',kind:'collect',targets:[{type:0,count:18}],time:0},
+  {title:'A little frost',kind:'ice',pattern:'corners',time:0},
+  {title:'Diamond rush',kind:'collect',targets:[{type:1,count:24}],time:100},
+  {title:'Garden treats',kind:'collect',targets:[{type:0,count:16},{type:2,count:16}],time:0},
+  {title:'Frozen ring',kind:'ice',pattern:'ring',time:0},
+  {title:'Mint on ice',kind:'mixed',targets:[{type:2,count:22}],pattern:'corners',time:0},
+  {title:'Golden minute',kind:'score',time:90},
+  {title:'Snow diamonds',kind:'ice',pattern:'diamond',time:0},
+  {title:'Honey harvest',kind:'collect',targets:[{type:3,count:26}],time:0},
+  {title:'Berry frost',kind:'mixed',targets:[{type:0,count:24}],pattern:'ring',time:0},
+  {title:'Winter sprint',kind:'mixed',targets:[{type:1,count:24}],pattern:'diagonal',time:120},
+];
+function generateLevels(){
+  const levels=[];
+  for(let i=1;i<=100;i++){
+    const colors=i<=12?4:i<=40?5:6;
+    const cycle=(i-1)%4;
+    const spec=OPENING_LEVELS[i-1]||{
+      title:['Sweet summit','Candy orchard','Frost trail','Frozen harvest'][cycle],
+      kind:['score','collect','ice','mixed'][cycle],time:cycle===0?120:0,
+      ...(cycle===1||cycle===3?{targets:[{type:(i-1)%colors,count:24+Math.floor(i/8)}]}:{}),
+      ...(cycle>=2?{pattern:['ring','diamond','cross','diagonal'][Math.floor(i/4)%4]}:{}),
+    };
+    const moves=Math.max(22,34-Math.floor((i-1)/8));
+    const targetScore=i===1?1298:1400+i*90;
+    levels.push({id:i,moves,timeSeconds:spec.time,targetScore,star2:Math.round(targetScore*1.25),star3:Math.round(targetScore*1.6),
+      colors,title:spec.title,objective:{kind:spec.kind,targets:spec.targets||[],pattern:spec.pattern||null},
+      stars:0,completed:false,locked:i>1});
   }
   return levels;
 }
@@ -31,7 +46,7 @@ function generateLevels() {
 let mapData = { currentLevel:1, levels:[], selectedRegion:null, selectedLevel:null };
 
 // ═══ SAVE / LOAD ═══
-const MAP_VERSION = 4; // bump when level formula changes
+const MAP_VERSION = 5; // Progress is migrated by stable level id.
 function saveMapData() {
   localStorage.setItem('cb_map', JSON.stringify({
     version: MAP_VERSION,
@@ -45,11 +60,11 @@ function loadMapData() {
     const saved = localStorage.getItem('cb_map');
     if (saved) {
       const p = JSON.parse(saved);
-      if (p.version !== MAP_VERSION) { localStorage.removeItem('cb_map'); mapData.levels[0].locked=false; return; }
+      if (!Array.isArray(p.levels)) throw new Error('Invalid map');
       mapData.currentLevel = p.currentLevel || 1;
       p.levels.forEach(s => {
         const lv = mapData.levels.find(l => l.id === s.id);
-        if (lv) { lv.stars = s.stars||0; lv.completed = s.completed||false; lv.locked = s.locked!==undefined ? s.locked : lv.locked; }
+        if (lv) { lv.stars = Math.max(0,Math.min(3,Number(s.stars)||0)); lv.completed = s.completed||false; lv.locked = s.locked!==undefined ? s.locked : lv.locked; }
       });
     }
   } catch(e) { localStorage.removeItem('cb_map'); }
@@ -69,7 +84,7 @@ function completeLevel(levelId, starsCount, finalScore) {
 function getLevelSettings(levelId) {
   const lv = mapData.levels.find(l => l.id === levelId);
   if (!lv) return null;
-  return { targetScore:lv.targetScore, moves:lv.moves, timeSeconds:lv.timeSeconds, colors:lv.colors, levelId:levelId };
+  return { targetScore:lv.targetScore, moves:lv.moves, timeSeconds:lv.timeSeconds, colors:lv.colors, objective:lv.objective, title:lv.title, levelId:levelId };
 }
 
 function getRegionForLevel(levelId) {
@@ -190,6 +205,7 @@ function renderLevelSelect(region) {
       dot.onmouseenter = () => dot.style.transform='scale(1.1)';
       dot.onmouseleave = () => dot.style.transform='';
     }
+    if(!isLocked){dot.title=lv.title+' — '+objectiveDescription(lv.objective);dot.setAttribute('role','button');dot.tabIndex=0;dot.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();showLevelInfo(lv,region);}};}
     row.appendChild(dot);
     scroll.appendChild(row);
   });
@@ -219,8 +235,10 @@ function startMapLevel(levelId) {
     timeSeconds: Math.round(base.timeSeconds * dc.timeMult),
     colors: base.colors,
     starMult: dc.starMult,
+    objective: base.objective,
   };
 
+  window._activeObjectiveSpec=base.objective;
   if (region) { applyThemeColors(region.theme); document.body.className = region.theme; }
   _goGameIntentional=true;
   goGame();
@@ -241,12 +259,14 @@ function showLevelInfo(lv, region) {
   popup.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);';
   popup.innerHTML = `<div style="background:linear-gradient(135deg,rgba(30,10,60,0.97),rgba(15,5,30,0.98));border:2px solid ${region.border};border-radius:24px;padding:28px 24px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
     <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:${region.color};margin-bottom:4px;letter-spacing:1px;">LEVEL ${lv.id}</div>
+    <div class="level-name">${lv.title}</div>
+    <div class="pregame-objective">${objectiveDescription(lv.objective)}</div>
     <div style="font-size:1.6rem;margin-bottom:4px;">${'⭐'.repeat(lv.stars)}${'☆'.repeat(3-lv.stars)}</div>
     <div style="display:inline-block;background:rgba(255,255,255,0.1);border-radius:20px;padding:3px 12px;font-size:0.75rem;color:rgba(255,255,255,0.6);margin-bottom:16px;">${dc.label}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;">
-      <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;"><div style="font-size:1.3rem;">🎯</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;">${adjTarget.toLocaleString()}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">TARGET</div></div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;"><div style="font-size:1.3rem;">🎯</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;">${adjTarget.toLocaleString()}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">${lv.objective.kind==='score'?'TARGET':'SCORE FOR STARS'}</div></div>
       <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;"><div style="font-size:1.3rem;">👣</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;">${adjMoves}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">MOVES</div></div>
-      <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;"><div style="font-size:1.3rem;">⏱️</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#43e97b;">${fmtTimeSt(adjTime)}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">TIME</div></div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;"><div style="font-size:1.3rem;">⏱️</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#43e97b;">${adjTime?fmtTimeSt(adjTime):'No timer'}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">TIME</div></div>
       <div style="background:rgba(255,255,255,0.07);border-radius:14px;padding:10px 6px;"><div style="font-size:1.3rem;">⭐</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#ffe259;">${adjStar3.toLocaleString()}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);">3 STARS</div></div>
     </div>
     <button onclick="document.getElementById('level-info-popup').remove();startMapLevel(${lv.id});" style="width:100%;padding:14px;background:linear-gradient(135deg,${region.color},${region.border});border:none;border-radius:50px;font-family:'Fredoka One',cursive;font-size:1.1rem;color:#fff;cursor:pointer;">▶ Play</button>

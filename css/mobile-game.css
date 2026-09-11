@@ -1,0 +1,46 @@
+/* The production game keeps its existing rules and accessible cells. */
+#game-scene{display:none}
+.mobile-hud,.mobile-controls{display:contents}
+html.game-3d #screen-game:not(.hidden){display:grid!important;grid-template-rows:auto minmax(0,1fr) auto!important;width:min(100%,560px)!important;height:100vh!important;height:100dvh!important;position:relative!important;margin:0 auto!important;padding:0!important;gap:0!important;overflow:hidden!important;background:#d9c9df!important;max-width:none;align-items:stretch!important;justify-content:stretch!important}
+html.game-3d .mobile-hud{display:block;background:linear-gradient(150deg,#74516c,#493254);border-radius:0 0 25px 25px;padding:calc(7px + env(safe-area-inset-top,0px)) 15px 10px;z-index:3;box-shadow:0 4px 0 #38223e22}
+html.game-3d #screen-game .game-header{width:100%;height:44px;padding:0;margin:0;max-width:none;background:none;border:0}
+html.game-3d #screen-game .header-btn{height:44px;width:44px;border-radius:14px;background:#ffffff12;border:1px solid #ffffff35;color:#fff;font-size:20px}
+html.game-3d #screen-game .game-title-small{font-size:19px;color:#fff0f5}
+html.game-3d #screen-game .stats{width:100%;max-width:none;display:flex;justify-content:space-around;margin:7px 0;height:43px;padding:0;background:none;gap:5px}
+html.game-3d #screen-game .stat-box{background:none;border:0;box-shadow:none;padding:2px 7px;min-width:0;flex:1;border-radius:12px}
+html.game-3d #screen-game .stat-box:last-child{display:none}
+html.game-3d #screen-game .stat-box:nth-child(3){background:#ffe3b5;color:#71485d}
+html.game-3d #screen-game .stat-box:nth-child(3) *{color:#71485d!important}
+html.game-3d #screen-game .stat-value{font-size:22px!important;line-height:1.1;color:#fff3ec!important}
+html.game-3d #screen-game .stat-label{font-size:8px;letter-spacing:1px;color:#ddc7df}
+html.game-3d #screen-game .objective-panel{max-width:none;margin:0;background:#ffffff09;border:1px solid #ffffff15;padding:6px 9px;border-radius:13px}
+html.game-3d #screen-game .objective-heading{margin-bottom:3px}
+html.game-3d #screen-game #objective-title{font-size:8px;letter-spacing:1px;color:#ead5e8}
+html.game-3d #screen-game #objective-goals{gap:6px;min-height:25px;color:#fff}
+html.game-3d #screen-game #objective-goals small{font-size:8px;color:#e5cede}
+html.game-3d #screen-game #objective-goals b{font-size:12px}
+html.game-3d #screen-game .hint-btn{min-height:30px;padding:3px 12px;background:#ffe6b6;color:#72495b;font-weight:bold;border:0;border-radius:10px}
+html.game-3d #screen-game .progress-wrap{width:100%;max-width:none;margin:6px 0 0;height:6px;background:#2c183988}
+html.game-3d #screen-game .progress-fill{background:linear-gradient(#e5f5a2,#a0d98c)}
+html.game-3d #screen-game #board-wrap{position:relative;width:100%!important;height:100%!important;min-height:0;max-width:none!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;overflow:hidden;align-self:stretch}
+html.game-3d #game-scene{display:block;position:absolute;inset:0}
+#game-scene canvas{display:block;width:100%;height:100%;touch-action:none;-webkit-user-select:none;user-select:none}
+html.game-3d #board{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important;pointer-events:none;overflow:visible}
+html.game-3d #board .cell{position:absolute!important;margin:0!important;transform:translate(-50%,-50%)!important;min-width:0!important;min-height:0!important;padding:0!important;opacity:1;background:none!important;border:0!important;box-shadow:none!important;pointer-events:none;border-radius:10px!important;animation:none!important;overflow:visible!important}
+html.game-3d #board .cell>.candy-art{visibility:hidden!important}
+html.game-3d #board .cell::before,html.game-3d #board .cell::after{display:none!important}
+html.game-3d #board .cell.selected,html.game-3d #board .cell.hint,html.game-3d #board .cell:focus-visible{outline:3px solid #fff!important;box-shadow:0 0 0 6px #9b448e,0 0 16px 5px #fff1a5!important;z-index:4}
+html.game-3d #board .cell.selected::after{display:block!important;content:'▼'!important;position:absolute;top:-23px;left:50%;transform:translateX(-50%);color:white;font-size:15px;background:none!important;width:auto;height:auto;box-shadow:none}
+html.game-3d #board .special-mark{display:block;color:#fff8b2;text-shadow:0 1px 3px #60325d;font-size:20px;position:absolute;inset:0;line-height:1.3;text-align:center;pointer-events:none}
+html.game-3d #screen-game #combo-display{position:absolute;top:44%;left:0;width:100%;max-width:none;z-index:6;pointer-events:none;height:25px}
+html.game-3d .mobile-controls{display:block;padding:5px 14px calc(9px + env(safe-area-inset-bottom,0px));border-radius:24px 24px 0 0;background:linear-gradient(#eee0eb,#e4cfe0);z-index:3}
+html.game-3d #screen-game #board-message{color:#76516f;font-size:10px;height:auto;min-height:24px;line-height:1.3;display:grid;place-items:center;margin:0 0 4px}
+html.game-3d #screen-game #ingame-boosters{max-width:none!important;width:100%;height:57px;gap:12px!important;padding:0!important;margin:0!important}
+html.game-3d #screen-game .ingame-booster-btn{flex:1;min-height:48px;max-width:125px;display:flex;justify-content:center;align-items:center;gap:5px;background:linear-gradient(#fff0c8,#f2ccaa)!important;border:2px solid #fff2d7!important;border-radius:16px;box-shadow:0 3px 0 #bfa1b6;padding:5px!important}
+html.game-3d #screen-game .ingame-booster-btn span{color:#70485e!important}
+html.game-3d #screen-game .ingame-booster-icon{font-size:23px!important}
+html.game-3d #screen-game .ingame-booster-label{font-size:9px!important}
+html.game-3d #screen-game .ingame-booster-count{background:#ffffff88!important;font-size:10px!important}
+@media(max-height:650px){html.game-3d .mobile-hud{padding-top:calc(4px + env(safe-area-inset-top,0px));padding-bottom:6px}html.game-3d #screen-game .stats{margin:4px 0;height:36px}html.game-3d #screen-game .stat-value{font-size:19px!important}html.game-3d .mobile-controls{padding-bottom:calc(5px + env(safe-area-inset-bottom,0px))}html.game-3d #screen-game #ingame-boosters{height:49px}}
+@media(orientation:landscape) and (max-height:550px){html.game-3d #screen-game:not(.hidden){width:100%!important;max-width:1000px;grid-template-columns:175px minmax(0,1fr) 115px;grid-template-rows:100%!important}html.game-3d .mobile-hud{border-radius:0;padding:12px 10px 10px max(10px,env(safe-area-inset-left));display:flex;flex-direction:column;justify-content:center}html.game-3d #screen-game .game-title-small{font-size:12px}html.game-3d #screen-game .header-btn{width:35px;height:44px}html.game-3d #screen-game .stats{flex-wrap:wrap;height:auto;margin:10px 0}html.game-3d #screen-game .stat-box{min-width:40%}html.game-3d #screen-game .objective-heading{flex-wrap:wrap;gap:5px}html.game-3d #screen-game #objective-goals{flex-wrap:wrap}html.game-3d .mobile-controls{border-radius:0;display:flex;flex-direction:column;justify-content:center;padding:8px max(8px,env(safe-area-inset-right)) 8px 8px}html.game-3d #screen-game #ingame-boosters{flex-direction:column;height:auto;align-items:stretch}html.game-3d #screen-game .ingame-booster-btn{flex:none}html.game-3d #screen-game #board-message{margin-bottom:12px}}
+html.game-3d #screen-game:not(.hidden){position:fixed!important;inset:0!important;flex-shrink:0!important;transform:none!important;z-index:10}

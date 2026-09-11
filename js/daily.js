@@ -1,11 +1,12 @@
 // ═══════ DAILY REWARDS — 3-TIER SYSTEM ═══════
 
-function getTodayKey(){return new Date().toISOString().split('T')[0];}
+function getTodayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function getCurrentWeekDay(){return['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];}
-function getWeekNumber(){return Math.floor(Date.now()/(7*24*60*60*1000));}
+function getWeekNumber(){const d=new Date();d.setDate(d.getDate()-(d.getDay()+6)%7);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
 // ═══ STATE ═══
-let dailyData={currentDay:0,lastLoginDate:null,monthStart:null,claimedDays:[],weeklyDays:[],weekNumber:0,claimedWeeklyDays:[],playMinutesToday:0,lastPlayDate:null,hourlyRewardsClaimed:0,sessionStartTime:null,totalDaysLoggedIn:0,spinCount:0};
+function createDailyData(){return {currentDay:0,lastLoginDate:null,monthStart:null,claimedDays:[],weeklyDays:[],weekNumber:0,claimedWeeklyDays:[],playMinutesToday:0,lastPlayDate:null,hourlyRewardsClaimed:0,sessionStartTime:null,totalDaysLoggedIn:0,spinCount:0,weeklyBonusWeek:null};}
+let dailyData=createDailyData();
 
 // ═══ SAVE / LOAD ═══
 function saveDailyData(){localStorage.setItem('cb_daily',JSON.stringify(dailyData));}
@@ -31,10 +32,10 @@ function checkMonthlyLogin(){
   const today=getTodayKey();
   if(dailyData.lastLoginDate===today)return;
   dailyData.lastLoginDate=today;dailyData.totalDaysLoggedIn++;
-  if(!dailyData.currentDay||dailyData.currentDay>30){dailyData.currentDay=1;dailyData.claimedDays=[];dailyData.monthStart=today;}
+  if(!dailyData.currentDay||dailyData.currentDay>=30){dailyData.currentDay=1;dailyData.claimedDays=[];dailyData.monthStart=today;}
   else{dailyData.currentDay++;}
   saveDailyData();
-  setTimeout(()=>{goScreen('rewards');renderRewardsScreen();},800);
+  setTimeout(()=>{if(currentScreen==='start'&&localStorage.getItem('cb_tutorial_done')){goScreen('rewards');renderRewardsScreen();}},800);
 }
 
 // ═══ WEEKLY ═══
@@ -51,10 +52,11 @@ function claimWeeklyDay(){
 }
 function giveWeeklyReward(reward){
   const dayIdx=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(reward.day);
-  if(dayIdx<=1)addLife(1);
-  else if(dayIdx<=3)earnBooster('extraMoves',1);
+  if(dayIdx===1)addLife(1);
+  else if(dayIdx===0||dayIdx===2)earnBooster('extraMoves',1);
+  else if(dayIdx===3)earnBooster('hammer',1);
   else if(dayIdx===4)earnBooster('bomb',1);
-  else if(dayIdx===5)showLuckySpinPopup();
+  else if(dayIdx===5)addSpin(1);
   else{earnBooster('extraMoves',1);earnBooster('hammer',1);earnBooster('bomb',1);}
 }
 
@@ -213,10 +215,10 @@ function renderWeeklyTab(container){
   const allClaimed=claimed.length===7;
   const bonusDiv=document.createElement('div');
   bonusDiv.style.cssText=`margin-top:20px;text-align:center;background:${allClaimed?'rgba(255,215,0,0.15)':'rgba(255,255,255,0.04)'};border:1.5px solid ${allClaimed?'rgba(255,215,0,0.4)':'rgba(255,255,255,0.08)'};border-radius:16px;padding:16px;`;
-  bonusDiv.innerHTML=`<div style="font-size:2rem;margin-bottom:6px;">${allClaimed?'🏆':'🔒'}</div><div style="font-family:'Fredoka One',cursive;color:${allClaimed?'#ffd700':'rgba(255,255,255,0.4)'};font-size:1rem;">Full Week Bonus</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:4px;">${allClaimed?'5 Lives + All Boosters!':'Play '+(7-claimed.length)+' more days'}</div>${allClaimed?'<button class="btn btn-play" style="margin-top:12px;padding:10px 24px;" onclick="claimWeeklyBonus(this)">Claim Bonus! 🎁</button>':''}`;
+  bonusDiv.innerHTML=`<div style="font-size:2rem;margin-bottom:6px;">${allClaimed?'🏆':'🔒'}</div><div style="font-family:'Fredoka One',cursive;color:${allClaimed?'#ffd700':'rgba(255,255,255,0.4)'};font-size:1rem;">Full Week Bonus</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:4px;">${allClaimed?'5 Lives + All Boosters!':'Play '+(7-claimed.length)+' more days'}</div>${allClaimed&&dailyData.weeklyBonusWeek!==getWeekNumber()?'<button class="btn btn-play" style="margin-top:12px;padding:10px 24px;" onclick="claimWeeklyBonus(this)">Claim Bonus! 🎁</button>':''}`;
   container.appendChild(bonusDiv);
 }
-function claimWeeklyBonus(btn){btn.disabled=true;btn.textContent='Claimed! ✅';addLife(5);earnBooster('extraMoves',3);earnBooster('hammer',3);earnBooster('bomb',3);showRewardToast('🏆','5 Lives + All Boosters!');}
+function claimWeeklyBonus(btn){if(dailyData.weekNumber!==getWeekNumber()||dailyData.claimedWeeklyDays.length!==7||dailyData.weeklyBonusWeek===getWeekNumber())return;dailyData.weeklyBonusWeek=getWeekNumber();saveDailyData();btn.disabled=true;btn.textContent='Claimed! ✅';addLife(5);earnBooster('extraMoves',3);earnBooster('hammer',3);earnBooster('bomb',3);showRewardToast('🏆','5 Lives + All Boosters!');}
 
 // ── HOURLY TAB ──
 function renderHourlyTab(container){

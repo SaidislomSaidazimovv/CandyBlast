@@ -137,6 +137,7 @@ function showHammerHint(show){
     }
   }else{
     if(hint)hint.remove();
+    document.getElementById('ingame-btn-hammer')?.classList.remove('active-hammer');
     hammerMode=false;
   }
 }
@@ -149,25 +150,34 @@ function activateBomb(){
   const colors=Object.keys(colorCounts).map(Number);
   if(colors.length===0){hidePreGame();return;}
   const target=colors[Math.floor(Math.random()*colors.length)];
-  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){if(grid[r][c]===target)grid[r][c]=-1;}
+  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){if(getType(r,c)===target)removeCandy(r,c);}
   renderBoard();
-  hidePreGame();
   busy=true;
+  hidePreGame();
+  const session=gameSession;
   setTimeout(async()=>{
-    for(let col=0;col<GRID;col++){let empty=0;for(let r=GRID-1;r>=0;r--){if(grid[r][col]===-1)empty++;else if(empty>0){grid[r+empty][col]=grid[r][col];grid[r][col]=-1;}}for(let r=0;r<empty;r++)grid[r][col]=randType();}
-    renderBoard();await processMatches();busy=false;
+    if(session!==gameSession)return;
+    await dropCandies();if(session!==gameSession)return;
+    await processMatches();if(session!==gameSession)return;finishMove();
   },350);
 }
 
 // ═══ PRE-GAME ═══
-function showPreGame(){const ov=document.getElementById('overlay-pregame');if(ov)ov.classList.remove('hidden');}
+function showPreGame(){pregame=true;document.getElementById('pregame-title').textContent='Level '+level;document.getElementById('pregame-objective').textContent=objectiveDescription(objective);const ov=document.getElementById('overlay-pregame');if(ov)ov.classList.remove('hidden');}
 function hidePreGame(){
+  pregame=false;
   const ov=document.getElementById('overlay-pregame');if(ov)ov.classList.add('hidden');
   // Start timer now that pregame is dismissed
   if(window._pendingTimer&&window._pendingTimer>0){
     if(typeof startGameTimer==='function')startGameTimer(window._pendingTimer);
     window._pendingTimer=0;
   }
+  startPlayTimer();saveGameState();
+}
+function cancelPreGame(){
+  window._pendingTimer=0;stopGameTimer();gameEnded=true;pregame=false;clearGameState();
+  if(mapData.selectedRegion){goScreen('levelselect');renderLevelSelect(mapData.selectedRegion);}
+  else{goScreen('map');renderMapScreen();}
 }
 
 // ═══ NO LIVES POPUP ═══
@@ -181,17 +191,16 @@ function showNoLivesPopup(){
 
 // ═══ IN-GAME BOOSTERS ═══
 function useIngameBooster(type){
+  if(busy||paused||pregame||gameEnded)return;
+  if(type==='hammer'&&hammerMode){
+    showHammerHint(false);livesData.boosters.hammer++;saveLives();updateLivesUI();saveGameState();return;
+  }
   if(livesData.boosters[type]<=0){
     const btn=document.getElementById('ingame-btn-'+type);
     if(btn){btn.style.animation='shake 0.4s ease';setTimeout(()=>btn.style.animation='',420);}
     return;
   }
-  if(busy)return;
-  if(type==='hammer'&&hammerMode){
-    hammerMode=false;showHammerHint(false);
-    const hb=document.getElementById('ingame-btn-hammer');if(hb)hb.classList.remove('active-hammer');
-    livesData.boosters.hammer++;saveLives();updateLivesUI();return;
-  }
+
   livesData.boosters[type]--;saveLives();updateLivesUI();
   if(type==='extraMoves'){
     moves+=5;updateStats();
@@ -203,17 +212,20 @@ function useIngameBooster(type){
   }else if(type==='bomb'){
     activateIngameBomb();
   }
+  if(!busy)saveGameState();
 }
 function activateIngameBomb(){
   const counts=Array(TYPES).fill(0);
   for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++)if(typeof grid[r][c]==='number'&&grid[r][c]>=0)counts[grid[r][c]]++;
   const target=counts.indexOf(Math.max(...counts));
   const cells=[];
-  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++)if(grid[r][c]===target){cells.push({r,c});const el=getCell(r,c);if(el)el.classList.add('matched');grid[r][c]=-1;}
+  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++)if(grid[r][c]===target){cells.push({r,c});const el=getCell(r,c);if(el)el.classList.add('matched');removeCandy(r,c);}
   busy=true;
+  const session=gameSession;
   setTimeout(async()=>{
-    for(let c=0;c<GRID;c++){let empty=0;for(let r=GRID-1;r>=0;r--){if(grid[r][c]===-1)empty++;else if(empty>0){grid[r+empty][c]=grid[r][c];grid[r][c]=-1;}}for(let r=0;r<empty;r++)grid[r][c]=randType();}
-    renderBoard();await processMatches();busy=false;
+    if(session!==gameSession)return;
+    await dropCandies();if(session!==gameSession)return;
+    await processMatches();if(session!==gameSession)return;finishMove();
   },380);
 }
 function updateIngameBoosterUI(){
