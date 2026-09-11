@@ -13,7 +13,7 @@ function loadLives(){
   regenLives();
 }
 function regenLives(){
-  if(livesData.lives>=MAX_LIVES){livesData.lastLostAt=null;saveLives();return;}
+  if(livesData.lives>=MAX_LIVES){if(livesData.lastLostAt!==null){livesData.lastLostAt=null;saveLives();}return;}
   if(!livesData.lastLostAt)return;
   const elapsed=Date.now()-livesData.lastLostAt;
   const regened=Math.floor(elapsed/LIFE_REGEN_MS);
@@ -61,10 +61,10 @@ function formatTime(ms){
 function updateLivesUI(){
   // Desktop hearts
   const heartsEl=document.getElementById('lives-hearts');
-  if(heartsEl){heartsEl.innerHTML='';for(let i=0;i<MAX_LIVES;i++){const h=document.createElement('span');h.textContent=i<livesData.lives?'❤️':'🖤';h.style.cssText='font-size:1.2rem;line-height:1;';heartsEl.appendChild(h);}}
+  if(heartsEl&&heartsEl.dataset.lives!==String(livesData.lives)){heartsEl.dataset.lives=String(livesData.lives);heartsEl.innerHTML='';for(let i=0;i<MAX_LIVES;i++){const h=document.createElement('span');h.textContent=i<livesData.lives?'❤️':'🖤';h.style.cssText='font-size:1.2rem;line-height:1;';heartsEl.appendChild(h);}}
   // Mobile hearts
   const heartsElM=document.getElementById('lives-hearts-mobile');
-  if(heartsElM){heartsElM.innerHTML='';for(let i=0;i<MAX_LIVES;i++){const h=document.createElement('span');h.textContent=i<livesData.lives?'❤️':'🖤';h.style.cssText='font-size:0.95rem;line-height:1;';heartsElM.appendChild(h);}}
+  if(heartsElM&&heartsElM.dataset.lives!==String(livesData.lives)){heartsElM.dataset.lives=String(livesData.lives);heartsElM.innerHTML='';for(let i=0;i<MAX_LIVES;i++){const h=document.createElement('span');h.textContent=i<livesData.lives?'❤️':'🖤';h.style.cssText='font-size:0.95rem;line-height:1;';heartsElM.appendChild(h);}}
   // Boosters
   ['extraMoves','hammer','bomb'].forEach(type=>{
     const el=document.getElementById('booster-count-'+type);if(el)el.textContent=livesData.boosters[type];

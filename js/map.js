@@ -111,12 +111,12 @@ function renderMapScreen() {
   c.innerHTML = '';
 
   // Header
-  const h = document.createElement('div');
+  const h = document.createElement('div');h.className='app-screen-header';
   h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;flex-shrink:0;background:linear-gradient(180deg,rgba(0,0,0,0.7) 0%,transparent 100%);position:relative;z-index:10;';
   h.innerHTML = `<button onclick="goScreen('start')" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.2);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button><div style="text-align:center;"><div style="font-family:'Fredoka One',cursive;font-size:1.3rem;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.5);">🗺️ World Map</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.5);">Level ${mapData.currentLevel} of 100</div></div><div style="background:rgba(255,220,0,0.15);border:1.5px solid rgba(255,220,0,0.3);border-radius:20px;padding:6px 14px;font-family:'Fredoka One',cursive;font-size:0.85rem;color:#ffe259;">⭐ ${getTotalStars()}</div>`;
   c.appendChild(h);
 
-  const scroll = document.createElement('div');
+  const scroll = document.createElement('div');scroll.className='app-scroll';
   scroll.style.cssText = 'flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 16px 24px;scrollbar-width:none;';
 
   REGIONS.forEach(region => {
@@ -125,11 +125,11 @@ function renderMapScreen() {
     const regionStars = mapData.levels.filter(l => l.id >= region.levels[0] && l.id <= region.levels[1]).reduce((s,l) => s+(l.stars||0), 0);
     const pct = (done / 20) * 100;
 
-    const card = document.createElement('div');
+    const card = document.createElement('div');card.className='region-card';
     card.style.cssText = `border-radius:24px;background:${isUnlocked?`linear-gradient(135deg,${region.bgColor.replace('0.15','0.25')},rgba(0,0,0,0.4))`:'rgba(255,255,255,0.04)'};border:2px solid ${isUnlocked?region.border:'rgba(255,255,255,0.08)'};padding:0;margin-bottom:14px;opacity:${isUnlocked?'1':'0.55'};cursor:${isUnlocked?'pointer':'not-allowed'};overflow:hidden;transition:transform 0.15s,box-shadow 0.15s;position:relative;`;
 
     // Banner
-    const banner = document.createElement('div');
+    const banner = document.createElement('div');banner.className='region-banner';
     banner.style.cssText = `height:90px;background:linear-gradient(135deg,${region.bgColor.replace('0.15','0.35')},${region.bgColor.replace('0.15','0.15')});display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:relative;overflow:hidden;`;
     banner.innerHTML = `<div style="position:absolute;right:-10px;top:-15px;font-size:7rem;opacity:0.12;line-height:1;pointer-events:none;">${region.emoji}</div><div style="display:flex;align-items:center;gap:14px;"><div style="width:54px;height:54px;background:rgba(0,0,0,0.3);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:2rem;border:2px solid ${region.border};">${region.emoji}</div><div><div style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,0.5);">${region.name}</div><div style="font-size:0.7rem;color:${isUnlocked?region.color:'rgba(255,255,255,0.3)'};">${region.description}</div></div></div>${!isUnlocked?'<div style="font-size:2rem;opacity:0.7;">🔒</div>':`<div style="text-align:right;"><div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:#ffe259;">${regionStars}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);letter-spacing:0.5px;">/ 60 ⭐</div></div>`}`;
 
@@ -141,6 +141,7 @@ function renderMapScreen() {
     card.appendChild(banner);
     card.appendChild(prog);
     if (isUnlocked) {
+      card.setAttribute('role','button');card.tabIndex=0;card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();card.click();}});
       card.onclick = () => { mapData.selectedRegion = region; renderLevelSelect(region); goScreen('levelselect'); };
       card.onmouseenter = () => { card.style.transform='scale(1.02)'; card.style.boxShadow=`0 8px 24px ${region.color}40`; };
       card.onmouseleave = () => { card.style.transform=''; card.style.boxShadow=''; };
@@ -158,13 +159,13 @@ function renderLevelSelect(region) {
   applyThemeColors(region.theme);
 
   // Header
-  const h = document.createElement('div');
+  const h = document.createElement('div');h.className='app-screen-header';
   h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;flex-shrink:0;background:linear-gradient(180deg,rgba(0,0,0,0.75) 0%,transparent 100%);position:relative;z-index:10;';
   const regDone = mapData.levels.filter(l=>l.id>=region.levels[0]&&l.id<=region.levels[1]&&l.completed).length;
   h.innerHTML = `<button onclick="goScreen('map');renderMapScreen();" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.2);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button><div style="text-align:center;"><div style="font-size:1.6rem;">${region.emoji}</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,0.5);">${region.name}</div></div><div style="font-family:'Fredoka One',cursive;font-size:0.8rem;color:${region.color};text-align:right;">${regDone}/20<br><span style="font-size:0.65rem;color:rgba(255,255,255,0.35);font-family:sans-serif;">done</span></div>`;
   c.appendChild(h);
 
-  const scroll = document.createElement('div');
+  const scroll = document.createElement('div');scroll.className='app-scroll';
   scroll.style.cssText = 'flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 20px 40px;scrollbar-width:none;';
   const levels = mapData.levels.filter(l => l.id >= region.levels[0] && l.id <= region.levels[1]);
   const positions = ['left','center','right','center'];
@@ -195,6 +196,7 @@ function renderLevelSelect(region) {
     }
 
     const dot = document.createElement('div');
+    dot.className='app-level'+(isCurrent?' is-current':'')+(isCompleted?' is-complete':'')+(isLocked?' is-locked':'');
     dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:${isLocked?'not-allowed':'pointer'};border:${isCurrent?'4px solid #ffffff':isCompleted?`3px solid ${region.color}`:isLocked?'2px solid rgba(255,255,255,0.12)':`2px solid ${region.border}`};background:${isCompleted?`radial-gradient(circle,${region.bgColor.replace('0.15','0.5')},rgba(0,0,0,0.6))`:isLocked?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.5)'};box-shadow:${isCurrent?`0 0 0 6px ${region.color}40,0 0 24px ${region.color}60,0 4px 16px rgba(0,0,0,0.5)`:isCompleted?`0 0 12px ${region.color}40,0 4px 12px rgba(0,0,0,0.4)`:'0 4px 12px rgba(0,0,0,0.3)'};position:relative;z-index:1;transition:transform 0.15s;opacity:${isLocked?'0.45':'1'};${isCurrent?'animation:levelPulse 2s ease-in-out infinite;':''}`;
 
     const starsHtml = isCompleted ? `<div style="font-size:0.7rem;letter-spacing:1px;margin-bottom:3px;line-height:1;">${'⭐'.repeat(lv.stars)}${'☆'.repeat(3-lv.stars)}</div>` : '';

@@ -1,5 +1,13 @@
 # Candy Blast
 
+## Yagona mobil interfeys
+
+Bosh menyu, sozlamalar, xarita, mukofotlar, Lucky Spin, reyting va qo‘llanma
+3D o‘yin ranglari va yumaloq boshqaruvlariga moslashtirilgan. Mahalliy SVG
+ikonlar bir xil uslubda ishlaydi; tashqi ikon xizmatlari kerak emas.
+Kichik ekranlarda uzun panellar aylantiriladi va xavfsiz ekran chetlari hisobga olinadi.
+Jonlar indikatori faqat qiymat o‘zgarganda qayta chiziladi.
+
 ## Amaldagi o‘yin — 3D
 
 Asosiy manzil `/` endi haqiqiy 3D maydonni ishlatadi. Alohida namuna ochish

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'candy-blast-v11';
+const CACHE_NAME = 'candy-blast-v12';
 const ASSETS = [
   '/',
   '/index.html',
@@ -18,6 +18,10 @@ const ASSETS = [
   '/js/render-bridge.js',
   '/js/renderer3d.mjs',
   '/css/mobile-game.css',
+  '/css/interface.css',
+  '/js/interface.js',
+  '/images/ui/icons.svg',
+  '/images/ui/app.svg',
   '/vendor/three/three.module.min.js',
   '/vendor/three/three.core.js',
   '/js/performance.js',

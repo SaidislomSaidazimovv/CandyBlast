@@ -5,15 +5,18 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a0014",
-  "theme_color": "#000000",
-  "categories": ["games", "entertainment"],
+  "background_color": "#493254",
+  "theme_color": "#493254",
+  "categories": [
+    "games",
+    "entertainment"
+  ],
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍭</text></svg>",
+      "src": "images/ui/app.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
