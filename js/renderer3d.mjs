@@ -57,6 +57,12 @@ function start(){
   const pos=i=>({x:(i%8-3.5)*1.04,z:(Math.floor(i/8)-3.5)*1.04});
   for(let i=0;i<64;i++){const p=pos(i);dummy.position.set(p.x,.12,p.z);dummy.rotation.set(0,0,0);dummy.scale.set(1,1,1);dummy.updateMatrix();tiles.setMatrixAt(i,dummy.matrix);}
 
+  function syncTheme(){
+    const css=getComputedStyle(document.body),base=new THREE.Color(css.getPropertyValue('--app-plum').trim()||'#493254'),top=new THREE.Color(css.getPropertyValue('--app-top').trim()||'#79536f');
+    scene.background.copy(top).lerp(new THREE.Color('#ffffff'),.55);scene.fog.color.copy(scene.background);
+    land.material.color.copy(scene.background);platform.material.color.copy(base).lerp(top,.5);tiles.material.color.copy(top).lerp(new THREE.Color('#ffffff'),.45);icing.material.color.copy(scene.background).lerp(new THREE.Color('#ffffff'),.65);wake();
+  }
+  const themeObserver=new MutationObserver(syncTheme);themeObserver.observe(document.body,{attributes:true,attributeFilter:['class']});
   // Low-detail, shared landscape geometry. All scenery stays still while idle.
   const hillColors=['#b2c5b1','#97b9a6','#c0cba9','#bfa9c7'];
   const hills=[[-7,-5,3,2.9],[-4,-8,3.4,2.7],[1,-9,4.5,3.2],[6,-7,3.4,3.6],[9,-3,4,2.6],[-9,1,3,2.2]];
@@ -177,7 +183,7 @@ function start(){
   document.addEventListener('visibilitychange',()=>{cancelAnimationFrame(raf);raf=0;last=0;wake();});
   renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();lost=true;cancelAnimationFrame(raf);raf=0;});
   renderer.domElement.addEventListener('webglcontextrestored',()=>{lost=false;last=0;resize();wake();});
-  window.addEventListener('pagehide',e=>{cancelAnimationFrame(raf);raf=0;if(e.persisted)return;disposed=true;observer.disconnect();visibilityObserver.disconnect();resizer.disconnect();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());scene.traverse(o=>{if(o.isInstancedMesh)o.dispose();});environment.dispose();shadowTexture.dispose();renderer.dispose();});
+  window.addEventListener('pagehide',e=>{cancelAnimationFrame(raf);raf=0;if(e.persisted)return;disposed=true;observer.disconnect();themeObserver.disconnect();visibilityObserver.disconnect();resizer.disconnect();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());scene.traverse(o=>{if(o.isInstancedMesh)o.dispose();});environment.dispose();shadowTexture.dispose();renderer.dispose();});
   window.addEventListener('pageshow',()=>{last=0;wake();});
-  document.documentElement.classList.add('game-3d');sync();
+  document.documentElement.classList.add('game-3d');syncTheme();sync();
 }

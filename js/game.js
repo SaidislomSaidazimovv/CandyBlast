@@ -741,9 +741,10 @@ async function processMatches(){
     matches.forEach(({r,c})=>triggered.add(r*GRID+c));
     const specialsInMatch=matches.filter(({r,c})=>getSpecial(r,c));
     if(settings.anim){matches.forEach(({r,c})=>{const el=getCell(r,c);if(el)el.classList.add('matched');});await delay(340);if(session!==gameSession)return;}else{await delay(0);if(session!==gameSession)return;}
+    const specialPositions=new Set(specialsInMatch.map(s=>s.r*GRID+s.c));
     // Remove normal matched cells
     matches.forEach(({r,c})=>{
-      if(!specialsInMatch.some(s=>s.r===r&&s.c===c)){removeCandy(r,c);}
+      if(!specialPositions.has(r*GRID+c)){removeCandy(r,c);}
     });
     // Activate specials and score their extra cells
     for(const {r,c} of specialsInMatch){
@@ -939,7 +940,7 @@ function restoreGameState(){
     if(state.mapStarMult)window._mapStarMult=state.mapStarMult;
     // Restore region theme
     const region=getRegionForLevel(level);
-    if(region){applyThemeColors(region.theme);document.body.className=region.theme;}
+    applyThemeColors(settings.theme||'');document.body.className=settings.theme||'';
     paused=false;busy=false;gameEnded=false;timeExpired=false;
     pregame=!!state.pregame;window._pendingTimer=state.pendingTimer||0;
     renderBoard();updateStats();document.getElementById('board-message').textContent=boardInstruction();

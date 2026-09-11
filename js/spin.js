@@ -33,7 +33,7 @@ function renderSpinScreen(){
   const closeBtn=document.createElement('button');
   closeBtn.style.cssText='position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);z-index:10;';
   closeBtn.textContent='✕';
-  closeBtn.onclick=()=>goScreen('start');
+  closeBtn.onclick=()=>{if(!spinRunning&&!spinPending)goScreen('start');};
   container.appendChild(closeBtn);
 
   // Card wrapper
@@ -73,24 +73,34 @@ function showLuckySpinPopup(){
   openSpinScreen();
 }
 
+let spinRunning=false, spinPending=null;
 function doSpin(winIdx){
+  if(spinRunning||spinPending||!Number.isInteger(winIdx)||!SPIN_PRIZES[winIdx])return;
+  if(!useSpin())return;
+  spinRunning=true;
+  const ac=getAC();if(ac?.state==='suspended')ac.resume().catch(()=>{});
   // Deduct spin
-  useSpin();
+
   const btn=document.getElementById('spin-action-btn');if(btn){btn.disabled=true;btn.textContent='Spinning...';}
-  const totalSteps=27+winIdx;let step=0,dl=60,prevIdx=-1;
+  const totalSteps=28+winIdx;let step=0,dl=60,prevIdx=-1;
   function tick(){
-    if(!document.getElementById('spin-grid'))return;
+    if(!document.getElementById('spin-grid')){spinRunning=false;return;}
     if(prevIdx>=0){const prev=document.getElementById('spin-slot-'+prevIdx);if(prev){const s=TIER_STYLES[SPIN_PRIZES[prevIdx].tier];prev.style.background=s.bg;prev.style.borderColor=s.border;prev.style.transform='scale(1)';prev.style.boxShadow='none';}}
     const curIdx=step%9;const cur=document.getElementById('spin-slot-'+curIdx);
     if(cur){cur.style.background='rgba(255,255,255,0.25)';cur.style.borderColor='#ffffff';cur.style.transform='scale(1.08)';cur.style.boxShadow='0 0 16px rgba(255,255,255,0.5)';}
+    document.querySelectorAll('.spin-slot').forEach((slot,i)=>slot.classList.toggle('is-active',i===curIdx));
+    playTone(500+curIdx*35,.045,'triangle',.09);
     prevIdx=curIdx;step++;
-    if(step<totalSteps){if(step>totalSteps-6)dl=100+(totalSteps-step)*60;else if(step>totalSteps-12)dl=90;setTimeout(tick,dl);}
+    if(step<totalSteps){if(step>totalSteps-6)dl=100+(6-(totalSteps-step))*65;else if(step>totalSteps-12)dl=90;setTimeout(tick,dl);}
     else{setTimeout(()=>finalizeSpin(winIdx),400);}
   }
   setTimeout(tick,100);
 }
 
 function finalizeSpin(winIdx){
+  if(!spinRunning)return;spinRunning=false;spinPending=winIdx;
+  document.querySelectorAll('.spin-slot').forEach((slot,i)=>{slot.classList.remove('is-active');slot.classList.toggle('is-winner',i===winIdx);slot.style.transform='';slot.style.boxShadow='none';});
+  playWin();
   const winner=SPIN_PRIZES[winIdx];const s=TIER_STYLES[winner.tier];
   const winSlot=document.getElementById('spin-slot-'+winIdx);
   if(winSlot){winSlot.style.background=winner.tier==='gold'?'rgba(255,215,0,0.45)':winner.tier==='silver'?'rgba(192,192,192,0.4)':'rgba(205,127,50,0.35)';winSlot.style.borderColor=s.label;winSlot.style.transform='scale(1.15)';winSlot.style.boxShadow='0 0 24px '+s.glow+',0 0 40px '+s.glow;}
@@ -100,6 +110,8 @@ function finalizeSpin(winIdx){
 }
 
 function claimSpinPrize(prize){
+  if(spinPending===null||SPIN_PRIZES[spinPending]!==prize)return;
+  spinPending=null;
   switch(prize.type){
     case'life':addLife(prize.val);break;case'hammer':earnBooster('hammer',prize.val);break;
     case'bomb':earnBooster('bomb',prize.val);break;case'moves':earnBooster('extraMoves',prize.val);break;

@@ -1,5 +1,6 @@
 // ═══════ TUTORIAL (slide-based) ═══════
-let tutSlide=0;
+let tutSlide=0,tutEpoch=0;
+function tutLater(fn,ms){const epoch=tutEpoch;return setTimeout(()=>{if(epoch===tutEpoch&&currentScreen==='tutorial'&&!document.hidden&&settings.anim&&!matchMedia('(prefers-reduced-motion: reduce)').matches)fn();},ms);}
 const TUT_COLORS=['c0','c1','c2','c3','c4','c5'];
 const TUT_ICONS=['🍒','💎','🍀','⭐','🔮','🍊'];
 
@@ -8,6 +9,7 @@ function nextTutSlide(){tutSlide++;if(tutSlide>=6){localStorage.setItem('cb_tuto
 function checkFirstTime(){if(!localStorage.getItem('cb_tutorial_done')){setTimeout(()=>{if(currentScreen!=='start')return;tutSlide=0;goScreen('tutorial');renderTutSlide(0);},800);}}
 
 function renderTutSlide(n){
+  tutEpoch++;
   const container=document.getElementById('tut-container');
   container.innerHTML='';container.style.animation='none';void container.offsetHeight;container.style.animation='slideInTut 0.35s ease';
   const skipBtn=document.getElementById('tut-skip-btn');
@@ -21,7 +23,7 @@ function renderTutSlide(n){
     {title:'Tap to Swap! 👆',body:'Tap any candy, then tap an adjacent candy next to it. They will swap places!',btn:'Got it! →'},
     {title:'Match 3 or More! 🎯',body:'Line up 3 or more same candies in a row or column — they explode and you earn points!',btn:'Nice! →'},
     {title:'Chain Combos! 🔥',body:'When new candies fall and match automatically, it creates a COMBO! Each combo multiplies your score!',btn:'Awesome! →'},
-    {title:'Score Big, Move Smart! 🧠',body:'Reach the target score before your moves run out. The faster you finish, the more stars you earn!',btn:'Understood! →'},
+    {title:'Score Big, Move Smart! 🧠',body:'Reach the target score before your moves run out. Earn more points to reach the next star milestone!',btn:'Understood! →'},
     {title:"You're Ready! 🎉",body:'Match candies, chain combos, and reach the target score. Good luck, champion!',btn:'▶ Start Playing!'}
   ];
   const s=slides[n];
@@ -60,7 +62,7 @@ function buildVis0(wrap){
   wrap.appendChild(grid);
 }
 function buildVis1(wrap){
-  const board=[[3,1,4],[0,2,5],[2,4,1]];
+  const board=[[2,1,4],[0,2,5],[2,4,1]];
   const grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:10px;';
   board.forEach((row,r)=>row.forEach((t,c)=>{
     const cell=document.createElement('div');cell.className='tut-candy-cell '+TUT_COLORS[t];
@@ -81,21 +83,21 @@ function buildVis1(wrap){
       const wrapRect=gridWrap.getBoundingClientRect();
       if(wrapRect.width===0)return;
       hand.style.left=(cellRect.left-wrapRect.left+cellRect.width/2-14)+'px';
-      hand.style.top=(cellRect.top-wrapRect.top-'-66')+'px';
+      hand.style.top=(cellRect.top-wrapRect.top+cellRect.height)+'px';
     }));
   }
   const c1=grid.children[3],c2=grid.children[4];let phase=0;
   positionHand(3);
   function animSwap(){if(!document.body.contains(grid))return;phase++;
-    if(phase%2===1){positionHand(4);c1.style.transition='transform 0.4s ease';c2.style.transition='transform 0.4s ease';c1.style.transform='translateX(66px)';c2.style.transform='translateX(-66px)';}
+    if(phase%2===1){positionHand(4);c1.style.transition='transform 0.4s ease';c2.style.transition='transform 0.4s ease';const distance=c2.offsetLeft-c1.offsetLeft;c1.style.transform='translateX('+distance+'px)';c2.style.transform='translateX(-'+distance+'px)';}
     else{positionHand(3);c1.style.transform='';c2.style.transform='';}
-    setTimeout(animSwap,1200);
+    tutLater(animSwap,1200);
   }
-  setTimeout(animSwap,800);
+  tutLater(animSwap,800);
 }
 function buildVis2(wrap){
   wrap.style.flexDirection='column';wrap.style.gap='16px';
-  const initTypes=[0,1,0,0,1],swappedTypes=[1,0,0,0,1],CS=66;
+  const initTypes=[0,1,0,0,1],swappedTypes=[1,0,0,0,1],CS=0;
   const row=document.createElement('div');row.style.cssText='display:flex;gap:8px;align-items:center;position:relative;';
   const cellEls=[];
   initTypes.forEach(t=>{
@@ -114,25 +116,25 @@ function buildVis2(wrap){
   }
   function runAnim(){
     if(!document.body.contains(row))return;
-    setTimeout(()=>{if(!document.body.contains(row))return;
+    tutLater(()=>{if(!document.body.contains(row))return;
       cellEls[0].style.boxShadow='0 0 0 3px #fff,0 0 16px rgba(255,255,255,0.7)';
       cellEls[1].style.boxShadow='0 0 0 3px #fff,0 0 16px rgba(255,255,255,0.7)';},300);
-    setTimeout(()=>{if(!document.body.contains(row))return;
-      cellEls[0].style.transform='translateX('+CS+'px)';cellEls[1].style.transform='translateX(-'+CS+'px)';
+    tutLater(()=>{if(!document.body.contains(row))return;
+      const distance=cellEls[1].offsetLeft-cellEls[0].offsetLeft;cellEls[0].style.transform='translateX('+distance+'px)';cellEls[1].style.transform='translateX(-'+distance+'px)';
       cellEls[0].style.boxShadow='';cellEls[1].style.boxShadow='';},800);
-    setTimeout(()=>{if(!document.body.contains(row))return;
+    tutLater(()=>{if(!document.body.contains(row))return;
       swappedTypes.forEach((t,i)=>{cellEls[i].className='tut-candy-cell '+TUT_COLORS[t];cellEls[i].textContent=TUT_ICONS[t];
         cellEls[i].style.transform='';cellEls[i].style.transition='transform 0s,opacity 0.3s,box-shadow 0.3s';});},1250);
-    setTimeout(()=>{if(!document.body.contains(row))return;
+    tutLater(()=>{if(!document.body.contains(row))return;
       cellEls.forEach(c=>{c.style.transition='transform 0.3s ease,opacity 0.3s ease,box-shadow 0.3s ease';});
       [1,2,3].forEach(i=>{cellEls[i].style.boxShadow='0 0 0 3px #fff,0 0 24px rgba(255,100,150,0.9)';cellEls[i].style.transform='scale(1.15)';});},1600);
-    setTimeout(()=>{if(!document.body.contains(row))return;
+    tutLater(()=>{if(!document.body.contains(row))return;
       [1,2,3].forEach(i=>{cellEls[i].style.transform='scale(0)';cellEls[i].style.opacity='0';cellEls[i].style.boxShadow='';});},2100);
-    setTimeout(()=>{if(!document.body.contains(row))return;
+    tutLater(()=>{if(!document.body.contains(row))return;
       scoreEl.style.opacity='1';scoreEl.style.transform='translateY(-24px)';},2400);
-    setTimeout(()=>{if(!document.body.contains(row))return;resetRow();setTimeout(runAnim,400);},3600);
+    tutLater(()=>{if(!document.body.contains(row))return;resetRow();tutLater(runAnim,400);},3600);
   }
-  setTimeout(runAnim,500);
+  tutLater(runAnim,500);
 }
 function buildVis3(wrap){
   const comboEl=document.createElement('div');
@@ -145,9 +147,9 @@ function buildVis3(wrap){
   let ci=0;
   function next(){if(!document.body.contains(comboEl))return;ci=(ci+1)%combos.length;const c=combos[ci];
     comboEl.style.transform='scale(1.3)';comboEl.style.color=c.color;comboEl.textContent=c.txt;ptsEl.textContent=c.pts;ptsEl.style.color=c.color;
-    setTimeout(()=>{comboEl.style.transform='scale(1)';},300);setTimeout(next,1200);
+    tutLater(()=>{comboEl.style.transform='scale(1)';},300);tutLater(next,1200);
   }
-  setTimeout(next,1000);
+  tutLater(next,1000);
 }
 function buildVis4(wrap){
   wrap.style.gap='16px';wrap.style.flexDirection='row';wrap.style.alignItems='center';wrap.style.justifyContent='center';
@@ -166,9 +168,9 @@ function buildVis4(wrap){
     const sc=scoreSteps[si],mv=moveSteps[si];sVal.textContent=sc.toLocaleString();sBarFill.style.width=(sc/1000*100)+'%';
     mVal.textContent=mv;mVal.style.color=mv<=5?'#ff4444':mv<=10?'#ff8c42':'#ff88cc';
     movesBox.style.animation=mv<=5?'pulse-red 0.5s infinite':'none';sVal.style.color=sc>=1000?'#43e97b':'#ffe259';
-    setTimeout(anim,900);
+    tutLater(anim,900);
   }
-  setTimeout(anim,800);
+  tutLater(anim,800);
 }
 function buildVis5(wrap){
   wrap.style.position='relative';wrap.style.overflow='hidden';
@@ -183,9 +185,9 @@ function buildVis5(wrap){
     for(let i=0;i<18;i++){const p=document.createElement('div');const angle=Math.random()*360;const dist=80+Math.random()*120;
       const tx=Math.cos(angle*Math.PI/180)*dist,ty=Math.sin(angle*Math.PI/180)*dist-60;
       p.style.cssText=`position:absolute;width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>.5?'50%':'3px'};left:50%;top:50%;--tx:${tx}px;--ty:${ty}px;--rot:${Math.random()*720}deg;animation:confettiBurst ${.8+Math.random()*.6}s ease forwards;pointer-events:none;z-index:1;`;
-      wrap.appendChild(p);setTimeout(()=>p.remove(),1500);
+      wrap.appendChild(p);tutLater(()=>p.remove(),1500);
     }
-    setTimeout(spawnConfetti,2000);
+    tutLater(spawnConfetti,2000);
   }
-  setTimeout(spawnConfetti,300);
+  tutLater(spawnConfetti,300);
 }

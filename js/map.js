@@ -105,53 +105,26 @@ const DIFF_CONFIG = {
 };
 
 // ═══ MAP SCREEN ═══
-function renderMapScreen() {
-  const c = document.getElementById('map-container');
-  if (!c) return;
-  c.innerHTML = '';
-
-  // Header
-  const h = document.createElement('div');h.className='app-screen-header';
-  h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;flex-shrink:0;background:linear-gradient(180deg,rgba(0,0,0,0.7) 0%,transparent 100%);position:relative;z-index:10;';
-  h.innerHTML = `<button onclick="goScreen('start')" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.2);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button><div style="text-align:center;"><div style="font-family:'Fredoka One',cursive;font-size:1.3rem;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.5);">🗺️ World Map</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.5);">Level ${mapData.currentLevel} of 100</div></div><div style="background:rgba(255,220,0,0.15);border:1.5px solid rgba(255,220,0,0.3);border-radius:20px;padding:6px 14px;font-family:'Fredoka One',cursive;font-size:0.85rem;color:#ffe259;">⭐ ${getTotalStars()}</div>`;
-  c.appendChild(h);
-
-  const scroll = document.createElement('div');scroll.className='app-scroll';
-  scroll.style.cssText = 'flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 16px 24px;scrollbar-width:none;';
-
-  REGIONS.forEach(region => {
-    const isUnlocked = !mapData.levels.find(l => l.id === region.levels[0])?.locked;
-    const done = mapData.levels.filter(l => l.id >= region.levels[0] && l.id <= region.levels[1] && l.completed).length;
-    const regionStars = mapData.levels.filter(l => l.id >= region.levels[0] && l.id <= region.levels[1]).reduce((s,l) => s+(l.stars||0), 0);
-    const pct = (done / 20) * 100;
-
-    const card = document.createElement('div');card.className='region-card';
-    card.style.cssText = `border-radius:24px;background:${isUnlocked?`linear-gradient(135deg,${region.bgColor.replace('0.15','0.25')},rgba(0,0,0,0.4))`:'rgba(255,255,255,0.04)'};border:2px solid ${isUnlocked?region.border:'rgba(255,255,255,0.08)'};padding:0;margin-bottom:14px;opacity:${isUnlocked?'1':'0.55'};cursor:${isUnlocked?'pointer':'not-allowed'};overflow:hidden;transition:transform 0.15s,box-shadow 0.15s;position:relative;`;
-
-    // Banner
-    const banner = document.createElement('div');banner.className='region-banner';
-    banner.style.cssText = `height:90px;background:linear-gradient(135deg,${region.bgColor.replace('0.15','0.35')},${region.bgColor.replace('0.15','0.15')});display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:relative;overflow:hidden;`;
-    banner.innerHTML = `<div style="position:absolute;right:-10px;top:-15px;font-size:7rem;opacity:0.12;line-height:1;pointer-events:none;">${region.emoji}</div><div style="display:flex;align-items:center;gap:14px;"><div style="width:54px;height:54px;background:rgba(0,0,0,0.3);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:2rem;border:2px solid ${region.border};">${region.emoji}</div><div><div style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,0.5);">${region.name}</div><div style="font-size:0.7rem;color:${isUnlocked?region.color:'rgba(255,255,255,0.3)'};">${region.description}</div></div></div>${!isUnlocked?'<div style="font-size:2rem;opacity:0.7;">🔒</div>':`<div style="text-align:right;"><div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:#ffe259;">${regionStars}</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);letter-spacing:0.5px;">/ 60 ⭐</div></div>`}`;
-
-    // Progress row
-    const prog = document.createElement('div');
-    prog.style.cssText = 'padding:12px 20px 14px;background:rgba(0,0,0,0.25);';
-    prog.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><div style="font-size:0.7rem;color:rgba(255,255,255,0.4);">Levels ${region.levels[0]}–${region.levels[1]}</div><div style="font-family:'Fredoka One',cursive;font-size:0.8rem;color:${region.color};">${done}/20</div></div><div style="height:6px;border-radius:6px;background:rgba(255,255,255,0.1);overflow:hidden;"><div style="height:100%;border-radius:6px;width:${pct}%;background:linear-gradient(90deg,${region.color},${region.border});box-shadow:0 0 8px ${region.color}80;transition:width 0.6s ease;"></div></div>`;
-
-    card.appendChild(banner);
-    card.appendChild(prog);
-    if (isUnlocked) {
-      card.setAttribute('role','button');card.tabIndex=0;card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();card.click();}});
-      card.onclick = () => { mapData.selectedRegion = region; renderLevelSelect(region); goScreen('levelselect'); };
-      card.onmouseenter = () => { card.style.transform='scale(1.02)'; card.style.boxShadow=`0 8px 24px ${region.color}40`; };
-      card.onmouseleave = () => { card.style.transform=''; card.style.boxShadow=''; };
-    }
-    scroll.appendChild(card);
+function renderMapScreen(){
+  const host=document.getElementById('map-container');if(!host)return;host.innerHTML='';
+  const header=document.createElement('header');header.className='app-screen-header journey-header';
+  header.innerHTML='<button class="app-icon-button" aria-label="Home" onclick="goScreen(&quot;start&quot;)">←</button><div><strong>Sweet Journey</strong><small>Level '+mapData.currentLevel+' / 100</small></div><span>⭐ '+getTotalStars()+'</span>';host.append(header);
+  const scroll=document.createElement('div');scroll.className='journey-scroll';host.append(scroll);
+  const trail=document.createElement('div');trail.className='journey-trail';scroll.append(trail);
+  const positions=mapData.levels.map((lv,i)=>({x:50+28*Math.sin(i*.85),y:130+i*112}));
+  const height=positions.at(-1).y+150;trail.style.height=height+'px';
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 100 '+height);svg.setAttribute('preserveAspectRatio','none');svg.classList.add('journey-path');svg.setAttribute('aria-hidden','true');
+  const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d',positions.map((p,i)=>{if(!i)return 'M'+p.x+' '+p.y;const prev=positions[i-1],mid=(prev.y+p.y)/2;return 'C'+prev.x+' '+mid+' '+p.x+' '+mid+' '+p.x+' '+p.y;}).join(' '));svg.append(path);trail.append(svg);
+  mapData.levels.forEach((lv,i)=>{
+    const region=getRegionForLevel(lv.id),pos=positions[i];
+    if(i%20===0){const sign=document.createElement('div');sign.className='journey-region';sign.style.top=(pos.y-100)+'px';sign.textContent=region.emoji+' '+region.name;trail.append(sign);}
+    const button=document.createElement('button');button.className='journey-level'+(lv.completed?' completed':'')+(lv.id===mapData.currentLevel?' current':'');button.disabled=lv.locked;button.style.left=pos.x+'%';button.style.top=pos.y+'px';button.setAttribute('aria-label','Level '+lv.id+(lv.locked?', locked':', '+lv.stars+' stars'));
+    button.innerHTML='<span>'+(lv.locked?'🔒':lv.id)+'</span><small>'+(lv.completed?'⭐'.repeat(lv.stars):lv.id===mapData.currentLevel?'PLAY':'')+'</small>';
+    button.onclick=()=>{mapData.selectedRegion=region;showLevelInfo(lv,region);};trail.append(button);
   });
-  c.appendChild(scroll);
+  requestAnimationFrame(()=>{scroll.scrollTop=Math.max(0,positions[Math.min(99,mapData.currentLevel-1)].y-scroll.clientHeight*.45);});
 }
 
-// ═══ LEVEL SELECT ═══
 function renderLevelSelect(region) {
   const c = document.getElementById('levelselect-container');
   if (!c) return;
@@ -241,7 +214,7 @@ function startMapLevel(levelId) {
   };
 
   window._activeObjectiveSpec=base.objective;
-  if (region) { applyThemeColors(region.theme); document.body.className = region.theme; }
+  applyThemeColors(settings.theme||''); document.body.className=settings.theme||'';
   _goGameIntentional=true;
   goGame();
 }
