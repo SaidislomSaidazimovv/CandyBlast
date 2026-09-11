@@ -393,6 +393,7 @@ function closeToStart(e){
   setTimeout(()=>goScreen('start'),50);
 }
 function goScreen(name){
+  if(name==='levelselect')name='map';
   if(currentScreen==='game'&&name!=='game'){
     stopPlayTimer();
     if(name==='settings'){paused=true;saveGameState();}
@@ -402,6 +403,7 @@ function goScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
   document.getElementById('screen-'+name).classList.remove('hidden');
   prevScreen=currentScreen;currentScreen=name;
+  if(name==='map')renderMapScreen();
   if(name==='leaderboard')renderLB('global');
   if(name==='start'){
     document.getElementById('best-score-start').textContent=bestScore;
@@ -491,6 +493,7 @@ function loadSettings(){
   try{const s=localStorage.getItem('cb_settings');if(s)settings={...settings,...JSON.parse(s)};}catch(e){localStorage.removeItem('cb_settings');}
   document.getElementById('set-sfx').checked=settings.sfx;
   document.getElementById('set-music').checked=settings.music;
+  if(document.getElementById('music-track'))document.getElementById('music-track').value=settings.musicTrack||'sweet';
   document.getElementById('set-vibro').checked=settings.vibro;
   document.getElementById('set-anim').checked=settings.anim;
   document.getElementById('set-volume').value=settings.volume;
@@ -560,14 +563,15 @@ function playOver(){[400,350,300,250].forEach((f,i)=>setTimeout(()=>playTone(f,.
 
 // ═══════ BACKGROUND MUSIC ═══════
 let bgMusicNodes=[],bgMusicPlaying=false,bgMusicTimer=null;
-function startBgMusic(){if(bgMusicPlaying)return;const ac=getAC();if(!ac)return;bgMusicPlaying=true;scheduleMusicLoop();}
+function startBgMusic(){if(bgMusicPlaying)return;const ac=getAC();if(!ac)return;if(ac.state==='suspended')ac.resume().catch(()=>{});bgMusicPlaying=true;scheduleMusicLoop();}
 function stopBgMusic(){bgMusicPlaying=false;if(bgMusicTimer){clearTimeout(bgMusicTimer);bgMusicTimer=null;}bgMusicNodes.forEach(n=>{try{n.stop();}catch(e){}});bgMusicNodes=[];}
 function scheduleMusicLoop(){
   if(!bgMusicPlaying)return;const ac=getAC();if(!ac)return;
-  const notes=[523,659,784,880,784,659,523,587,659,523],noteDur=0.35,vol=(settings.volume/100)*0.06;
+  const tracks={sweet:{notes:[523,659,784,659,587,698,880,698,659,784,988,784,587,659,523,392],pace:.38},dream:{notes:[262,330,392,494,440,392,330,294,262,330,392,523,494,392,330,294],pace:.6},groove:{notes:[330,0,392,440,0,392,330,294,262,0,330,392,0,330,294,392],pace:.25}};
+  const track=tracks[settings.musicTrack]||tracks.sweet;const notes=track.notes,noteDur=track.pace,vol=(settings.volume/100)*0.06;
   if(vol<=0){bgMusicTimer=setTimeout(scheduleMusicLoop,notes.length*noteDur*1000);return;}
-  notes.forEach((freq,i)=>{try{const osc=ac.createOscillator(),gain=ac.createGain();osc.connect(gain);gain.connect(ac.destination);osc.type='triangle';osc.frequency.value=freq;const st=ac.currentTime+i*noteDur,et=st+noteDur*.8;gain.gain.setValueAtTime(0,st);gain.gain.linearRampToValueAtTime(vol,st+.02);gain.gain.setValueAtTime(vol,et-.05);gain.gain.linearRampToValueAtTime(0,et);osc.start(st);osc.stop(et);bgMusicNodes.push(osc);}catch(e){}});
-  bgMusicTimer=setTimeout(()=>{bgMusicNodes=[];scheduleMusicLoop();},notes.length*noteDur*1000-200);
+  notes.forEach((freq,i)=>{if(!freq)return;try{const osc=ac.createOscillator(),gain=ac.createGain();osc.connect(gain);gain.connect(ac.destination);osc.type='triangle';osc.frequency.value=freq;const st=ac.currentTime+i*noteDur,et=st+noteDur*.8;gain.gain.setValueAtTime(0,st);gain.gain.linearRampToValueAtTime(vol,st+.02);gain.gain.setValueAtTime(vol,et-.05);gain.gain.linearRampToValueAtTime(0,et);osc.start(st);osc.stop(et);bgMusicNodes.push(osc);}catch(e){}});
+  bgMusicTimer=setTimeout(()=>{bgMusicNodes=[];scheduleMusicLoop();},notes.length*noteDur*1000);
 }
 
 // ═══════ GAME LOGIC ═══════
@@ -620,6 +624,7 @@ function updateStats(){
 }
 function onCellClick(e){
   if(busy||paused||pregame||gameEnded)return;
+  if(bombMode){activateIngameBomb(+e.currentTarget.dataset.r,+e.currentTarget.dataset.c);return;}
   if(hammerMode){
     const hr=+e.currentTarget.dataset.r,hc=+e.currentTarget.dataset.c;
     removeCandy(hr,hc);showHammerHint(false);busy=true;
@@ -641,7 +646,7 @@ function onCellClick(e){
 }
 let touchStartPos=null;
 function onTouchStart(e){const t=e.touches[0];touchStartPos={x:t.clientX,y:t.clientY,r:+e.currentTarget.dataset.r,c:+e.currentTarget.dataset.c};}
-function onTouchEnd(e){if(!touchStartPos||busy||paused||pregame||gameEnded||hammerMode)return;const t=e.changedTouches[0];const dx=t.clientX-touchStartPos.x,dy=t.clientY-touchStartPos.y;const absDx=Math.abs(dx),absDy=Math.abs(dy);const{r,c}=touchStartPos;touchStartPos=null;if(absDx<15&&absDy<15)return;e.preventDefault();let tr=r,tc=c;if(absDx>absDy){tc+=dx>0?1:-1;}else{tr+=dy>0?1:-1;}if(tr<0||tr>=GRID||tc<0||tc>=GRID)return;if(selected){const el=getCell(selected.r,selected.c);if(el)el.classList.remove('selected');selected=null;}trySwap(r,c,tr,tc);}
+function onTouchEnd(e){if(!touchStartPos||busy||paused||pregame||gameEnded||hammerMode||bombMode)return;const t=e.changedTouches[0];const dx=t.clientX-touchStartPos.x,dy=t.clientY-touchStartPos.y;const absDx=Math.abs(dx),absDy=Math.abs(dy);const{r,c}=touchStartPos;touchStartPos=null;if(absDx<15&&absDy<15)return;e.preventDefault();let tr=r,tc=c;if(absDx>absDy){tc+=dx>0?1:-1;}else{tr+=dy>0?1:-1;}if(tr<0||tr>=GRID||tc<0||tc>=GRID)return;if(selected){const el=getCell(selected.r,selected.c);if(el)el.classList.remove('selected');selected=null;}trySwap(r,c,tr,tc);}
 async function trySwap(r1,c1,r2,c2){
   if(busy||paused||pregame||gameEnded)return;
   busy=true;

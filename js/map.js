@@ -125,76 +125,8 @@ function renderMapScreen(){
   requestAnimationFrame(()=>{scroll.scrollTop=Math.max(0,positions[Math.min(99,mapData.currentLevel-1)].y-scroll.clientHeight*.45);});
 }
 
-function renderLevelSelect(region) {
-  const c = document.getElementById('levelselect-container');
-  if (!c) return;
-  c.innerHTML = '';
-  applyThemeColors(region.theme);
+function renderLevelSelect(){renderMapScreen();}
 
-  // Header
-  const h = document.createElement('div');h.className='app-screen-header';
-  h.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;flex-shrink:0;background:linear-gradient(180deg,rgba(0,0,0,0.75) 0%,transparent 100%);position:relative;z-index:10;';
-  const regDone = mapData.levels.filter(l=>l.id>=region.levels[0]&&l.id<=region.levels[1]&&l.completed).length;
-  h.innerHTML = `<button onclick="goScreen('map');renderMapScreen();" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.2);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">←</button><div style="text-align:center;"><div style="font-size:1.6rem;">${region.emoji}</div><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,0.5);">${region.name}</div></div><div style="font-family:'Fredoka One',cursive;font-size:0.8rem;color:${region.color};text-align:right;">${regDone}/20<br><span style="font-size:0.65rem;color:rgba(255,255,255,0.35);font-family:sans-serif;">done</span></div>`;
-  c.appendChild(h);
-
-  const scroll = document.createElement('div');scroll.className='app-scroll';
-  scroll.style.cssText = 'flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 20px 40px;scrollbar-width:none;';
-  const levels = mapData.levels.filter(l => l.id >= region.levels[0] && l.id <= region.levels[1]);
-  const positions = ['left','center','right','center'];
-
-  // Inject pulse animation
-  if (!document.getElementById('map-animations')) {
-    const st = document.createElement('style');
-    st.id = 'map-animations';
-    st.textContent = '@keyframes levelPulse{0%,100%{box-shadow:0 0 0 6px rgba(255,255,255,0.2),0 0 24px rgba(255,255,255,0.3),0 4px 16px rgba(0,0,0,0.5);}50%{box-shadow:0 0 0 10px rgba(255,255,255,0.08),0 0 40px rgba(255,255,255,0.15),0 4px 16px rgba(0,0,0,0.5);}}';
-    document.head.appendChild(st);
-  }
-
-  levels.forEach((lv, idx) => {
-    const pos = positions[idx % 4];
-    const isCurrent = lv.id === mapData.currentLevel;
-    const isCompleted = lv.completed;
-    const isLocked = lv.locked;
-    const dotSize = isCurrent ? 88 : 76;
-
-    const row = document.createElement('div');
-    row.style.cssText = `display:flex;justify-content:${pos==='left'?'flex-start':pos==='right'?'flex-end':'center'};padding:0 10px;margin-bottom:4px;position:relative;`;
-
-    // Connector
-    if (idx < levels.length - 1) {
-      const line = document.createElement('div');
-      line.style.cssText = `position:absolute;width:3px;height:52px;background:${levels[idx+1].locked?'rgba(255,255,255,0.08)':`linear-gradient(180deg,${region.color}80,${region.color}30)`};border-radius:2px;bottom:-52px;z-index:0;${pos==='left'?'left:52px':pos==='right'?'right:52px':'left:50%;transform:translateX(-50%)'};`;
-      row.appendChild(line);
-    }
-
-    const dot = document.createElement('div');
-    dot.className='app-level'+(isCurrent?' is-current':'')+(isCompleted?' is-complete':'')+(isLocked?' is-locked':'');
-    dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:${isLocked?'not-allowed':'pointer'};border:${isCurrent?'4px solid #ffffff':isCompleted?`3px solid ${region.color}`:isLocked?'2px solid rgba(255,255,255,0.12)':`2px solid ${region.border}`};background:${isCompleted?`radial-gradient(circle,${region.bgColor.replace('0.15','0.5')},rgba(0,0,0,0.6))`:isLocked?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.5)'};box-shadow:${isCurrent?`0 0 0 6px ${region.color}40,0 0 24px ${region.color}60,0 4px 16px rgba(0,0,0,0.5)`:isCompleted?`0 0 12px ${region.color}40,0 4px 12px rgba(0,0,0,0.4)`:'0 4px 12px rgba(0,0,0,0.3)'};position:relative;z-index:1;transition:transform 0.15s;opacity:${isLocked?'0.45':'1'};${isCurrent?'animation:levelPulse 2s ease-in-out infinite;':''}`;
-
-    const starsHtml = isCompleted ? `<div style="font-size:0.7rem;letter-spacing:1px;margin-bottom:3px;line-height:1;">${'⭐'.repeat(lv.stars)}${'☆'.repeat(3-lv.stars)}</div>` : '';
-    dot.innerHTML = `${starsHtml}<div style="font-family:'Fredoka One',cursive;font-size:${isCurrent?'1.3rem':'1.1rem'};color:${isLocked?'rgba(255,255,255,0.3)':'#fff'};line-height:1;text-shadow:0 2px 6px rgba(0,0,0,0.6);">${isLocked?'🔒':lv.id}</div>${isCurrent?`<div style="font-size:0.5rem;color:${region.color};font-family:'Fredoka One',cursive;margin-top:3px;letter-spacing:1px;">NOW</div>`:''}`;
-
-    if (!isLocked) {
-      dot.onclick = () => showLevelInfo(lv, region);
-      dot.onmouseenter = () => dot.style.transform='scale(1.1)';
-      dot.onmouseleave = () => dot.style.transform='';
-    }
-    if(!isLocked){dot.title=lv.title+' — '+objectiveDescription(lv.objective);dot.setAttribute('role','button');dot.tabIndex=0;dot.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();showLevelInfo(lv,region);}};}
-    row.appendChild(dot);
-    scroll.appendChild(row);
-  });
-
-  c.appendChild(scroll);
-
-  // Auto-scroll to current level
-  setTimeout(() => {
-    const ci = levels.findIndex(l => l.id === mapData.currentLevel);
-    if (ci > 2) scroll.scrollTop = Math.max(0, (ci-2)*92);
-  }, 150);
-}
-
-// ═══ START MAP LEVEL ═══
 function startMapLevel(levelId) {
   mapData.selectedLevel = levelId;
   const base = getLevelSettings(levelId);

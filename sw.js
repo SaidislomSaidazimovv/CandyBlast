@@ -1,5 +1,6 @@
-const CACHE_NAME = 'candy-blast-v13';
+const CACHE_NAME = 'candy-blast-v14';
 const ASSETS = [
+  '/js/entry.js',
   '/images/ui/landscape.svg',
   '/',
   '/index.html',

@@ -69,6 +69,10 @@ function updateObjectiveUI(){
   document.getElementById('objective-title').textContent=objectiveLabel(objective);
 }
 
+function hasMatchAt(r,c){
+  const type=getType(r,c);if(type<0)return false;
+  for(const [dr,dc] of [[0,1],[1,0]]){let count=1;for(const sign of [-1,1])for(let n=1;n<GRID;n++){const rr=r+dr*n*sign,cc=c+dc*n*sign;if(rr<0||cc<0||rr>=GRID||cc>=GRID||getType(rr,cc)!==type)break;count++;}if(count>=3)return true;}return false;
+}
 function findAvailableMove(){
   for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
     for(const [dr,dc] of [[0,1],[1,0]]){
@@ -76,7 +80,7 @@ function findAvailableMove(){
       const a=getSpecial(r,c),b=getSpecial(rr,cc);
       if((a&&b)||a===SPECIAL.BOMB||b===SPECIAL.BOMB)return [{r,c},{r:rr,c:cc}];
       [grid[r][c],grid[rr][cc]]=[grid[rr][cc],grid[r][c]];
-      const works=findMatchesNew().matched.length>0;
+      const works=hasMatchAt(r,c)||hasMatchAt(rr,cc);
       [grid[r][c],grid[rr][cc]]=[grid[rr][cc],grid[r][c]];
       if(works)return [{r,c},{r:rr,c:cc}];
     }
@@ -97,9 +101,24 @@ function ensurePlayableBoard(){
   initGrid();specials.forEach((v,i)=>{const r=Math.floor(i/GRID),c=i%GRID;grid[r][c]={...v,type:grid[r][c]};});
   return true;
 }
+function findBestHint(){
+  let best=null,bestValue=-1;
+  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++)for(const [dr,dc] of [[0,1],[1,0]]){
+    const rr=r+dr,cc=c+dc;if(rr>=GRID||cc>=GRID)continue;
+    const a=getSpecial(r,c),b=getSpecial(rr,cc);let value=0;
+    if((a&&b)||a===SPECIAL.BOMB||b===SPECIAL.BOMB)value=100;
+    else{
+      [grid[r][c],grid[rr][cc]]=[grid[rr][cc],grid[r][c]];
+      try{if(hasMatchAt(r,c)||hasMatchAt(rr,cc)){const result=findMatchesNew();value=result.matched.length*10+result.specialCreations.length*35;
+        for(const cell of result.matched){if(objective.ice.includes(cell.r*GRID+cell.c))value+=35;const type=getType(cell.r,cell.c);if(objective.targets.some(t=>t.type===type&&(objective.collected[type]||0)<t.count))value+=25;}
+      }}finally{[grid[r][c],grid[rr][cc]]=[grid[rr][cc],grid[r][c]];}
+    }
+    if(value>0&&value>bestValue){bestValue=value;best=[{r,c},{r:rr,c:cc}];}
+  }return best;
+}
 function showHint(){
-  if(busy||paused||pregame||gameEnded||hammerMode)return;
-  const move=findAvailableMove();
+  if(busy||paused||pregame||gameEnded||hammerMode||bombMode)return;
+  const move=findBestHint();
   if(!move){ensurePlayableBoard();renderBoard();saveGameState();return;}
   document.querySelectorAll('.cell.hint').forEach(el=>el.classList.remove('hint'));
   move.forEach(({r,c})=>{const el=getCell(r,c);if(el){el.classList.add('hint');setTimeout(()=>el.classList.remove('hint'),1800);}});

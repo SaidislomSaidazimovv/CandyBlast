@@ -6,7 +6,7 @@ const TUT_ICONS=['🍒','💎','🍀','⭐','🔮','🍊'];
 
 function skipTutorial(){localStorage.setItem('cb_tutorial_done','1');startMapLevel(mapData.currentLevel);}
 function nextTutSlide(){tutSlide++;if(tutSlide>=6){localStorage.setItem('cb_tutorial_done','1');startMapLevel(mapData.currentLevel);}else{renderTutSlide(tutSlide);}}
-function checkFirstTime(){if(!localStorage.getItem('cb_tutorial_done')){setTimeout(()=>{if(currentScreen!=='start')return;tutSlide=0;goScreen('tutorial');renderTutSlide(0);},800);}}
+function checkFirstTime(){if(!localStorage.getItem('cb_tutorial_done')){setTimeout(()=>{if(currentScreen!=='start'||document.getElementById('entry-overlay'))return;tutSlide=0;goScreen('tutorial');renderTutSlide(0);},800);}}
 
 function renderTutSlide(n){
   tutEpoch++;
@@ -20,7 +20,7 @@ function renderTutSlide(n){
   panel.style.cssText='background:linear-gradient(135deg,rgba(60,15,100,0.97),rgba(20,5,40,0.98));border:1.5px solid rgba(255,255,255,0.12);border-radius:28px 28px 0 0;padding:28px 24px 36px;text-align:center;flex-shrink:0;';
   const slides=[
     {title:'Welcome to Candy Blast! 🍭',body:'A sweet puzzle game where you match colorful candies to score points and beat each level!',btn:"Let's Go! →"},
-    {title:'Tap to Swap! 👆',body:'Tap any candy, then tap an adjacent candy next to it. They will swap places!',btn:'Got it! →'},
+    {title:'Tap to Swap! 👆',body:'Tap any candy, then tap an adjacent candy next to it. Swap to line up three matching candies. You can also swipe toward a neighbor.',btn:'Got it! →'},
     {title:'Match 3 or More! 🎯',body:'Line up 3 or more same candies in a row or column — they explode and you earn points!',btn:'Nice! →'},
     {title:'Chain Combos! 🔥',body:'When new candies fall and match automatically, it creates a COMBO! Each combo multiplies your score!',btn:'Awesome! →'},
     {title:'Score Big, Move Smart! 🧠',body:'Reach the target score before your moves run out. Earn more points to reach the next star milestone!',btn:'Understood! →'},
@@ -74,7 +74,7 @@ function buildVis1(wrap){
   gridWrap.appendChild(grid);
   const hand=document.createElement('div');
   hand.style.cssText='position:absolute;font-size:1.8rem;animation:handPoint 0.8s ease-in-out infinite;transition:left 0.4s ease,top 0.4s ease;z-index:10;pointer-events:none;left:0;top:-48px;';
-  hand.textContent='👆';gridWrap.appendChild(hand);wrap.appendChild(gridWrap);
+  hand.className='tutorial-hand';hand.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><use href="images/ui/icons.svg#hand"/></svg>'; gridWrap.appendChild(hand);wrap.appendChild(gridWrap);
   function positionHand(targetChild){
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       const cellEl=grid.children[targetChild];
@@ -82,8 +82,8 @@ function buildVis1(wrap){
       const cellRect=cellEl.getBoundingClientRect();
       const wrapRect=gridWrap.getBoundingClientRect();
       if(wrapRect.width===0)return;
-      hand.style.left=(cellRect.left-wrapRect.left+cellRect.width/2-14)+'px';
-      hand.style.top=(cellRect.top-wrapRect.top+cellRect.height)+'px';
+      hand.style.left=(cellEl.offsetLeft+cellEl.offsetWidth/2-14)+'px';
+      hand.style.top=(grid.offsetHeight+8)+'px';
     }));
   }
   const c1=grid.children[3],c2=grid.children[4];let phase=0;

@@ -22,6 +22,7 @@
 <link rel="stylesheet" href="css/interface.css">
 </head>
 <body>
+<div id="entry-overlay" class="entry-overlay"><div class="entry-card"><img src="images/ui/app.svg" alt=""><h1>Candy Blast</h1><p role="status">Preparing your sweet adventure…</p><progress aria-label="Loading game"></progress><noscript>Enable JavaScript to play Candy Blast.</noscript></div></div>
 
 <canvas id="bg-canvas"></canvas>
 
@@ -38,6 +39,7 @@
     <div class="panel-title">⚙️ Settings</div>
     <div class="setting-row"><div><div class="setting-label">🔊 Sound Effects</div></div><label class="toggle"><input type="checkbox" id="set-sfx" aria-label="Sound effects" checked><span class="toggle-slider"></span></label></div>
     <div class="setting-row"><div><div class="setting-label">🎵 Music</div></div><label class="toggle"><input type="checkbox" id="set-music" aria-label="Music"><span class="toggle-slider"></span></label></div>
+    <div class="setting-row"><label class="setting-label" for="music-track">Melody</label><select id="music-track" onchange="settings.musicTrack=this.value;saveSettings();stopBgMusic();if(settings.music)startBgMusic();"><option value="sweet">Sweet Garden</option><option value="dream">Dream Clouds</option><option value="groove">Candy Groove</option></select></div>
     <div class="setting-row"><div><div class="setting-label">📳 Vibration</div></div><label class="toggle"><input type="checkbox" id="set-vibro" aria-label="Vibration" checked><span class="toggle-slider"></span></label></div>
     <div class="setting-row"><div><div class="setting-label">✨ Animations</div></div><label class="toggle"><input type="checkbox" id="set-anim" aria-label="Animations" checked><span class="toggle-slider"></span></label></div>
     <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
@@ -235,6 +237,7 @@
 <script type="module" src="js/renderer3d.mjs"></script>
 <script src="js/performance.js"></script>
 <script src="js/interface.js"></script>
+<script src="js/entry.js"></script>
 <script>
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
 </script>

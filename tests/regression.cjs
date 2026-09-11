@@ -169,14 +169,14 @@ test('reset restores in-memory inventory and removes the saved game', () => {
 });
 
 test('a bomb cascade that reaches the target ends the level', async () => {
-  const g = game();g.run('startMapLevel(1);hidePreGame();processMatches=async()=>{score=targetScore;levelScore=score;};activateIngameBomb();');
+  const g = game();g.run('startMapLevel(1);hidePreGame();processMatches=async()=>{score=targetScore;levelScore=score;};bombMode=true;activateIngameBomb(0,0);');
   await g.pending.at(-1)();
   assert.equal(g.run('gameEnded'), true);
   assert.equal(g.run('mapData.levels[0].completed'), true);
 });
 
 test('an old booster callback cannot modify a new level', async () => {
-  const g = game();g.run('startMapLevel(1);hidePreGame();activateIngameBomb();');
+  const g = game();g.run('startMapLevel(1);hidePreGame();bombMode=true;activateIngameBomb(0,0);');
   const oldCallback = g.pending.at(-1);
   g.run('startMapLevel(1);');const board = g.run('JSON.stringify(grid)');
   await oldCallback();
@@ -315,3 +315,12 @@ test('3D swipe cannot bypass pause, pregame or hammer input guards',()=>{
   g.run('paused=false;hammerMode=true;window.Candy3DBridge.swipe(0,1)');assert.equal(g.run('swaps'),0);
   g.run('hammerMode=false;window.Candy3DBridge.swipe(0,1)');assert.equal(g.run('swaps'),1);
 });
+
+ test('bomb targets the chosen color and consumes stock only on application',()=>{const g=game();g.run('startMapLevel(1);hidePreGame();grid=Array.from({length:8},(_,r)=>Array.from({length:8},(_,c)=>(r+c)%4));');const before=g.run('livesData.boosters.bomb');g.run('selectBombTarget();selectBombTarget();');assert.equal(g.run('livesData.boosters.bomb'),before);g.run('selectBombTarget();activateIngameBomb(0,2);');assert.equal(g.run('livesData.boosters.bomb'),before-1);assert.equal(g.run('grid.flat().filter(v=>v===2).length'),0);assert.equal(g.run('grid.flat().filter(v=>v===1).length'),16);});
+ test('legacy region navigation returns to the unified map',()=>{const g=game();g.run("goScreen('levelselect');");assert.equal(g.run('currentScreen'),'map');});
+
+test('hint search does not mutate the board or objective',()=>{const g=game();g.run('startMapLevel(1);hidePreGame();');const before=g.run('JSON.stringify({grid,objective})');assert.ok(g.run('findBestHint()'));assert.equal(g.run('JSON.stringify({grid,objective})'),before);});
+test('availability uses local line checks rather than full board scans',()=>{const g=game();g.run('startMapLevel(1);hidePreGame();findMatchesNew=()=>{throw Error("unexpected full scan")};');assert.ok(g.run('findAvailableMove()'));});
+
+test('local move search agrees with full scans on 100 stable boards',()=>{const g=game();g.run('startMapLevel(1);hidePreGame();');for(let i=0;i<100;i++){g.run('initGrid();');assert.equal(g.run(`JSON.stringify(findAvailableMove())`),g.run(`JSON.stringify((()=>{for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++)for(const [dr,dc] of [[0,1],[1,0]]){const rr=r+dr,cc=c+dc;if(rr>=GRID||cc>=GRID)continue;[grid[r][c],grid[rr][cc]]=[grid[rr][cc],grid[r][c]];const works=findMatchesNew().matched.length>0;[grid[r][c],grid[rr][cc]]=[grid[rr][cc],grid[r][c]];if(works)return [{r,c},{r:rr,c:cc}];}return null;})())`));}});
+test('result and pregame cancellation both return to the current journey',()=>{const g=game();g.run("startMapLevel(1);hidePreGame();levelScore=targetScore;showWin();goScreen('map');");assert.equal(g.run('currentScreen'),'map');assert.equal(g.run('mapData.currentLevel'),2);g.run("startMapLevel(2);cancelPreGame();");assert.equal(g.run('currentScreen'),'map');assert.equal(g.run('gameEnded'),true);});

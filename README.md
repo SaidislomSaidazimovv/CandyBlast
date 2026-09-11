@@ -121,3 +121,21 @@ Boshlang‘ich tahlil va qolgan yo‘nalishlar [AUDIT.md](AUDIT.md) da.
 
 Tekshiruvlar: 36 ta avtomatik test; brauzerda muzli moslik, Hint va qayta ochish;
 telefon, planshet va kompyuter o‘lchamlarida joylashuv tekshiruvi.
+
+
+## Interface and gameplay follow-up
+
+All legacy region return routes now use the continuous journey map. Hearts and
+stars have separate filled and empty symbols. Reward notices share one bounded
+status surface. The color-bomb booster waits for a selected candy and consumes
+stock only when applied. Hints rank immediate matches by objectives and special
+creation; availability checks inspect only the swapped lines on stable boards.
+
+Settings offers three locally synthesized melodies. The entry screen waits for
+page loading and offers a device-local player profile or guest play. It does not
+provide server authentication, password storage, or cross-device synchronization.
+Those require a selected account provider and backend configuration.
+
+Validation: node --test tests/regression.cjs tests/prototype.test.mjs tests/spin.cjs
+The suite compares local move checks with full-board checks on 100 generated boards.
+No claim of superiority over Candy Crush's private engine or mobile FPS is made.

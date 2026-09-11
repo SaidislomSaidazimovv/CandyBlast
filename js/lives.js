@@ -3,7 +3,7 @@ const MAX_LIVES=5;
 const LIFE_REGEN_MS=30*60*1000;
 
 let livesData={lives:5,lastLostAt:null,boosters:{extraMoves:2,hammer:1,bomb:1}};
-let hammerMode=false;
+let hammerMode=false,bombMode=false;
 let lifeTimerInterval=null;
 
 // ═══ SAVE / LOAD ═══
@@ -89,6 +89,7 @@ function updateTimerDisplay(){
 
 // ═══ BOOSTERS ═══
 function useBooster(type){
+  if(type==='bomb'){if(livesData.boosters.bomb<=0)return false;hidePreGame();selectBombTarget();return true;}
   if(livesData.boosters[type]<=0){shakeBoosterBtn(type);return false;}
   livesData.boosters[type]--;saveLives();updateLivesUI();
   if(type==='extraMoves')activateExtraMoves();
@@ -104,13 +105,7 @@ function shakeBoosterBtn(type){
   const btn=document.getElementById('booster-btn-'+type);
   if(!btn)return;btn.style.animation='shake 0.4s ease';setTimeout(()=>btn.style.animation='',420);
 }
-function showBoosterEarned(type){
-  const icons={extraMoves:'⚡',hammer:'🔨',bomb:'💣'};
-  const popup=document.createElement('div');
-  popup.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);font-family:'Fredoka One',cursive;font-size:1.4rem;color:#ffe259;background:rgba(80,20,120,0.95);border:1.5px solid rgba(255,255,255,0.2);border-radius:20px;padding:16px 28px;z-index:999;text-align:center;animation:popIn 0.4s ease forwards;";
-  popup.textContent=icons[type]+' Booster earned!';
-  document.body.appendChild(popup);setTimeout(()=>popup.remove(),1500);
-}
+function showBoosterEarned(type){showRewardToast({extraMoves:'⚡',hammer:'🔨',bomb:'💣'}[type],{extraMoves:'+5 moves',hammer:'Hammer',bomb:'Color bomb'}[type]);}
 
 // ─── Extra Moves ───
 function activateExtraMoves(){
@@ -138,29 +133,18 @@ function showHammerHint(show){
   }else{
     if(hint)hint.remove();
     document.getElementById('ingame-btn-hammer')?.classList.remove('active-hammer');
-    hammerMode=false;
+    hammerMode=false;bombMode=false;document.getElementById('ingame-btn-bomb')?.classList.remove('active-hammer');
   }
 }
 
 // ─── Bomb ───
-function activateBomb(){
-  // Remove all candies of random existing color
-  const colorCounts={};
-  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){const v=grid[r][c];if(v>=0)colorCounts[v]=(colorCounts[v]||0)+1;}
-  const colors=Object.keys(colorCounts).map(Number);
-  if(colors.length===0){hidePreGame();return;}
-  const target=colors[Math.floor(Math.random()*colors.length)];
-  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){if(getType(r,c)===target)removeCandy(r,c);}
-  renderBoard();
-  busy=true;
-  hidePreGame();
-  const session=gameSession;
-  setTimeout(async()=>{
-    if(session!==gameSession)return;
-    await dropCandies();if(session!==gameSession)return;
-    await processMatches();if(session!==gameSession)return;finishMove();
-  },350);
+function selectBombTarget(){
+  if(hammerMode)return;
+  bombMode=!bombMode;selected=null;document.querySelectorAll('.cell.selected').forEach(el=>el.classList.remove('selected'));
+  document.getElementById('ingame-btn-bomb')?.classList.toggle('active-hammer',bombMode);
+  document.getElementById('board-message').textContent=bombMode?'Tap a candy: clear every candy of that color. Tap Bomb again to cancel.':'';
 }
+function activateBomb(){hidePreGame();selectBombTarget();}
 
 // ═══ PRE-GAME ═══
 function showPreGame(){pregame=true;document.getElementById('pregame-title').textContent='Level '+level;document.getElementById('pregame-objective').textContent=objectiveDescription(objective);const ov=document.getElementById('overlay-pregame');if(ov)ov.classList.remove('hidden');}
@@ -192,6 +176,8 @@ function showNoLivesPopup(){
 // ═══ IN-GAME BOOSTERS ═══
 function useIngameBooster(type){
   if(busy||paused||pregame||gameEnded)return;
+  if(type==='bomb'){if(bombMode||livesData.boosters.bomb>0)selectBombTarget();return;}
+  if(bombMode)return;
   if(type==='hammer'&&hammerMode){
     showHammerHint(false);livesData.boosters.hammer++;saveLives();updateLivesUI();saveGameState();return;
   }
@@ -214,19 +200,15 @@ function useIngameBooster(type){
   }
   if(!busy)saveGameState();
 }
-function activateIngameBomb(){
-  const counts=Array(TYPES).fill(0);
-  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++)if(typeof grid[r][c]==='number'&&grid[r][c]>=0)counts[grid[r][c]]++;
-  const target=counts.indexOf(Math.max(...counts));
-  const cells=[];
-  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++)if(grid[r][c]===target){cells.push({r,c});const el=getCell(r,c);if(el)el.classList.add('matched');removeCandy(r,c);}
-  busy=true;
-  const session=gameSession;
-  setTimeout(async()=>{
-    if(session!==gameSession)return;
-    await dropCandies();if(session!==gameSession)return;
-    await processMatches();if(session!==gameSession)return;finishMove();
-  },380);
+function activateIngameBomb(r,c){
+  if(!bombMode||busy||paused||gameEnded||livesData.boosters.bomb<=0)return;
+  const target=getType(r,c);if(target<0)return;
+  bombMode=false;livesData.boosters.bomb--;saveLives();updateLivesUI();
+  document.getElementById('ingame-btn-bomb')?.classList.remove('active-hammer');document.getElementById('board-message').textContent='';
+  let removed=0;busy=true;const session=gameSession;
+  for(let row=0;row<GRID;row++)for(let col=0;col<GRID;col++)if(getType(row,col)===target){getCell(row,col)?.classList.add('matched');removeCandy(row,col);removed++;}
+  score+=removed*30;levelScore+=removed*30;updateStats();showBombEffect(r,c);playMatch(removed);
+  setTimeout(async()=>{if(session!==gameSession)return;await dropCandies();if(session!==gameSession)return;await processMatches();if(session!==gameSession)return;finishMove();},settings.anim?300:0);
 }
 function updateIngameBoosterUI(){
   ['extraMoves','hammer','bomb'].forEach(type=>{

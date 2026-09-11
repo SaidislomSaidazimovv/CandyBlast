@@ -246,10 +246,12 @@ function renderHourlyTab(container){
 }
 
 // ═══ TOAST ═══
+let rewardToastTimer;
 function showRewardToast(icon,label){
-  const toast=document.createElement('div');
-  toast.style.cssText="position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);color:#ffe259;font-family:'Fredoka One',cursive;padding:10px 24px;border-radius:20px;font-size:1rem;z-index:600;white-space:nowrap;animation:score-float 2.5s ease forwards;";
-  toast.textContent=icon+' '+label+' claimed!';document.body.appendChild(toast);setTimeout(()=>toast.remove(),2500);
+  document.getElementById('reward-notice')?.remove();clearTimeout(rewardToastTimer);
+  const toast=document.createElement('div');toast.id='reward-notice';toast.className='reward-notice';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');
+  const art=document.createElement('span');art.className='reward-notice-art';art.textContent=icon;
+  const text=document.createElement('div'),title=document.createElement('strong'),detail=document.createElement('small');title.textContent='Reward collected';detail.textContent=label.replace(/\s*claimed!?/gi,'');text.append(title,detail);toast.append(art,text);document.body.append(toast);rewardToastTimer=setTimeout(()=>toast.remove(),3000);
 }
 
 // ═══ UI UPDATE ═══
