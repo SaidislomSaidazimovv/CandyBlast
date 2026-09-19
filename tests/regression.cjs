@@ -15,9 +15,9 @@ test('all shipped JavaScript parses', () => {
   new vm.Script(fs.readFileSync(path.join(root, 'sw.js'), 'utf8'));
 });
 
-test('hard retry preserves adjusted settings and starts a fresh timer after Play', () => {
+test('retry preserves authored level settings and starts a fresh timer fixture after Play', () => {
   const g = game();
-  g.run("settings.diff='hard';startMapLevel(1);hidePreGame();");
+  g.run("startMapLevel(1);hidePreGame();");
   const initial = g.run('JSON.stringify([moves,targetScore,timeLeft])');
   g.run('showTimeUp();retryLevel();');
   assert.equal(g.run('timerActive'), false);
@@ -289,3 +289,6 @@ test('legacy 100-level progress is backed up and clamped without losing earned s
 test('chapter completion stays at level 20 and permits replay',()=>{const g=game();g.run('startMapLevel(20);hidePreGame();completeLevel(20,3,9000);nextLevel();');assert.equal(g.run('currentScreen'),'map');assert.equal(g.run('mapData.levels.length'),20);g.run('startMapLevel(20);');assert.equal(g.run('pregame'),true);g.run('startMapLevel(21);');assert.equal(g.run('mapData.selectedLevel'),20);});
 
 test('runaway cascades recover a stable board and retain an untriggered special',async()=>{const g=game();g.run('startMapLevel(2);hidePreGame();settings.anim=false;delay=async()=>{};setCell(7,7,1,SPECIAL.WRAPPED);var originalFind=findMatchesNew;findMatchesNew=()=>({matched:[{r:0,c:0},{r:0,c:1},{r:0,c:2}],specialCreations:[]});');await g.run('processMatches()');g.run('findMatchesNew=originalFind;');assert.equal(g.run('findMatchesNew().matched.length'),0);assert.equal(g.run('grid.flat().some(v=>v&&v.special===SPECIAL.WRAPPED)'),true);assert.ok(g.run('findAvailableMove()'));});
+test('difficulty preference is retired and authored values are used verbatim',()=>{const g=game();g.storage.set('cb_settings',JSON.stringify({diff:'hard'}));g.run('loadSettings();startMapLevel(8);');assert.equal(g.run("'diff' in settings"),false);assert.equal(g.run('moves'),g.run('getLevelSettings(8).moves'));assert.equal(g.run('targetScore'),g.run('getLevelSettings(8).targetScore'));});
+test('settings screen no longer exposes a global difficulty control',()=>{const html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert.equal(/data-diff|>\s*Difficulty\s*</i.test(html),false);});
+test('an invalid swap always costs one authored move',async()=>{const g=game();g.run('startMapLevel(4);hidePreGame();settings.anim=false;delay=async()=>{};settings.diff="easy";var invalidPair=null;outer:for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++)for(const [dr,dc] of [[0,1],[1,0]]){const rr=r+dr,cc=c+dc;if(rr>=GRID||cc>=GRID)continue;[grid[r][c],grid[rr][cc]]=[grid[rr][cc],grid[r][c]];const valid=findMatchesNew().matched.length>0;[grid[r][c],grid[rr][cc]]=[grid[rr][cc],grid[r][c]];if(!valid){invalidPair=[r,c,rr,cc];break outer;}}var beforeMoves=moves;');assert.ok(g.run('invalidPair'));await g.run('trySwap(...invalidPair)');assert.equal(g.run('moves'),g.run('beforeMoves-1'));});

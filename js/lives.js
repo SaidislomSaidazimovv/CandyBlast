@@ -168,8 +168,8 @@ function cancelPreGame(){
 function showNoLivesPopup(){
   const t=getTimeUntilNextLife();
   const msg=t?'Next life in '+formatTime(t):'Wait 30 min per life.';
-  const popup=document.createElement('div');popup.className='overlay';
-  popup.innerHTML='<div class="overlay-card" style="max-width:280px;text-align:center;"><div style="font-size:3rem;margin-bottom:12px;">💔</div><div class="ov-title" style="font-size:1.6rem;">No Lives!</div><div style="color:rgba(255,255,255,0.6);font-size:0.9rem;margin:12px 0 20px;">'+msg+'</div><button class="btn btn-play" style="padding:12px;width:100%;" onclick="this.closest(\'.overlay\').remove()">OK</button></div>';
+  const popup=document.createElement('div');popup.className='overlay';popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','true');popup.setAttribute('aria-label','No lives');
+  popup.innerHTML='<div class="overlay-card game-dialog lives-dialog"><div class="dialog-candy" aria-hidden="true"><img src="images/candies/berry.svg" alt=""></div><div class="ov-kicker">Hearts are resting</div><div class="ov-title">More lives soon</div><div class="ov-sub">'+msg+'</div><button class="btn btn-play" onclick="this.closest(\'.overlay\').remove()">Got it</button></div>';
   document.body.appendChild(popup);
 }
 

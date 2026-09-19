@@ -9,12 +9,16 @@ Updated: 2026-09-19. This is the current plan; older architecture reports are hi
 - Legacy 100-level map progress is backed up before migration; higher-level saved games are archived.
 - Cascade recovery is bounded at 64 passes and preserves remaining specials and objective progress.
 - Reproducible balance runner plays the actual swap/match/gravity functions with seeded randomness, normal difficulty, no boosters and the greedy hint policy. DOM/animation and wall-clock costs are stubbed: this is NOT a phone benchmark or a human difficulty rating.
-- 30 seeds per level, 600 full games. See BALANCE_REPORT.json. 61 regression tests pass.
+- 30 seeds per level, 600 full games. See BALANCE_REPORT.json. 64 regression tests pass.
 - Human acceptance: new players can understand goals; no unexplained difficulty spikes; verify every special interaction and low-stock booster flow on devices.
 
-## 2. Design and UI — in progress
+## 2. Design and UI — core pass implemented, device audit pending
 - Existing shared palette, icons, dialogs and tutorial are retained.
 - In-game boosters are semantic buttons for keyboard/accessibility operation.
+- Global difficulty was removed: every stage now has one authored move budget, target and color count.
+- Settings themes are named controls; core result, pause, quit, reset, pregame and level-detail surfaces share one visual hierarchy.
+- No-lives, hourly reward and Lucky Spin empty/ready states use the same modal and button hierarchy.
+- Verified settings, level detail, pregame, pause and quit at 320×568 with no browser console errors.
 - Swap tutorial now lets the player select and swap the highlighted pair; no overlapping pointer or automatic reversal. Reduced motion skips the swap animation.
 - Remaining: small-screen walkthrough of every result/reward/error state, tutorial interaction polish, audio listening checks, reduced-motion and screen-reader checks.
 

@@ -4,7 +4,7 @@ const ICONS=['🍒','💎','🍀','⭐','🔮','🍊'];
 const COLORS=['c0','c1','c2','c3','c4','c5'];
 let grid=[],selected=null,score=0,moves=30,level=1,busy=false,combo=0,targetScore=500,levelScore=0;
 let bestScore=+localStorage.getItem('cb_best')||0;
-let settings={sfx:true,music:false,vibro:true,anim:true,volume:70,diff:'normal',theme:''};
+let settings={sfx:true,music:false,vibro:true,anim:true,volume:70,musicTrack:'sweet',theme:''};
 let personalBest=[];
 let paused=false;
 let gameSession=0;
@@ -440,7 +440,7 @@ function goGame(){
     window._mapTimeSeconds=ms.timeSeconds||0;
     window._mapLevelSettings=null;
   }else{
-    moves=getDiffMoves();level=1;targetScore=getDiffTarget();
+    moves=30;level=1;targetScore=500;
     activeCandyTypes=TYPES;startObjective();
     window._mapStarMult=null;
     window._mapTimeSeconds=0;
@@ -477,20 +477,15 @@ function setTheme(el,theme){
   settings.theme=theme;saveSettings();
   applyThemeColors(theme);applyBackground(theme);
 }
-function setDiff(el){
-  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');settings.diff=el.dataset.diff;saveSettings();
-}
 function updateVolume(el){
   const v=el.value;document.getElementById('vol-val').textContent=v;
   el.style.setProperty('--pct',v+'%');settings.volume=+v;saveSettings();
   if(bgMusicPlaying){stopBgMusic();startBgMusic();}
 }
-function getDiffMoves(){return settings.diff==='easy'?40:settings.diff==='hard'?20:30;}
-function getDiffTarget(){return settings.diff==='hard'?800:settings.diff==='easy'?350:500;}
 function saveSettings(){localStorage.setItem('cb_settings',JSON.stringify(settings));}
 function loadSettings(){
   try{const s=localStorage.getItem('cb_settings');if(s)settings={...settings,...JSON.parse(s)};}catch(e){localStorage.removeItem('cb_settings');}
+  delete settings.diff;
   document.getElementById('set-sfx').checked=settings.sfx;
   document.getElementById('set-music').checked=settings.music;
   if(document.getElementById('music-track'))document.getElementById('music-track').value=settings.musicTrack||'sweet';
@@ -501,7 +496,6 @@ function loadSettings(){
   document.getElementById('set-volume').style.setProperty('--pct',settings.volume+'%');
   document.body.className=settings.theme||'';
   document.querySelectorAll('.theme-dot').forEach(d=>d.classList.toggle('active',d.dataset.theme===settings.theme));
-  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.toggle('active',b.dataset.diff===settings.diff));
   applyThemeColors(settings.theme||'');
   initBackground();
   if(settings.music)startBgMusic();
@@ -523,7 +517,7 @@ function confirmReset(){
   dailyData=createDailyData();mapData.currentLevel=1;mapData.selectedLevel=null;mapData.selectedRegion=null;
   localStorage.removeItem('cb_best');localStorage.removeItem('cb_settings');localStorage.removeItem('cb_personal');localStorage.removeItem('cb_tutorial_done');localStorage.removeItem('cb_lives');localStorage.removeItem('cb_daily');localStorage.removeItem('cb_daily_done');localStorage.removeItem('cb_map');
   bestScore=0;score=0;level=1;
-  settings={sfx:true,music:false,vibro:true,anim:true,volume:70,diff:'normal',theme:''};
+  settings={sfx:true,music:false,vibro:true,anim:true,volume:70,musicTrack:'sweet',theme:''};
   stopBgMusic();loadSettings();goScreen('start');
 }
 
@@ -652,7 +646,7 @@ async function trySwap(r1,c1,r2,c2){
   busy=true;
   const session=gameSession;
   const sp1=getSpecial(r1,c1),sp2=getSpecial(r2,c2);
-  const mult=settings.diff==='hard'?1.5:settings.diff==='easy'?.8:1;
+  const mult=1;
 
   // Color Bomb swapped with normal candy → always activates
   const onlyOneBomb=(sp1===SPECIAL.BOMB&&!sp2)||(sp2===SPECIAL.BOMB&&!sp1);
@@ -704,7 +698,7 @@ async function trySwap(r1,c1,r2,c2){
     if(cell1){cell1.classList.add('invalid');setTimeout(()=>cell1.classList.remove('invalid'),420);}
     if(cell2){cell2.classList.add('invalid');setTimeout(()=>cell2.classList.remove('invalid'),420);}
     const flash=document.createElement('div');flash.className='board-flash';document.getElementById('board-wrap').appendChild(flash);setTimeout(()=>flash.remove(),380);
-    if(settings.diff==='normal'||settings.diff==='hard'){moves--;updateStats();const bw=document.getElementById('board-wrap');if(bw){const pop=document.createElement('div');pop.className='score-popup';pop.textContent='-1 move';pop.style.cssText+='color:#ff4444;left:50%;top:50%;transform:translateX(-50%);font-size:1rem;';bw.appendChild(pop);setTimeout(()=>pop.remove(),900);}if(moves<=0){finishMove();return;}}
+    moves--;updateStats();const bw=document.getElementById('board-wrap');if(bw){const pop=document.createElement('div');pop.className='score-popup';pop.textContent='No match · -1 move';pop.style.cssText+='color:#ff6f91;left:50%;top:50%;transform:translateX(-50%);font-size:.9rem;';bw.appendChild(pop);setTimeout(()=>pop.remove(),900);}if(moves<=0){finishMove();return;}
     finishMove();return;
   }
   moves--;combo=0;updateStats();await processMatches();if(session!==gameSession)return;
@@ -736,7 +730,7 @@ async function processMatches(){
       initGrid();earned.forEach((special,i)=>{const r=Math.floor(i/GRID),c=i%GRID;setCell(r,c,getType(r,c),special);});
       renderBoard();return;
     }
-    combo++;const mult=settings.diff==='hard'?1.5:settings.diff==='easy'?.8:1;
+    combo++;const mult=1;
     const pts=Math.round(matches.length*30*combo*mult);
     score+=pts;levelScore+=pts;updateStats();
     showCombo(combo,pts);playMatch(matches.length);vibrate(40);

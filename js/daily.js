@@ -77,8 +77,8 @@ function stopPlayTimer(){
 }
 function showHourlyRewardPopup(reward){
   setTimeout(()=>{
-    const popup=document.createElement('div');popup.className='overlay';popup.style.zIndex='500';
-    popup.innerHTML=`<div class="overlay-card" style="text-align:center;max-width:280px;"><div style="font-size:3rem;margin-bottom:8px;">${reward.icon}</div><div class="ov-title" style="font-size:1.5rem;">1 Hour Played! ⏱️</div><div style="color:rgba(255,255,255,0.6);font-size:0.9rem;margin:10px 0 20px;">${reward.label} earned!</div><button class="btn btn-play" style="width:100%;padding:12px;" onclick="claimHourlyReward('${reward.type}',this)">Claim! 🎁</button></div>`;
+    const popup=document.createElement('div');popup.className='overlay';popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','true');popup.setAttribute('aria-label','Hourly reward');
+    popup.innerHTML=`<div class="overlay-card game-dialog reward-dialog"><div class="dialog-candy small" aria-hidden="true">${reward.icon}</div><div class="ov-kicker">Playtime reward</div><div class="ov-title">A sweet hour!</div><div class="ov-sub">${reward.label} is ready for your journey.</div><button class="btn btn-play" onclick="claimHourlyReward('${reward.type}',this)">Collect reward</button></div>`;
     document.body.appendChild(popup);
   },500);
 }

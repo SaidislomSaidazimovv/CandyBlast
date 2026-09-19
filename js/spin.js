@@ -31,22 +31,22 @@ function renderSpinScreen(){
 
   // Close button (top-right, same style as settings/leaderboard)
   const closeBtn=document.createElement('button');
-  closeBtn.style.cssText='position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);z-index:10;';
+  closeBtn.className='app-icon-button spin-close';closeBtn.setAttribute('aria-label','Close');
   closeBtn.textContent='✕';
   closeBtn.onclick=()=>{if(!spinRunning&&!spinPending)goScreen('start');};
   container.appendChild(closeBtn);
 
   // Card wrapper
   const card=document.createElement('div');
-  card.style.cssText='background:var(--t-panel-bg,rgba(80,20,120,0.92));border:1.5px solid var(--t-panel-border,rgba(255,255,255,0.15));border-radius:24px;padding:24px 20px;max-width:380px;width:95%;text-align:center;';
+  card.className='spin-card';
 
   if(count<=0){
     // No spins state
     card.innerHTML=`
-      <div style="font-size:3.5rem;margin-bottom:12px;">🎡</div>
-      <div style="font-family:'Fredoka One',cursive;font-size:1.6rem;background:linear-gradient(135deg,#ffe259,#ff5fa0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;">Lucky Spin</div>
-      <div style="color:rgba(255,255,255,0.4);font-size:0.9rem;margin-bottom:20px;">No spins available.<br>Earn spins from Daily Rewards!</div>
-      <div style="font-family:'Fredoka One',cursive;font-size:0.9rem;color:rgba(255,255,255,0.3);">Spins: 0</div>
+      <div class="spin-emblem" aria-hidden="true">🎡</div><div class="ov-kicker">Daily bonus</div>
+      <div class="spin-title">Lucky Spin</div>
+      <div class="spin-subtitle">No spins available.<br>Earn another spin from Daily Rewards.</div>
+      <button class="btn btn-secondary" onclick="goScreen('rewards');renderRewardsScreen();">View rewards</button>
     `;
     container.appendChild(card);
     return;
@@ -58,8 +58,8 @@ function renderSpinScreen(){
   for(let i=0;i<weights.length;i++){rand-=weights[i];if(rand<=0){winIdx=i;break;}}
 
   card.innerHTML=`
-    <div style="font-family:'Fredoka One',cursive;font-size:1.6rem;background:linear-gradient(135deg,#ffe259,#ff5fa0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;">🎡 Lucky Spin!</div>
-    <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-bottom:18px;">Spins left: <span id="spin-remaining" style="color:#ffe259;font-family:'Fredoka One',cursive;">${count}</span></div>
+    <div class="ov-kicker">Daily bonus</div><div class="spin-title">🎡 Lucky Spin</div>
+    <div class="spin-subtitle">Spins left: <strong id="spin-remaining">${count}</strong></div>
     <div id="spin-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;">
       ${SPIN_PRIZES.map((p,i)=>{const s=TIER_STYLES[p.tier];return`<div class="spin-slot" id="spin-slot-${i}" style="border-radius:14px;padding:12px 6px;background:${s.bg};border:2px solid ${s.border};cursor:default;transition:all 0.08s;position:relative;"><div style="font-size:1.6rem;line-height:1;margin-bottom:4px;">${p.icon}</div><div style="font-family:'Fredoka One',cursive;font-size:0.7rem;color:#fff;line-height:1.2;margin-bottom:2px;">${p.label}</div><div style="font-size:0.55rem;font-weight:700;color:${s.label};letter-spacing:0.5px;">${p.sub}</div></div>`;}).join('')}
     </div>

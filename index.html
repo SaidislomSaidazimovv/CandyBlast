@@ -36,7 +36,7 @@
 <div class="screen hidden" id="screen-settings">
   <div class="panel" style="max-width:360px;width:100%;max-height:90vh;position:relative;">
     <button onclick="goBack()" style="position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);transition:background 0.15s;z-index:1;">✕</button>
-    <div class="panel-title">⚙️ Settings</div>
+    <div class="panel-title">⚙️ Settings</div><div class="panel-subtitle">Make the game feel right for you.</div>
     <div class="setting-row"><div><div class="setting-label">🔊 Sound Effects</div></div><label class="toggle"><input type="checkbox" id="set-sfx" aria-label="Sound effects" checked><span class="toggle-slider"></span></label></div>
     <div class="setting-row"><div><div class="setting-label">🎵 Music</div></div><label class="toggle"><input type="checkbox" id="set-music" aria-label="Music"><span class="toggle-slider"></span></label></div>
     <div class="setting-row"><label class="setting-label" for="music-track">Melody</label><select id="music-track" onchange="settings.musicTrack=this.value;saveSettings();stopBgMusic();if(settings.music)startBgMusic();"><option value="sweet">Sweet Garden</option><option value="dream">Dream Clouds</option><option value="groove">Candy Groove</option></select></div>
@@ -45,21 +45,13 @@
     <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
       <div class="setting-label">🎨 Theme</div>
       <div class="theme-row" id="theme-dots">
-        <div class="theme-dot active" style="background:linear-gradient(135deg,#4a0080,#ff5fa0)" data-theme="" onclick="setTheme(this,'')"></div>
-        <div class="theme-dot" style="background:linear-gradient(135deg,#003366,#00f2fe)" data-theme="theme-ocean" onclick="setTheme(this,'theme-ocean')"></div>
-        <div class="theme-dot" style="background:linear-gradient(135deg,#0a2e0a,#43e97b)" data-theme="theme-forest" onclick="setTheme(this,'theme-forest')"></div>
-        <div class="theme-dot" style="background:linear-gradient(135deg,#1a0500,#ff4500)" data-theme="theme-fire" onclick="setTheme(this,'theme-fire')"></div>
-        <div class="theme-dot" style="background:linear-gradient(135deg,#440055,#ff88cc)" data-theme="theme-candy" onclick="setTheme(this,'theme-candy')"></div>
-        <div class="theme-dot" style="background:linear-gradient(135deg,#e0e0e0,#ffffff);border:2px solid #ccc" data-theme="theme-white" onclick="setTheme(this,'theme-white')"></div>
-        <div class="theme-dot" style="background:linear-gradient(135deg,#000000,#1a1a1a);border:2px solid #333" data-theme="theme-black" onclick="setTheme(this,'theme-black')"></div>
-      </div>
-    </div>
-    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
-      <div class="setting-label">⚡ Difficulty</div>
-      <div class="diff-row" style="width:100%">
-        <button class="diff-btn" data-diff="easy" onclick="setDiff(this)">Easy</button>
-        <button class="diff-btn active" data-diff="normal" onclick="setDiff(this)">Normal</button>
-        <button class="diff-btn" data-diff="hard" onclick="setDiff(this)">Hard</button>
+        <button type="button" class="theme-dot active" aria-label="Plum theme" data-theme="" onclick="setTheme(this,'')"></button>
+        <button type="button" class="theme-dot" aria-label="Ocean theme" data-theme="theme-ocean" onclick="setTheme(this,'theme-ocean')"></button>
+        <button type="button" class="theme-dot" aria-label="Forest theme" data-theme="theme-forest" onclick="setTheme(this,'theme-forest')"></button>
+        <button type="button" class="theme-dot" aria-label="Sunset theme" data-theme="theme-fire" onclick="setTheme(this,'theme-fire')"></button>
+        <button type="button" class="theme-dot" aria-label="Candy theme" data-theme="theme-candy" onclick="setTheme(this,'theme-candy')"></button>
+        <button type="button" class="theme-dot" aria-label="Soft lavender theme" data-theme="theme-white" onclick="setTheme(this,'theme-white')"></button>
+        <button type="button" class="theme-dot" aria-label="Midnight theme" data-theme="theme-black" onclick="setTheme(this,'theme-black')"></button>
       </div>
     </div>
     <div class="setting-row">
@@ -75,7 +67,7 @@
 <div class="screen hidden" id="screen-leaderboard">
   <div class="panel" style="max-width:380px;width:100%;max-height:90vh;position:relative;">
     <button ontouchend="closeToStart(event)" onclick="closeToStart(event)" style="position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);transition:background 0.15s;z-index:10;">✕</button>
-    <div class="panel-title">🏆 Leaderboard</div>
+    <div class="panel-title">🏆 Leaderboard</div><div class="panel-subtitle">Your sweetest scores in one place.</div>
     <div class="lb-tabs">
       <button class="lb-tab active" onclick="showTab(this,'global')">🌍 Global</button>
       <button class="lb-tab" onclick="showTab(this,'weekly')">📅 Weekly</button>
@@ -126,29 +118,30 @@
 </div>
 
 </div>
-<div class="overlay hidden" id="overlay-pause"><div class="overlay-card"><div class="ov-title">⏸ Paused</div><div class="ov-btns">
+<div class="overlay hidden" id="overlay-pause"><div class="overlay-card game-dialog pause-dialog"><div class="dialog-candy" aria-hidden="true"><img src="images/candies/star.svg" alt=""></div><div class="ov-kicker">Game paused</div><div class="ov-title">Take a sweet break</div><div class="ov-sub">Your board is saved exactly as it is.</div><div class="ov-btns">
   <button class="btn btn-play" onclick="resumeGame()">▶ Resume</button>
   <button class="btn btn-settings" onclick="document.getElementById('overlay-pause').classList.add('hidden');goScreen('settings')">⚙️ Settings</button>
   <button class="btn btn-secondary" onclick="document.getElementById('overlay-pause').classList.add('hidden');showQuitDialog()">🏠 Main Menu</button>
 </div></div></div>
 
-<div class="overlay hidden" id="overlay-quit"><div class="overlay-card" style="text-align:center;max-width:300px;">
-  <div style="font-size:2.5rem;margin-bottom:12px;">💔</div>
-  <div class="ov-title" style="font-size:1.5rem;">Quit Game?</div>
-  <div style="color:rgba(255,255,255,0.65);font-size:0.9rem;margin:12px 0 24px;line-height:1.5;">If you quit now, you will lose <span style="color:#ff5fa0;font-family:'Fredoka One',cursive;font-size:1.1rem;">1 life ❤️</span>.<br>Are you sure?</div>
-  <div style="display:flex;gap:10px;">
-    <button onclick="cancelQuit()" style="flex:1;padding:12px;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.15);border-radius:50px;color:rgba(255,255,255,0.8);font-family:'Fredoka One',cursive;font-size:1rem;cursor:pointer;">No, Stay</button>
-    <button onclick="confirmQuit()" style="flex:1;padding:12px;background:linear-gradient(135deg,#ff5fa0,#ff4444);border:none;border-radius:50px;color:#fff;font-family:'Fredoka One',cursive;font-size:1rem;cursor:pointer;box-shadow:0 4px 12px rgba(255,68,68,0.4);">Yes, Quit</button>
+<div class="overlay hidden" id="overlay-quit"><div class="overlay-card game-dialog danger-dialog">
+  <div class="dialog-candy" aria-hidden="true"><img src="images/candies/berry.svg" alt=""></div>
+  <div class="ov-kicker">Leave this level?</div>
+  <div class="ov-title">Keep your last life</div>
+  <div class="ov-sub">Leaving now costs one heart and ends this attempt.</div>
+  <div class="dialog-actions split-actions">
+    <button class="btn btn-play" onclick="cancelQuit()">Keep playing</button>
+    <button class="btn btn-danger" onclick="confirmQuit()">Leave level</button>
   </div>
 </div></div>
 
-<div class="overlay hidden" id="overlay-reset"><div class="overlay-card"><div class="ov-title">Reset? 🗑️</div><div class="ov-sub">All progress will be erased</div><div class="ov-btns">
-  <button class="btn btn-play" onclick="confirmReset()">Yes, Reset</button>
-  <button class="btn btn-secondary" onclick="document.getElementById('overlay-reset').classList.add('hidden')">Cancel</button>
+<div class="overlay hidden" id="overlay-reset"><div class="overlay-card game-dialog danger-dialog"><div class="dialog-candy small" aria-hidden="true">↻</div><div class="ov-kicker">Permanent action</div><div class="ov-title">Reset your journey?</div><div class="ov-sub">Levels, stars, rewards and your best score will return to the beginning.</div><div class="ov-btns">
+  <button class="btn btn-danger" onclick="confirmReset()">Reset everything</button>
+  <button class="btn btn-secondary" onclick="document.getElementById('overlay-reset').classList.add('hidden')">Keep progress</button>
 </div></div></div>
 
-<div class="overlay hidden" id="overlay-win"><div class="overlay-card">
-  <div class="ov-title">Level Clear! 🎉</div>
+<div class="overlay hidden" id="overlay-win"><div class="overlay-card game-dialog result-dialog win-dialog">
+  <div class="ov-kicker">Level complete</div><div class="ov-title">Sweet victory!</div>
   <div class="stars" id="win-stars">⭐⭐⭐</div>
   <div class="ov-sub">Final Score</div>
   <div class="ov-score" id="win-score">0</div>
@@ -159,9 +152,9 @@
   </div>
 </div></div>
 
-<div class="overlay hidden" id="overlay-over"><div class="overlay-card">
-  <div class="ov-title">Game Over 😢</div>
-  <div class="ov-sub">No more moves!</div>
+<div class="overlay hidden" id="overlay-over"><div class="overlay-card game-dialog result-dialog lose-dialog">
+  <div class="dialog-candy small" aria-hidden="true">↻</div><div class="ov-kicker">Almost there</div><div class="ov-title">Out of moves</div>
+  <div class="ov-sub">Try a new route or bring a booster.</div>
   <div class="ov-score" id="over-score">0</div>
   <div class="ov-btns">
     <button class="btn btn-play" onclick="retryLevel()">🔄 Retry</button>
@@ -169,26 +162,26 @@
   </div>
 </div></div>
 
-<div class="overlay hidden" id="overlay-pregame"><div class="overlay-card" style="max-width:320px;">
+<div class="overlay hidden" id="overlay-pregame"><div class="overlay-card game-dialog pregame-dialog">
   <div class="ov-title" id="pregame-title">Ready? 🎮</div>
   <div id="pregame-objective" class="pregame-objective"></div>
   <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-bottom:20px;">Use a booster before you start!</div>
   <div style="display:flex;gap:10px;margin-bottom:20px;">
-    <div class="booster-card" id="booster-btn-extraMoves" onclick="useBooster('extraMoves')">
+    <button type="button" class="booster-card" id="booster-btn-extraMoves" onclick="useBooster('extraMoves')">
       <div class="booster-icon">⚡</div>
       <div class="booster-name" style="color:#ffe259;">+5 Moves</div>
       <div class="booster-badge" style="background:rgba(255,220,0,0.15);color:#ffe259;">x<span id="booster-count-extraMoves">0</span></div>
-    </div>
-    <div class="booster-card" id="booster-btn-hammer" onclick="useBooster('hammer')">
+    </button>
+    <button type="button" class="booster-card" id="booster-btn-hammer" onclick="useBooster('hammer')">
       <div class="booster-icon">🔨</div>
       <div class="booster-name" style="color:#ff8c42;">Hammer</div>
       <div class="booster-badge" style="background:rgba(255,140,66,0.15);color:#ff8c42;">x<span id="booster-count-hammer">0</span></div>
-    </div>
-    <div class="booster-card" id="booster-btn-bomb" onclick="useBooster('bomb')">
+    </button>
+    <button type="button" class="booster-card" id="booster-btn-bomb" onclick="useBooster('bomb')">
       <div class="booster-icon">💣</div>
       <div class="booster-name" style="color:#c471ed;">Bomb</div>
       <div class="booster-badge" style="background:rgba(196,113,237,0.15);color:#c471ed;">x<span id="booster-count-bomb">0</span></div>
-    </div>
+    </button>
   </div>
   <div style="display:flex;flex-direction:column;gap:10px;">
     <button class="btn btn-play" onclick="hidePreGame()" style="padding:14px;">▶ Play Now!</button>
