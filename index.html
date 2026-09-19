@@ -107,21 +107,21 @@
   <div class="mobile-controls">
   <div id="board-message" role="status">Swap adjacent candies to match 3</div>
   <div id="ingame-boosters" style="display:flex;gap:10px;justify-content:center;width:100%;max-width:420px;margin-top:10px;padding:0 4px;">
-    <div class="ingame-booster-btn" id="ingame-btn-extraMoves" onclick="useIngameBooster('extraMoves')" style="border-color:rgba(255,220,0,0.3);">
+    <button type="button" class="ingame-booster-btn" id="ingame-btn-extraMoves" onclick="useIngameBooster('extraMoves')" style="border-color:rgba(255,220,0,0.3);">
       <span class="ingame-booster-icon">⚡</span>
       <span class="ingame-booster-label" style="color:#ffe259;">+5</span>
       <span class="ingame-booster-count" id="ingame-count-extraMoves" style="background:rgba(255,220,0,0.2);color:#ffe259;">0</span>
-    </div>
-    <div class="ingame-booster-btn" id="ingame-btn-hammer" onclick="useIngameBooster('hammer')" style="border-color:rgba(255,140,66,0.3);">
+    </button>
+    <button type="button" class="ingame-booster-btn" id="ingame-btn-hammer" onclick="useIngameBooster('hammer')" style="border-color:rgba(255,140,66,0.3);">
       <span class="ingame-booster-icon">🔨</span>
       <span class="ingame-booster-label" style="color:#ff8c42;">Hammer</span>
       <span class="ingame-booster-count" id="ingame-count-hammer" style="background:rgba(255,140,66,0.2);color:#ff8c42;">0</span>
-    </div>
-    <div class="ingame-booster-btn" id="ingame-btn-bomb" onclick="useIngameBooster('bomb')" style="border-color:rgba(196,113,237,0.3);">
+    </button>
+    <button type="button" class="ingame-booster-btn" id="ingame-btn-bomb" onclick="useIngameBooster('bomb')" style="border-color:rgba(196,113,237,0.3);">
       <span class="ingame-booster-icon">💣</span>
       <span class="ingame-booster-label" style="color:#c471ed;">Bomb</span>
       <span class="ingame-booster-count" id="ingame-count-bomb" style="background:rgba(196,113,237,0.2);color:#c471ed;">0</span>
-    </div>
+    </button>
   </div>
 </div>
 
@@ -154,7 +154,7 @@
   <div class="ov-score" id="win-score">0</div>
   <div class="ov-sub" id="win-level-score" style="margin-top:-4px;margin-bottom:4px;font-size:.8rem;color:var(--t-secondary)"></div>
   <div class="ov-btns">
-    <button class="btn btn-play" onclick="nextLevel()">Next Level →</button>
+    <button class="btn btn-play" id="win-next" onclick="nextLevel()">Next Level →</button>
     <button class="btn btn-secondary" onclick="document.getElementById('overlay-win').classList.add('hidden');goScreen('map');renderMapScreen();">🗺️ Map</button>
   </div>
 </div></div>

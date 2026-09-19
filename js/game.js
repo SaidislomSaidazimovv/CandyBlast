@@ -729,7 +729,13 @@ async function processMatches(){
   const session=gameSession;
   let result=findMatchesNew();
   let matches=result.matched;
+  let cascadeSteps=0;
   while(matches.length){
+    if(++cascadeSteps>64){
+      const earned=grid.flat().filter(v=>v&&typeof v==='object'&&v.special).map(v=>v.special);
+      initGrid();earned.forEach((special,i)=>{const r=Math.floor(i/GRID),c=i%GRID;setCell(r,c,getType(r,c),special);});
+      renderBoard();return;
+    }
     combo++;const mult=settings.diff==='hard'?1.5:settings.diff==='easy'?.8:1;
     const pts=Math.round(matches.length*30*combo*mult);
     score+=pts;levelScore+=pts;updateStats();
@@ -840,6 +846,8 @@ function calcStars(ls,ts){
 }
 function showWin(){if(!beginResult())return;playWin();
   document.getElementById('win-score').textContent=levelScore.toLocaleString();
+  document.getElementById('win-next').textContent=level===RELEASE_LEVEL_COUNT?'Back to journey':'Next level →';
+  document.getElementById('overlay-win').querySelector('.ov-title').textContent=level===RELEASE_LEVEL_COUNT?'Chapter complete!':'Sweet victory!';
   const starCount=calcStars(levelScore,targetScore);
   const stars='⭐'.repeat(starCount)+'☆'.repeat(3-starCount);
   document.getElementById('win-stars').textContent=stars;
@@ -921,6 +929,7 @@ function restoreGameState(){
     const raw=localStorage.getItem('cb_gamestate');
     if(!raw)return false;
     const state=JSON.parse(raw);
+    if(state.level>RELEASE_LEVEL_COUNT){localStorage.setItem('cb_gamestate_legacy_100',raw);clearGameState();return false;}
     // Don't restore if saved more than 24h ago (stale)
     if(Date.now()-state.savedAt>24*60*60*1000){clearGameState();return false;}
     if(!Array.isArray(state.grid)||state.grid.length!==GRID||state.grid.some(row=>!Array.isArray(row)||row.length!==GRID||row.some(cell=>{const t=typeof cell==='object'&&cell!==null?cell.type:cell;return !Number.isInteger(t)||t<0||t>=TYPES;})))throw new Error('Invalid board');

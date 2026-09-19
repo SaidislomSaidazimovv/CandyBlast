@@ -7,46 +7,37 @@ const REGIONS = [
   { id:'africa', name:'Afrika', emoji:'🌅', levels:[81,100], theme:'theme-candy', color:'#ff5fa0', bgColor:'rgba(255,95,160,0.15)', border:'rgba(255,95,160,0.4)', description:'Rainbow candy paradise!' },
 ];
 
-// The opening chapter teaches one mechanic at a time.
+// Release one: authored goals; timers are reserved for a later challenge mode.
+const RELEASE_LEVEL_COUNT=20;
 const OPENING_LEVELS=[
-  {title:'First sweets',kind:'score',time:120},
-  {title:'Berry basket',kind:'collect',targets:[{type:0,count:18}],time:0},
-  {title:'A little frost',kind:'ice',pattern:'corners',time:0},
-  {title:'Diamond rush',kind:'collect',targets:[{type:1,count:24}],time:100},
-  {title:'Garden treats',kind:'collect',targets:[{type:0,count:16},{type:2,count:16}],time:0},
-  {title:'Frozen ring',kind:'ice',pattern:'ring',time:0},
-  {title:'Mint on ice',kind:'mixed',targets:[{type:2,count:22}],pattern:'corners',time:0},
-  {title:'Golden minute',kind:'score',time:90},
-  {title:'Snow diamonds',kind:'ice',pattern:'diamond',time:0},
-  {title:'Honey harvest',kind:'collect',targets:[{type:3,count:26}],time:0},
-  {title:'Berry frost',kind:'mixed',targets:[{type:0,count:24}],pattern:'ring',time:0},
-  {title:'Winter sprint',kind:'mixed',targets:[{type:1,count:24}],pattern:'diagonal',time:120},
+ {title:'First sweets',kind:'score',moves:24,score:1200,colors:4},
+ {title:'Berry basket',kind:'collect',moves:26,score:1600,colors:4,targets:[{type:0,count:18}]},
+ {title:'A little frost',kind:'ice',moves:26,score:1800,colors:4,pattern:'corners'},
+ {title:'Diamond rush',kind:'collect',moves:27,score:2000,colors:5,targets:[{type:1,count:24}]},
+ {title:'Garden treats',kind:'collect',moves:28,score:2200,colors:5,targets:[{type:0,count:16},{type:2,count:16}]},
+ {title:'Frozen ring',kind:'ice',moves:28,score:2400,colors:5,pattern:'ring'},
+ {title:'Mint on ice',kind:'mixed',moves:30,score:2500,colors:5,targets:[{type:2,count:22}],pattern:'corners'},
+ {title:'Golden meadow',kind:'score',moves:26,score:3200,colors:5},
+ {title:'Snow diamonds',kind:'ice',moves:30,score:2800,colors:5,pattern:'diamond'},
+ {title:'Honey harvest',kind:'collect',moves:28,score:3000,colors:5,targets:[{type:3,count:30}]},
+ {title:'Berry frost',kind:'mixed',moves:30,score:3200,colors:5,targets:[{type:0,count:24}],pattern:'ring'},
+ {title:'Winter trail',kind:'mixed',moves:32,score:3400,colors:5,targets:[{type:1,count:24}],pattern:'diagonal'},
+ {title:'Grape grove',kind:'collect',moves:30,score:3400,colors:6,targets:[{type:4,count:22}]},
+ {title:'Orchard duet',kind:'collect',moves:32,score:3600,colors:6,targets:[{type:0,count:22},{type:4,count:22}]},
+ {title:'Crystal crossing',kind:'ice',moves:32,score:3800,colors:6,pattern:'cross'},
+ {title:'Sweet summit',kind:'score',moves:28,score:4800,colors:6},
+ {title:'Frosted grapes',kind:'mixed',moves:34,score:4000,colors:6,targets:[{type:4,count:26}],pattern:'ring'},
+ {title:'Three baskets',kind:'collect',moves:34,score:4400,colors:6,targets:[{type:0,count:20},{type:1,count:20},{type:2,count:20}]},
+ {title:'Diamond garden',kind:'mixed',moves:34,score:4600,colors:6,targets:[{type:1,count:28}],pattern:'diamond'},
+ {title:'Sweet celebration',kind:'mixed',moves:36,score:5000,colors:6,targets:[{type:3,count:28},{type:4,count:24}],pattern:'cross'},
 ];
-function generateLevels(){
-  const levels=[];
-  for(let i=1;i<=100;i++){
-    const colors=i<=12?4:i<=40?5:6;
-    const cycle=(i-1)%4;
-    const spec=OPENING_LEVELS[i-1]||{
-      title:['Sweet summit','Candy orchard','Frost trail','Frozen harvest'][cycle],
-      kind:['score','collect','ice','mixed'][cycle],time:cycle===0?120:0,
-      ...(cycle===1||cycle===3?{targets:[{type:(i-1)%colors,count:24+Math.floor(i/8)}]}:{}),
-      ...(cycle>=2?{pattern:['ring','diamond','cross','diagonal'][Math.floor(i/4)%4]}:{}),
-    };
-    const moves=Math.max(22,34-Math.floor((i-1)/8));
-    const targetScore=i===1?1298:1400+i*90;
-    levels.push({id:i,moves,timeSeconds:spec.time,targetScore,star2:Math.round(targetScore*1.25),star3:Math.round(targetScore*1.6),
-      colors,title:spec.title,objective:{kind:spec.kind,targets:spec.targets||[],pattern:spec.pattern||null},
-      stars:0,completed:false,locked:i>1});
-  }
-  return levels;
-}
+function generateLevels(){return OPENING_LEVELS.map((spec,i)=>({id:i+1,moves:spec.moves,timeSeconds:0,targetScore:spec.score,star2:Math.round(spec.score*1.25),star3:Math.round(spec.score*1.6),colors:spec.colors,title:spec.title,objective:{kind:spec.kind,targets:(spec.targets||[]).map(t=>({...t})),pattern:spec.pattern||null},stars:0,completed:false,locked:i>0}));}
 
 // ═══ STATE ═══
 let mapData = { currentLevel:1, levels:[], selectedRegion:null, selectedLevel:null };
 
 // ═══ SAVE / LOAD ═══
-const MAP_VERSION = 5; // Progress is migrated by stable level id.
+const MAP_VERSION = 6; // Progress is migrated by stable level id.
 function saveMapData() {
   localStorage.setItem('cb_map', JSON.stringify({
     version: MAP_VERSION,
@@ -61,7 +52,8 @@ function loadMapData() {
     if (saved) {
       const p = JSON.parse(saved);
       if (!Array.isArray(p.levels)) throw new Error('Invalid map');
-      mapData.currentLevel = p.currentLevel || 1;
+      if(p.levels.some(l=>l.id>RELEASE_LEVEL_COUNT)&&!localStorage.getItem('cb_map_legacy_100'))localStorage.setItem('cb_map_legacy_100',saved);
+      mapData.currentLevel = Math.max(1,Math.min(RELEASE_LEVEL_COUNT,Math.floor(Number(p.currentLevel)||1)));
       p.levels.forEach(s => {
         const lv = mapData.levels.find(l => l.id === s.id);
         if (lv) { lv.stars = Math.max(0,Math.min(3,Number(s.stars)||0)); lv.completed = s.completed||false; lv.locked = s.locked!==undefined ? s.locked : lv.locked; }
@@ -76,6 +68,7 @@ function completeLevel(levelId, starsCount, finalScore) {
   if (!lv) return;
   if (starsCount > lv.stars) lv.stars = starsCount;
   lv.completed = true;
+  mapData.currentLevel=Math.max(mapData.currentLevel,Math.min(RELEASE_LEVEL_COUNT,levelId+1));
   const next = mapData.levels.find(l => l.id === levelId + 1);
   if (next) { next.locked = false; mapData.currentLevel = Math.max(mapData.currentLevel, levelId + 1); }
   saveMapData();
@@ -108,7 +101,7 @@ const DIFF_CONFIG = {
 function renderMapScreen(){
   const host=document.getElementById('map-container');if(!host)return;host.innerHTML='';
   const header=document.createElement('header');header.className='app-screen-header journey-header';
-  header.innerHTML='<button class="app-icon-button" aria-label="Home" onclick="goScreen(&quot;start&quot;)">←</button><div><strong>Sweet Journey</strong><small>Level '+mapData.currentLevel+' / 100</small></div><span>⭐ '+getTotalStars()+'</span>';host.append(header);
+  header.innerHTML='<button class="app-icon-button" aria-label="Home" onclick="goScreen(&quot;start&quot;)">←</button><div><strong>Sweet Journey</strong><small>Level '+mapData.currentLevel+' / '+RELEASE_LEVEL_COUNT+'</small></div><span>⭐ '+getTotalStars()+'</span>';host.append(header);
   const scroll=document.createElement('div');scroll.className='journey-scroll';host.append(scroll);
   const trail=document.createElement('div');trail.className='journey-trail';scroll.append(trail);
   const positions=mapData.levels.map((lv,i)=>({x:50+28*Math.sin(i*.85),y:130+i*112}));
@@ -122,15 +115,15 @@ function renderMapScreen(){
     button.innerHTML='<span>'+(lv.locked?'🔒':lv.id)+'</span><small>'+(lv.completed?'⭐'.repeat(lv.stars):lv.id===mapData.currentLevel?'PLAY':'')+'</small>';
     button.onclick=()=>{mapData.selectedRegion=region;showLevelInfo(lv,region);};trail.append(button);
   });
-  requestAnimationFrame(()=>{scroll.scrollTop=Math.max(0,positions[Math.min(99,mapData.currentLevel-1)].y-scroll.clientHeight*.45);});
+  requestAnimationFrame(()=>{scroll.scrollTop=Math.max(0,positions[Math.max(0,Math.min(positions.length-1,mapData.currentLevel-1))].y-scroll.clientHeight*.45);});
 }
 
 function renderLevelSelect(){renderMapScreen();}
 
 function startMapLevel(levelId) {
-  mapData.selectedLevel = levelId;
   const base = getLevelSettings(levelId);
   if (!base) return;
+  mapData.selectedLevel = levelId;
   const region = getRegionForLevel(levelId);
   const diff = (typeof settings !== 'undefined' && settings.diff) || 'normal';
   const dc = DIFF_CONFIG[diff] || DIFF_CONFIG.normal;

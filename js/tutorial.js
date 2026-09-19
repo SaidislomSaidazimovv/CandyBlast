@@ -62,38 +62,27 @@ function buildVis0(wrap){
   wrap.appendChild(grid);
 }
 function buildVis1(wrap){
-  const board=[[2,1,4],[0,2,5],[2,4,1]];
-  const grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:10px;';
-  board.forEach((row,r)=>row.forEach((t,c)=>{
-    const cell=document.createElement('div');cell.className='tut-candy-cell '+TUT_COLORS[t];
-    cell.textContent=TUT_ICONS[t];if(r===1&&c<=1)cell.classList.add('highlight');
-    grid.appendChild(cell);
-  }));
-  const gridWrap=document.createElement('div');
-  gridWrap.style.cssText='position:relative;display:inline-block;';
-  gridWrap.appendChild(grid);
-  const hand=document.createElement('div');
-  hand.style.cssText='position:absolute;font-size:1.8rem;animation:handPoint 0.8s ease-in-out infinite;transition:left 0.4s ease,top 0.4s ease;z-index:10;pointer-events:none;left:0;top:-48px;';
-  hand.className='tutorial-hand';hand.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><use href="images/ui/icons.svg#hand"/></svg>'; gridWrap.appendChild(hand);wrap.appendChild(gridWrap);
-  function positionHand(targetChild){
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      const cellEl=grid.children[targetChild];
-      if(!cellEl||!document.body.contains(cellEl))return;
-      const cellRect=cellEl.getBoundingClientRect();
-      const wrapRect=gridWrap.getBoundingClientRect();
-      if(wrapRect.width===0)return;
-      hand.style.left=(cellEl.offsetLeft+cellEl.offsetWidth/2-14)+'px';
-      hand.style.top=(grid.offsetHeight+8)+'px';
-    }));
-  }
-  const c1=grid.children[3],c2=grid.children[4];let phase=0;
-  positionHand(3);
-  function animSwap(){if(!document.body.contains(grid))return;phase++;
-    if(phase%2===1){positionHand(4);c1.style.transition='transform 0.4s ease';c2.style.transition='transform 0.4s ease';const distance=c2.offsetLeft-c1.offsetLeft;c1.style.transform='translateX('+distance+'px)';c2.style.transform='translateX(-'+distance+'px)';}
-    else{positionHand(3);c1.style.transform='';c2.style.transform='';}
-    tutLater(animSwap,1200);
-  }
-  tutLater(animSwap,800);
+  wrap.style.flexDirection='column';wrap.style.gap='20px';
+  const types=[2,1,4,0,2,5,2,4,1],names=['Berry heart','Blue diamond','Mint leaf','Honey star','Grape drop','Orange bean'];
+  const grid=document.createElement('div');grid.className='tutorial-practice';
+  const message=document.createElement('p');message.className='tutorial-instruction';message.setAttribute('role','status');message.textContent='Tap the heart. Then tap the mint beside it.';
+  let first=null,done=false,moving=false;
+  types.forEach((type,i)=>{
+    const cell=document.createElement('button');cell.type='button';cell.className='tut-candy-cell '+TUT_COLORS[type];cell.setAttribute('aria-label',names[type]);cell.disabled=i!==3&&i!==4;
+    if(i===3||i===4)cell.classList.add('practice-target');
+    cell.onclick=async()=>{
+      if(done||moving)return;
+      if(first===null||first===i){first=first===i?null:i;grid.querySelectorAll('button').forEach((el,n)=>{el.classList.toggle('practice-selected',n===first);el.setAttribute('aria-pressed',String(n===first));});message.textContent=first===null?'Tap either highlighted candy.':'Now tap the candy beside it.';return;}
+      moving=true;const left=grid.children[3],right=grid.children[4],distance=right.offsetLeft-left.offsetLeft;
+      const animate=settings.anim&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
+      left.style.transition=right.style.transition=animate?'transform .28s ease':'none';left.style.transform='translateX('+distance+'px)';right.style.transform='translateX(-'+distance+'px)';
+      if(animate)await new Promise(resolve=>setTimeout(resolve,290));
+      if(!grid.isConnected)return;
+      left.style.transition=right.style.transition='none';left.style.transform=right.style.transform='';left.className='tut-candy-cell c2';right.className='tut-candy-cell c0';left.setAttribute('aria-label',names[2]);right.setAttribute('aria-label',names[0]);
+      grid.querySelectorAll('button').forEach(el=>{el.disabled=true;el.classList.remove('practice-selected','practice-target');el.removeAttribute('aria-pressed');});
+      [0,3,6].forEach(n=>grid.children[n].classList.add('practice-match'));message.textContent='Perfect! Three mints in a column. That is a match.';done=true;moving=false;
+    };grid.append(cell);
+  });wrap.append(grid,message);
 }
 function buildVis2(wrap){
   wrap.style.flexDirection='column';wrap.style.gap='16px';

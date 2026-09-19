@@ -1,0 +1,166 @@
+{
+  "policy": "Greedy objective-aware hint bot; no boosters, normal difficulty, seeded boards. Not a human difficulty rating.",
+  "runsPerLevel": 30,
+  "levels": [
+    {
+      "level": 1,
+      "runs": 30,
+      "wins": 30,
+      "winRate": 1,
+      "averageMoves": 2.2,
+      "averageScore": 5212
+    },
+    {
+      "level": 2,
+      "runs": 30,
+      "wins": 30,
+      "winRate": 1,
+      "averageMoves": 4.4,
+      "averageScore": 7341
+    },
+    {
+      "level": 3,
+      "runs": 30,
+      "wins": 30,
+      "winRate": 1,
+      "averageMoves": 6.6,
+      "averageScore": 16067
+    },
+    {
+      "level": 4,
+      "runs": 30,
+      "wins": 30,
+      "winRate": 1,
+      "averageMoves": 11.6,
+      "averageScore": 7996
+    },
+    {
+      "level": 5,
+      "runs": 30,
+      "wins": 30,
+      "winRate": 1,
+      "averageMoves": 9.9,
+      "averageScore": 4913
+    },
+    {
+      "level": 6,
+      "runs": 30,
+      "wins": 29,
+      "winRate": 0.9666666666666667,
+      "averageMoves": 9.7,
+      "averageScore": 5672
+    },
+    {
+      "level": 7,
+      "runs": 30,
+      "wins": 28,
+      "winRate": 0.9333333333333333,
+      "averageMoves": 14.2,
+      "averageScore": 8987
+    },
+    {
+      "level": 8,
+      "runs": 30,
+      "wins": 30,
+      "winRate": 1,
+      "averageMoves": 6.8,
+      "averageScore": 4058
+    },
+    {
+      "level": 9,
+      "runs": 30,
+      "wins": 29,
+      "winRate": 0.9666666666666667,
+      "averageMoves": 13.6,
+      "averageScore": 8168
+    },
+    {
+      "level": 10,
+      "runs": 30,
+      "wins": 30,
+      "winRate": 1,
+      "averageMoves": 14.6,
+      "averageScore": 8060
+    },
+    {
+      "level": 11,
+      "runs": 30,
+      "wins": 30,
+      "winRate": 1,
+      "averageMoves": 13.4,
+      "averageScore": 8505
+    },
+    {
+      "level": 12,
+      "runs": 30,
+      "wins": 30,
+      "winRate": 1,
+      "averageMoves": 15.2,
+      "averageScore": 9376
+    },
+    {
+      "level": 13,
+      "runs": 30,
+      "wins": 29,
+      "winRate": 0.9666666666666667,
+      "averageMoves": 18,
+      "averageScore": 5299
+    },
+    {
+      "level": 14,
+      "runs": 30,
+      "wins": 26,
+      "winRate": 0.8666666666666667,
+      "averageMoves": 21.9,
+      "averageScore": 6166
+    },
+    {
+      "level": 15,
+      "runs": 30,
+      "wins": 22,
+      "winRate": 0.7333333333333333,
+      "averageMoves": 20.4,
+      "averageScore": 5618
+    },
+    {
+      "level": 16,
+      "runs": 30,
+      "wins": 25,
+      "winRate": 0.8333333333333334,
+      "averageMoves": 19.9,
+      "averageScore": 5072
+    },
+    {
+      "level": 17,
+      "runs": 30,
+      "wins": 24,
+      "winRate": 0.8,
+      "averageMoves": 24.7,
+      "averageScore": 6870
+    },
+    {
+      "level": 18,
+      "runs": 30,
+      "wins": 27,
+      "winRate": 0.9,
+      "averageMoves": 23.1,
+      "averageScore": 6220
+    },
+    {
+      "level": 19,
+      "runs": 30,
+      "wins": 20,
+      "winRate": 0.6666666666666666,
+      "averageMoves": 26.9,
+      "averageScore": 8417
+    },
+    {
+      "level": 20,
+      "runs": 30,
+      "wins": 23,
+      "winRate": 0.7666666666666667,
+      "averageMoves": 27,
+      "averageScore": 8815
+    }
+  ]
+}

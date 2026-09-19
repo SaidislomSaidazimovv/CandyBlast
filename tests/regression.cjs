@@ -6,48 +6,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 
-function game() {
-  const storage = new Map(), intervals = new Map(), pending = [];
-  let nextId = 0;
-  function element() {
-    const classes = new Set(['hidden']);
-    return {
-      style: { setProperty() {} }, dataset: {}, offsetWidth: 420,
-      classList: { add: k => classes.add(k), remove: k => classes.delete(k),
-        contains: k => classes.has(k), toggle() {} },
-      appendChild() {}, insertAdjacentElement() {}, insertBefore() {}, remove() {},
-      addEventListener() {}, querySelector: element,
-    };
-  }
-  const elements = new Map();
-  const context = vm.createContext({
-    console, Date, Math, Set, Map, Promise,
-    window: {}, navigator: {},
-    document: {
-      getElementById(id) { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); },
-      querySelector: () => null, querySelectorAll: () => [], createElement: element,
-      body: element(), documentElement: element(),
-    },
-    localStorage: { getItem: k => storage.get(k) ?? null,
-      setItem: (k, v) => storage.set(k, String(v)), removeItem: k => storage.delete(k) },
-    setTimeout: fn => { pending.push(fn); return ++nextId; }, clearTimeout() {},
-    setInterval: fn => { intervals.set(++nextId, fn); return nextId; },
-    clearInterval: id => intervals.delete(id),
-  });
-  for (const file of ['lives', 'daily', 'spin', 'specials', 'map', 'adventure', 'game', 'render-bridge']) {
-    let code = fs.readFileSync(path.join(root, 'js', file + '.js'), 'utf8');
-    if (file === 'game') code = code.split('// ═══════ INIT ═══════')[0];
-    vm.runInContext(code, context, { filename: file + '.js' });
-  }
-  const run = code => vm.runInContext(code, context);
-  run(`renderBoard=()=>{};updateStats=()=>{};renderMapScreen=()=>{};
-    playWin=()=>{};playOver=()=>{};showBoosterEarned=()=>{};updateLivesUI=()=>{};
-    showRewardToast=()=>{};showLaserH=()=>{};showLaserV=()=>{};showWrappedEffect=()=>{};
-    showBombEffect=()=>{};initBackground=()=>{};checkFirstTime=()=>{};
-    dropCandies=async()=>{applyGravity();};
-    mapData.levels=generateLevels();`);
-  return { run, storage, pending, tick() { for (const fn of [...intervals.values()]) fn(); } };
-}
+const {game}=require('./harness.cjs');
 
 test('all shipped JavaScript parses', () => {
   for (const file of fs.readdirSync(path.join(root, 'js'))) {
@@ -125,7 +84,7 @@ test('transient board is not saved and malformed saves are rejected', () => {
 
 test('extra moves are persisted immediately', () => {
   const g = game();g.run('startMapLevel(1);hidePreGame();useIngameBooster("extraMoves");');
-  assert.equal(JSON.parse(g.storage.get('cb_gamestate')).moves, 39);
+  assert.equal(JSON.parse(g.storage.get('cb_gamestate')).moves, g.run('getLevelSettings(1).moves+5'));
 });
 
 test('the last hammer can be cancelled and refunded', () => {
@@ -242,7 +201,7 @@ test('version 4 map migration preserves stars and unlocked levels', () => {
 });
 
 test('all generated stages have valid goals and available colors', () => {
-  const g=game();assert.equal(g.run('generateLevels().length'),100);
+  const g=game();assert.equal(g.run('generateLevels().length'),20);
   assert.equal(g.run(`generateLevels().every(l=>l.objective.targets.every(t=>t.type<l.colors&&t.count>0)&&(!l.objective.pattern||icePattern(l.objective.pattern).length>0))`),true);
   assert.equal(g.run('new Set(generateLevels().map(l=>l.objective.kind)).size'),4);
 });
@@ -271,7 +230,7 @@ test('dead-board recovery preserves inventory, score, moves and objective', () =
   assert.equal(g.run('JSON.stringify(grid.flat().sort())'),counts);
   assert.equal(g.run('findMatchesNew().matched.length'),0);
   assert.equal(g.run('findAvailableMove()!==null'),true);
-  assert.equal(g.run('objective.ice.length'),4);assert.equal(g.run('moves'),34);assert.equal(g.run('score'),0);
+  assert.equal(g.run('objective.ice.length'),4);assert.equal(g.run('moves'),g.run('getLevelSettings(3).moves'));assert.equal(g.run('score'),0);
 });
 
 test('special explosions contribute to ice and collection objectives', () => {
@@ -284,7 +243,7 @@ test('special explosions contribute to ice and collection objectives', () => {
 test('a complete swap resolves cascades, collects candies and saves a stable board', async () => {
   const g=game();g.run('startMapLevel(2);hidePreGame();settings.anim=false;delay=async()=>{};var pair=findAvailableMove();');
   await g.run('trySwap(pair[0].r,pair[0].c,pair[1].r,pair[1].c)');
-  assert.equal(g.run('moves'),33);
+  assert.equal(g.run('moves'),g.run('getLevelSettings(2).moves-1'));
   assert.ok(g.run('objective.collected.reduce((a,b)=>a+b,0)')>=3);
   assert.equal(g.run('findMatchesNew().matched.length'),0);
   assert.equal(g.run('grid.flat().includes(-1)'),false);
@@ -324,3 +283,9 @@ test('availability uses local line checks rather than full board scans',()=>{con
 
 test('local move search agrees with full scans on 100 stable boards',()=>{const g=game();g.run('startMapLevel(1);hidePreGame();');for(let i=0;i<100;i++){g.run('initGrid();');assert.equal(g.run(`JSON.stringify(findAvailableMove())`),g.run(`JSON.stringify((()=>{for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++)for(const [dr,dc] of [[0,1],[1,0]]){const rr=r+dr,cc=c+dc;if(rr>=GRID||cc>=GRID)continue;[grid[r][c],grid[rr][cc]]=[grid[rr][cc],grid[r][c]];const works=findMatchesNew().matched.length>0;[grid[r][c],grid[rr][cc]]=[grid[rr][cc],grid[r][c]];if(works)return [{r,c},{r:rr,c:cc}];}return null;})())`));}});
 test('result and pregame cancellation both return to the current journey',()=>{const g=game();g.run("startMapLevel(1);hidePreGame();levelScore=targetScore;showWin();goScreen('map');");assert.equal(g.run('currentScreen'),'map');assert.equal(g.run('mapData.currentLevel'),2);g.run("startMapLevel(2);cancelPreGame();");assert.equal(g.run('currentScreen'),'map');assert.equal(g.run('gameEnded'),true);});
+
+test('first release contains exactly 20 untimed authored levels',()=>{const g=game();assert.equal(g.run('generateLevels().length'),20);assert.equal(g.run('generateLevels().every(l=>l.timeSeconds===0)'),true);assert.equal(g.run('new Set(generateLevels().map(l=>l.title)).size'),20);});
+test('legacy 100-level progress is backed up and clamped without losing earned stars',()=>{const g=game();const saved=JSON.stringify({version:5,currentLevel:75,levels:Array.from({length:100},(_,i)=>({id:i+1,stars:i<74?3:0,completed:i<74,locked:i>74}))});g.storage.set('cb_map',saved);g.run('loadMapData();saveMapData();');assert.equal(g.run('mapData.currentLevel'),20);assert.equal(g.run('getTotalStars()'),60);assert.equal(g.storage.get('cb_map_legacy_100'),saved);g.run('loadMapData();');assert.equal(g.storage.get('cb_map_legacy_100'),saved);});
+test('chapter completion stays at level 20 and permits replay',()=>{const g=game();g.run('startMapLevel(20);hidePreGame();completeLevel(20,3,9000);nextLevel();');assert.equal(g.run('currentScreen'),'map');assert.equal(g.run('mapData.levels.length'),20);g.run('startMapLevel(20);');assert.equal(g.run('pregame'),true);g.run('startMapLevel(21);');assert.equal(g.run('mapData.selectedLevel'),20);});
+
+test('runaway cascades recover a stable board and retain an untriggered special',async()=>{const g=game();g.run('startMapLevel(2);hidePreGame();settings.anim=false;delay=async()=>{};setCell(7,7,1,SPECIAL.WRAPPED);var originalFind=findMatchesNew;findMatchesNew=()=>({matched:[{r:0,c:0},{r:0,c:1},{r:0,c:2}],specialCreations:[]});');await g.run('processMatches()');g.run('findMatchesNew=originalFind;');assert.equal(g.run('findMatchesNew().matched.length'),0);assert.equal(g.run('grid.flat().some(v=>v&&v.special===SPECIAL.WRAPPED)'),true);assert.ok(g.run('findAvailableMove()'));});

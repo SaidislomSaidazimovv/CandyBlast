@@ -1,5 +1,10 @@
 # Candy Blast
 
+Hozirgi reliz maqsadi: 20 ta alohida sozlangan, taymersiz bosqich.
+Joriy ishlar va tashqi bog‘liqliklar: [RELEASE_PLAN.md](RELEASE_PLAN.md).
+Balans: [BALANCE_REPORT.json](BALANCE_REPORT.json), qayta ishga tushirish: `node scripts/balance.cjs 30`.
+Quyidagi 100 bosqich haqidagi yozuvlar oldingi versiyaga tegishli.
+
 ## Yagona mobil interfeys
 
 Bosh menyu, sozlamalar, xarita, mukofotlar, Lucky Spin, reyting va qo‘llanma
