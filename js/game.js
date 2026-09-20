@@ -403,6 +403,7 @@ function goScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
   document.getElementById('screen-'+name).classList.remove('hidden');
   prevScreen=currentScreen;currentScreen=name;
+  window.CandyWorldScene?.syncForScreen(name);
   if(name==='map')renderMapScreen();
   if(name==='leaderboard')renderLB('global');
   if(name==='start'){
@@ -438,6 +439,7 @@ function goGame(){
     activeCandyTypes=ms.colors||TYPES;startObjective(ms.objective);
     window._mapStarMult=ms.starMult||1.0;
     window._mapTimeSeconds=ms.timeSeconds||0;
+    window.CandyWorldScene?.setLevel(level);
     window._mapLevelSettings=null;
   }else{
     moves=30;level=1;targetScore=500;

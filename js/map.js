@@ -73,6 +73,7 @@ function completeLevel(levelId, starsCount, finalScore) {
   const next = mapData.levels.find(l => l.id === levelId + 1);
   if (next) { next.locked = false; mapData.currentLevel = Math.max(mapData.currentLevel, levelId + 1); }
   saveMapData();
+  window.CandyWorldScene?.setLevel(mapData.currentLevel);
 }
 
 function getLevelSettings(levelId) {
@@ -119,6 +120,7 @@ function startMapLevel(levelId) {
   const base = getLevelSettings(levelId);
   if (!base) return;
   mapData.selectedLevel = levelId;
+  window.CandyWorldScene?.setLevel(levelId);
   const region = getRegionForLevel(levelId);
   window._mapLevelSettings = {
     levelId: levelId,
@@ -131,7 +133,7 @@ function startMapLevel(levelId) {
   };
 
   window._activeObjectiveSpec=base.objective;
-  applyThemeColors(settings.theme||''); document.body.className=settings.theme||'';
+  applyThemeColors(settings.theme||'');
   _goGameIntentional=true;
   goGame();
 }

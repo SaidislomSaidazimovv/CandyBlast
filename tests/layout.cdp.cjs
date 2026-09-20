@@ -23,8 +23,10 @@ async function connect(){
 (async()=>{
   const {socket,send}=await connect();
   await send('Page.enable');await send('Runtime.enable');
+  await send('Page.navigate',{url:'http://127.0.0.1:4174/'});await delay(350);
   const evaluate=async expression=>{const result=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(result.exceptionDetails)throw new Error(result.exceptionDetails.text);return result.result.value;};
-  await evaluate(`(async()=>{for(let i=0;i<80&&!window.goScreen;i++)await new Promise(r=>setTimeout(r,50));localStorage.setItem('cb_tutorial_done','1');document.getElementById('entry-overlay')?.remove();settings.anim=false;return true;})()`);
+  await evaluate(`localStorage.setItem('cb_guest_mode','1');localStorage.setItem('cb_tutorial_done','1');location.reload()`);await delay(700);
+  await evaluate(`(async()=>{for(let i=0;i<80&&!window.goScreen;i++)await new Promise(r=>setTimeout(r,50));document.getElementById('entry-overlay')?.remove();settings.anim=false;return true;})()`);
   const sizes=[[320,568],[360,800],[390,844],[430,932],[844,390],[768,1024]];
   const screens=[
     ['home',`goScreen('start')`],
@@ -44,6 +46,20 @@ async function connect(){
       if(result.scrollWidth>width+2||result.root[0]>width+2||result.root[1]>height+2||result.overflow.length)failures.push({size:`${width}x${height}`,name,...result});
       if(outputDir&&width===320&&(name==='home'||name==='game'||name==='tutorial')){const shot=await send('Page.captureScreenshot',{format:'png',fromSurface:true});fs.mkdirSync(outputDir,{recursive:true});fs.writeFileSync(path.join(outputDir,`${width}x${height}-${name}.png`),Buffer.from(shot.data,'base64'));}
     }
+  }
+  const authScreens=[
+    ['signin',`window.CandyCloud?.openAccount?.()`],
+    ['signup',`document.getElementById('auth-switch')?.click()`]
+  ];
+  for(const [width,height] of sizes){
+    await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true,screenWidth:width,screenHeight:height});
+    for(const [name,open] of authScreens){
+      await evaluate(open);await delay(80);
+      const result=await evaluate(`(()=>{const host=document.getElementById('entry-overlay'),card=host?.querySelector('.entry-card');if(!host||!card)return {missing:true};const h=host.getBoundingClientRect(),c=card.getBoundingClientRect();return {missing:false,hostScroll:host.scrollHeight>host.clientHeight+2,cardScroll:card.scrollHeight>card.clientHeight+2,card:[Math.round(c.left),Math.round(c.top),Math.round(c.right),Math.round(c.bottom)],viewport:[innerWidth,innerHeight]};})()`);
+      if(result.missing||result.hostScroll||result.cardScroll||result.card[0]<-2||result.card[1]<-2||result.card[2]>width+2||result.card[3]>height+2)failures.push({size:`${width}x${height}`,name,...result});
+      if(outputDir&&width===320){const shot=await send('Page.captureScreenshot',{format:'png',fromSurface:true});fs.mkdirSync(outputDir,{recursive:true});fs.writeFileSync(path.join(outputDir,`${width}x${height}-${name}.png`),Buffer.from(shot.data,'base64'));}
+    }
+    await evaluate(`document.getElementById('entry-overlay')?.remove()`);
   }
   socket.close();
   if(failures.length){console.error(JSON.stringify(failures,null,2));process.exitCode=1;}else console.log(`Responsive layout passed ${sizes.length} viewports × ${screens.length} screens.`);

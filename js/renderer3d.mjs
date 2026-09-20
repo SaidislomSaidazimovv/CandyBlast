@@ -63,6 +63,7 @@ function start(){
     land.material.color.copy(scene.background);platform.material.color.copy(base).lerp(top,.5);tiles.material.color.copy(top).lerp(new THREE.Color('#ffffff'),.45);icing.material.color.copy(scene.background).lerp(new THREE.Color('#ffffff'),.65);wake();
   }
   const themeObserver=new MutationObserver(syncTheme);themeObserver.observe(document.body,{attributes:true,attributeFilter:['class']});
+  window.addEventListener('candyworldchange',syncTheme);
   // Low-detail, shared landscape geometry. All scenery stays still while idle.
   const hillColors=['#b2c5b1','#97b9a6','#c0cba9','#bfa9c7'];
   const hills=[[-7,-5,3,2.9],[-4,-8,3.4,2.7],[1,-9,4.5,3.2],[6,-7,3.4,3.6],[9,-3,4,2.6],[-9,1,3,2.2]];
