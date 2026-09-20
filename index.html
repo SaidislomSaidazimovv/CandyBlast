@@ -30,7 +30,7 @@
 
 <div class="screen" id="screen-start">
  <div class="home-top"><button class="home-profile" id="home-profile" onclick="window.CandyCloud?.openAccount?.()" aria-label="Open player profile"><span class="home-avatar" id="home-profile-avatar">👤</span><span class="home-profile-copy"><strong id="home-profile-name">Player</strong><small id="home-profile-status">Guest journey</small></span></button><div class="home-actions"><div class="home-lives"><div id="lives-hearts-mobile"></div><span id="lives-timer-mobile">Full</span></div><button class="app-icon-button" onclick="goScreen('settings')" aria-label="Settings">⚙️</button></div></div>
- <div class="home-hero"><span class="home-eyebrow">A LITTLE EVERYDAY MAGIC</span><div class="home-sweets" aria-hidden="true"><img src="images/candies/mint.svg" class="sweet-mint" alt=""><img src="images/candies/star.svg" class="sweet-star" alt=""><img src="images/candies/berry.svg" class="sweet-heart" alt=""><img src="images/candies/diamond.svg" class="sweet-diamond" alt=""></div><img class="home-logo" src="images/ui/candyblast-logo.webp" alt="Candy Blast"><p>Your next sweet adventure awaits.</p></div>
+ <div class="home-hero"><span class="home-eyebrow">A LITTLE EVERYDAY MAGIC</span><img class="home-brand-lockup" src="images/ui/candyblast-hero.webp" alt="Candy Blast"><p>Your next sweet adventure awaits.</p></div>
  <div class="home-play"><button class="btn btn-play" onclick="goScreen('map');renderMapScreen();">▶ Play</button><div class="home-best">Personal best <strong id="best-score-start">0</strong></div></div>
  <nav class="home-nav" aria-label="Main navigation"><button id="btn-daily-big" onclick="goScreen('rewards');renderRewardsScreen();">🎁<span>Rewards</span><i id="daily-notif-dot"></i></button><button id="spin-mobile-btn" onclick="openSpinScreen()">🎡<span>Lucky Spin</span><b id="spin-mobile-count">0</b></button><button onclick="tutSlide=0;goScreen('tutorial');renderTutSlide(0);">🎓<span>How to play</span></button><button onclick="goScreen('leaderboard')">🏆<span>Scores</span></button></nav>
 </div>
@@ -63,13 +63,13 @@
 <div class="screen hidden" id="screen-leaderboard">
   <div class="panel" style="max-width:380px;width:100%;max-height:90vh;position:relative;">
     <button ontouchend="closeToStart(event)" onclick="closeToStart(event)" style="position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);transition:background 0.15s;z-index:10;">✕</button>
-    <div class="panel-title">🏆 Leaderboard</div><div class="panel-subtitle">Your sweetest scores in one place.</div>
+    <div class="panel-title">🏆 Live Scores</div><div class="panel-subtitle">Fresh results appear automatically.</div>
     <div class="lb-tabs">
       <button class="lb-tab active" onclick="showTab(this,'global')">🌍 Global</button>
       <button class="lb-tab" onclick="showTab(this,'weekly')">📅 Weekly</button>
       <button class="lb-tab" onclick="showTab(this,'personal')">👤 Personal</button>
     </div>
-    <div class="lb-list" id="lb-list"></div>
+    <div class="lb-list" id="lb-list" aria-live="polite"></div>
   </div>
 </div>
 
@@ -227,6 +227,7 @@
 <script src="js/performance.js"></script>
 <script src="js/interface.js"></script>
 <script src="js/entry.js"></script>
+<script src="js/leaderboard.js"></script>
 <script>
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
 </script>

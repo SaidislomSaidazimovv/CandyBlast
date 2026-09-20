@@ -73,6 +73,7 @@ function completeLevel(levelId, starsCount, finalScore) {
   const next = mapData.levels.find(l => l.id === levelId + 1);
   if (next) { next.locked = false; mapData.currentLevel = Math.max(mapData.currentLevel, levelId + 1); }
   saveMapData();
+  window.CandyLeaderboard?.submit?.({level:levelId,score:finalScore,stars:starsCount});
   window.CandyWorldScene?.setLevel(mapData.currentLevel);
 }
 

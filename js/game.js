@@ -405,7 +405,7 @@ function goScreen(name){
   prevScreen=currentScreen;currentScreen=name;
   window.CandyWorldScene?.syncForScreen(name);
   if(name==='map')renderMapScreen();
-  if(name==='leaderboard')renderLB('global');
+  if(name==='leaderboard')(window.CandyLeaderboard?.open?.('global')||renderLB('global'));
   if(name==='start'){
     document.getElementById('best-score-start').textContent=bestScore;
     const ss=document.getElementById('screen-start');
@@ -530,7 +530,7 @@ function confirmReset(){
 }
 
 // ═══════ LEADERBOARD ═══════
-function showTab(el,type){document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderLB(type);}
+function showTab(el,type){document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');if(!window.CandyLeaderboard?.open?.(type))renderLB(type);}
 function renderLB(type){
   const list=document.getElementById('lb-list');
   let data=type==='weekly'?weeklyLB:type==='personal'?getPersonalLB():globalLB;

@@ -65,3 +65,28 @@ html.game-3d #screen-game .ingame-booster-count{min-width:19px;height:19px;displ
 html.game-3d #screen-game .ingame-booster-btn.active-hammer{outline:0!important;filter:none!important}html.game-3d #screen-game .ingame-booster-btn.active-hammer .ingame-booster-icon{transform:translateY(-3px) scale(1.12);filter:drop-shadow(0 0 8px #fff0a8) drop-shadow(0 6px 3px #79526988)}
 .booster-card{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding-inline:2px!important}.booster-card:active{box-shadow:none!important;transform:scale(.92)!important}.booster-card .booster-icon{font-size:38px!important;filter:drop-shadow(0 5px 3px #25142f77)}.booster-card .booster-badge{border:2px solid #fff2cb;background:#79536f!important;color:#fff!important}.booster-card:not(.empty):focus-visible{outline:3px solid #ffe6a8!important;outline-offset:2px}
 @media(max-height:660px){.home-nav button>.ui-icon{width:34px!important;height:34px!important;padding:1px!important}html.game-3d #screen-game .ingame-booster-icon{width:31px;height:31px;font-size:29px!important}html.game-3d #screen-game .ingame-booster-icon>.ui-icon{width:30px;height:30px}}
+
+/* Unified brand art, crisp navigation, account marks and lives. */
+.home-brand-lockup{display:block;width:min(310px,80vw);max-height:clamp(190px,42dvh,390px);object-fit:contain;filter:drop-shadow(0 11px 8px #21122d62)}
+.entry-card>img{align-self:center!important}
+.provider-mark{flex:0 0 24px!important;background:transparent!important;border:0!important;border-radius:0!important;padding:0!important}
+.provider-mark svg{display:block;width:100%;height:100%}.apple-mark{color:#17131a!important}
+.auth-provider>span:last-child{min-width:0;text-align:center;line-height:1.2}
+.life-heart{display:inline-grid;place-items:center;width:var(--heart-size);height:var(--heart-size);filter:drop-shadow(0 2px 1px #36172c70)}.life-heart svg{display:block;width:100%;height:100%;overflow:visible}.life-heart.is-empty{filter:none}
+.home-nav{background:#32213fbf!important;border:1px solid #fff4dc29!important;border-bottom:0!important;box-shadow:inset 0 1px #ffffff24,0 -8px 30px #21132b38!important;-webkit-backdrop-filter:blur(15px) saturate(1.15);backdrop-filter:blur(15px) saturate(1.15);padding:9px 6px max(4px,env(safe-area-inset-bottom))!important}
+.home-nav button>.ui-icon{width:45px!important;height:45px!important;filter:drop-shadow(0 4px 2px #1e102866) saturate(1.18)!important}
+.home-nav button>span:not(.ui-icon){font-size:9px!important;letter-spacing:.05px}.home-nav button:focus-visible{outline-color:#fff1b8!important}
+
+/* Rewards keep the scene visible while every reward stays legible. */
+#screen-rewards{background:#35213d70!important;-webkit-backdrop-filter:blur(9px) saturate(.82);backdrop-filter:blur(9px) saturate(.82)}
+#rewards-container{background:linear-gradient(180deg,#382243ba,#2c1c38d7)!important;border-inline:1px solid #ffffff2b;box-shadow:0 0 44px #23142d7a}
+#rewards-tabs{background:linear-gradient(180deg,#442b50d6,#3b2748bf)}
+#rewards-tabs button{background:#ffffff0a!important;color:#ead9e5!important}
+#rewards-tabs button[style*="border-bottom: 2px"],#rewards-tabs button[style*="border-bottom:2px"]{background:#fff4df18!important;color:#fff8ee!important}
+#rewards-tab-content{background:#2c1c365e;-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
+#rewards-tab-content>div[style*="grid-template-columns"]>div,#rewards-tab-content>div[style*="display:flex"]>div{background-color:#4a3156d9!important;border-color:#ffffff35!important;box-shadow:inset 0 1px #ffffff1f,0 5px 14px #21132945!important}
+#rewards-tab-content [style*="color:rgba(255,255,255,0.35)"],#rewards-tab-content [style*="color:rgba(255,255,255,0.4)"],#rewards-tab-content [style*="color:rgba(255,255,255,0.45)"],#rewards-tab-content [style*="color:rgba(255,255,255,0.5)"]{color:#dfcddd!important}
+
+@media(max-height:680px){.home-brand-lockup{width:min(245px,69vw);max-height:34dvh}.home-nav button>.ui-icon{width:36px!important;height:36px!important}}
+
+.lb-live-state{min-height:150px;display:grid;place-items:center;padding:24px;text-align:center;color:var(--app-muted);font-size:12px;line-height:1.5}.lb-live-state.is-error{color:#ffc3cf}.lb-rank.gold,.lb-rank.silver,.lb-rank.bronze{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;color:#70465b!important;font-size:13px!important;text-shadow:none!important}.lb-rank.gold{background:#ffd767!important}.lb-rank.silver{background:#e1dce4!important}.lb-rank.bronze{background:#dfa276!important}

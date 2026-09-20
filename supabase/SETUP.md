@@ -6,6 +6,8 @@ The browser client is already connected to project `wvoupimfijsveodbhmue` with i
 
 Open **Supabase Dashboard → SQL Editor → New query**, paste the complete contents of [`migrations/001_auth_and_progress.sql`](migrations/001_auth_and_progress.sql), and run it once. The migration creates `player_progress`, enables RLS, and limits every read/write to the signed-in user's own row.
 
+Then run [`migrations/002_live_leaderboard.sql`](migrations/002_live_leaderboard.sql) once. It creates the live score feed, allows public leaderboard reads, limits score submission to the signed-in player's own account, and enables Supabase Realtime for new results.
+
 ## 2. Configure application redirects
 
 Open **Authentication → URL Configuration**.

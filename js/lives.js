@@ -59,12 +59,13 @@ function formatTime(ms){
 
 // ═══ UI ═══
 function updateLivesUI(){
+  const heart=(full,size)=>`<span class="life-heart${full?'':' is-empty'}" style="--heart-size:${size}"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="images/ui/icons.svg#${full?'heart':'heart-empty'}"></use></svg></span>`;
   // Desktop hearts
   const heartsEl=document.getElementById('lives-hearts');
-  if(heartsEl&&heartsEl.dataset.lives!==String(livesData.lives)){heartsEl.dataset.lives=String(livesData.lives);heartsEl.innerHTML='';for(let i=0;i<MAX_LIVES;i++){const h=document.createElement('span');h.textContent=i<livesData.lives?'❤️':'🖤';h.style.cssText='font-size:1.2rem;line-height:1;';heartsEl.appendChild(h);}}
+  if(heartsEl&&heartsEl.dataset.lives!==String(livesData.lives)){heartsEl.dataset.lives=String(livesData.lives);heartsEl.innerHTML=Array.from({length:MAX_LIVES},(_,i)=>heart(i<livesData.lives,'20px')).join('');}
   // Mobile hearts
   const heartsElM=document.getElementById('lives-hearts-mobile');
-  if(heartsElM&&heartsElM.dataset.lives!==String(livesData.lives)){heartsElM.dataset.lives=String(livesData.lives);heartsElM.innerHTML='';for(let i=0;i<MAX_LIVES;i++){const h=document.createElement('span');h.textContent=i<livesData.lives?'❤️':'🖤';h.style.cssText='font-size:0.95rem;line-height:1;';heartsElM.appendChild(h);}}
+  if(heartsElM&&heartsElM.dataset.lives!==String(livesData.lives)){heartsElM.dataset.lives=String(livesData.lives);heartsElM.innerHTML=Array.from({length:MAX_LIVES},(_,i)=>heart(i<livesData.lives,'17px')).join('');}
   // Boosters
   ['extraMoves','hammer','bomb'].forEach(type=>{
     const el=document.getElementById('booster-count-'+type);if(el)el.textContent=livesData.boosters[type];
