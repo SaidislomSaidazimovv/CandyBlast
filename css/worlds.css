@@ -35,3 +35,33 @@ body{font-family:var(--body-font)!important}
 @media(max-height:600px) and (orientation:portrait){.entry-card{padding:10px 15px!important}.entry-card>img{display:none}.entry-card h1{font-size:20px!important}.entry-card p{margin-bottom:4px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.entry-card label{position:absolute;width:1px;height:1px;padding:0;margin:-1px!important;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.entry-card input{min-height:36px!important;height:36px;padding:6px 10px!important;margin:3px 0!important}.entry-card button{min-height:36px!important;height:36px;margin-top:4px!important}.auth-provider{font-size:10px!important}.auth-divider{margin:4px 0 0!important}.auth-switch,.auth-link{min-height:26px!important;height:26px}.entry-card #entry-error{min-height:8px!important;margin:0!important}}
 @media(max-height:540px),(orientation:landscape) and (max-height:550px){.entry-card{max-width:min(660px,calc(100vw - 24px))!important}.entry-card>img{display:none}.entry-card #entry-content{display:grid;grid-template-columns:minmax(180px,.78fr) minmax(240px,1.22fr);column-gap:18px;align-items:start}.entry-card #entry-content>h1,.entry-card #entry-content>p,.entry-card .auth-providers,.entry-card .auth-divider{grid-column:1}.entry-card form{grid-column:2;grid-row:1/7}.entry-card .auth-link,.entry-card .auth-switch,.entry-card #entry-guest{grid-column:1}.entry-card #entry-error{position:absolute;right:17px;bottom:3px;max-width:55%}}
 .world-setting-preview{display:flex;align-items:flex-end;gap:8px;height:76px;padding:12px 14px;border:1px solid #ffffff20;border-radius:18px;background:linear-gradient(180deg,#9bd8e2,#69956f);overflow:hidden}.world-setting-preview i{display:block;width:32px;height:48px;border-radius:50% 50% 14px 14px;background:linear-gradient(120deg,#ffe6ef,#dc739c);box-shadow:inset 5px 4px #ffffff58}.world-setting-preview i:nth-child(2){height:62px;background:linear-gradient(120deg,#fff0c5,#e7a65d)}.world-setting-preview i:nth-child(3){height:39px;background:linear-gradient(120deg,#e8f5cb,#7db58b)}.world-setting-preview span{margin-left:auto;align-self:center;color:#fff;font-size:10px;font-weight:800;text-shadow:0 1px 4px #365648}
+
+/* The generated scene is the complete backdrop; no decorative animation sits over it. */
+#candy-world .world-sun,#candy-world .world-cloud,#candy-world .world-layer,#candy-world .world-landmark,#candy-world .world-props,#candy-world .world-motes,#candy-world .world-vignette{display:none!important}
+#candy-world .world-sky{inset:0;animation:none!important;filter:none!important;transition:background-position .35s ease}
+#candy-world.is-game{opacity:1;filter:none}.screen:not(#screen-game),#screen-map,#screen-levelselect{background:transparent!important}
+
+/* New generated wordmark and emblem. */
+.home-logo{display:block;width:min(250px,72vw);height:auto;margin:clamp(-4px,-.7dvh,0px) auto clamp(1px,.8dvh,8px);object-fit:contain;filter:drop-shadow(0 7px 5px #351d3e61)}
+.entry-card>img{object-fit:contain!important;filter:drop-shadow(0 7px 6px #2e173955)!important}
+@media(max-height:680px){.home-logo{width:min(205px,64vw);margin-block:-7px 0}}
+
+/* Main navigation icons float as recognizable objects instead of boxed tiles. */
+.home-nav{border-top:0!important;background:linear-gradient(180deg,transparent,#30203c70);border-radius:26px 26px 0 0;padding-inline:5px!important}
+.home-nav button{box-shadow:none!important;text-shadow:0 2px 4px #28163299}.home-nav button:active{transform:scale(.92)!important;box-shadow:none!important}
+.home-nav button>.ui-icon{box-sizing:border-box!important;width:42px!important;height:42px!important;padding:2px!important;border:0!important;border-radius:0!important;background:none!important;filter:drop-shadow(0 5px 3px #27152f88)}
+.home-nav button:nth-child(1)>.ui-icon{color:#f7b05d}.home-nav button:nth-child(2)>.ui-icon{color:#ef78a9}.home-nav button:nth-child(3)>.ui-icon{color:#79d7c7}.home-nav button:nth-child(4)>.ui-icon{color:#ffd36e}
+.home-nav button>span:not(.ui-icon){font-weight:800!important;color:#fff7ed;text-shadow:0 2px 4px #23142e}
+.home-nav b{top:2px!important;right:13%!important;border-color:#fff5d0!important;box-shadow:0 2px 4px #26142f66}
+
+/* Boosters are tactile objects, not glass cards. Counts stay as small badges. */
+html.game-3d #screen-game .ingame-booster-btn{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:2px!important;overflow:visible}
+html.game-3d #game-scene{background:#d9c9df}
+html.game-3d #screen-game .ingame-booster-btn:active{transform:scale(.9)!important}html.game-3d #screen-game .ingame-booster-btn.empty{opacity:.38}
+html.game-3d #screen-game .ingame-booster-icon{display:grid;place-items:center;width:38px;height:38px;font-size:34px!important;filter:drop-shadow(0 5px 3px #7a567066)}
+html.game-3d #screen-game .ingame-booster-icon>.ui-icon{width:36px;height:36px;color:inherit!important}
+html.game-3d #screen-game .ingame-booster-label{font-size:8px!important;font-weight:850;color:#70485e!important}
+html.game-3d #screen-game .ingame-booster-count{min-width:19px;height:19px;display:grid;place-items:center;padding:0 4px;border:2px solid #fff7db!important;border-radius:999px!important;background:#8a5875!important;color:white!important;box-shadow:0 2px 3px #6a425766}
+html.game-3d #screen-game .ingame-booster-btn.active-hammer{outline:0!important;filter:none!important}html.game-3d #screen-game .ingame-booster-btn.active-hammer .ingame-booster-icon{transform:translateY(-3px) scale(1.12);filter:drop-shadow(0 0 8px #fff0a8) drop-shadow(0 6px 3px #79526988)}
+.booster-card{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding-inline:2px!important}.booster-card:active{box-shadow:none!important;transform:scale(.92)!important}.booster-card .booster-icon{font-size:38px!important;filter:drop-shadow(0 5px 3px #25142f77)}.booster-card .booster-badge{border:2px solid #fff2cb;background:#79536f!important;color:#fff!important}.booster-card:not(.empty):focus-visible{outline:3px solid #ffe6a8!important;outline-offset:2px}
+@media(max-height:660px){.home-nav button>.ui-icon{width:34px!important;height:34px!important;padding:1px!important}html.game-3d #screen-game .ingame-booster-icon{width:31px;height:31px;font-size:29px!important}html.game-3d #screen-game .ingame-booster-icon>.ui-icon{width:30px;height:30px}}
