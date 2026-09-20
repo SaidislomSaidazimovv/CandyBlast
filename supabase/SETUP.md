@@ -13,6 +13,7 @@ Open **Authentication → URL Configuration**.
 - During local development set **Site URL** to `http://127.0.0.1:4174/`.
 - Add `http://127.0.0.1:4174/` to **Redirect URLs**.
 - Add `https://candy-blast-six.vercel.app/` to **Redirect URLs** for the current playable staging build.
+- Keep the separate official website (`https://candyblast-official-site.vercel.app/`) out of auth redirects because it does not run the game client.
 - Once hosting is chosen, replace the Site URL with the production HTTPS URL and add that exact URL to Redirect URLs.
 - Later, add the native mobile deep-link callback used by the Android/iOS wrapper.
 

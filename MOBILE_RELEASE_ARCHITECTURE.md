@@ -14,7 +14,7 @@ The website is a lightweight product page, not the playable release. Its job is 
 
 - Local game development: `http://127.0.0.1:4174/`
 - Current web staging: `https://candy-blast-six.vercel.app/`
-- Official website: its own Vercel project, followed by a custom HTTPS domain owned by the project
+- Official website: `https://candyblast-official-site.vercel.app/`, followed by a custom HTTPS domain owned by the project
 - Mobile auth callback: an app deep link added when the Capacitor application ID is finalized
 
 The existing Candy Blast Vercel deployment remains the playable game staging build during mobile development. The public website uses a separate repository and Vercel project.
