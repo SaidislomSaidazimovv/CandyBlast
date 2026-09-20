@@ -8,16 +8,16 @@ The playable game is the primary product. It owns gameplay, onboarding, account/
 
 ### Public website
 
-The website is a lightweight product page, not the playable release. Its job is to explain Candy Blast, link to Google Play and the App Store, and host public Privacy Policy, Terms and support information. A ready first version lives in `site/`. Store buttons remain marked “Coming soon” until real listing URLs exist.
+The website is a lightweight product page, not the playable release. Its job is to explain Candy Blast, link to Google Play and the App Store, and host public Privacy Policy, Terms and support information. It is maintained and deployed from the separate `CandyBlast-Official-Site` repository. Store buttons remain marked “Coming soon” until real listing URLs exist.
 
 ## Environments
 
 - Local game development: `http://127.0.0.1:4174/`
 - Current web staging: `https://candy-blast-six.vercel.app/`
-- Final public website: a custom HTTPS domain owned by the project
+- Official website: its own Vercel project, followed by a custom HTTPS domain owned by the project
 - Mobile auth callback: an app deep link added when the Capacitor application ID is finalized
 
-The Vercel deployment remains a game staging build during mobile development. Switching its root to `site/` happens only after native auth callbacks work and store/test distribution links exist.
+The existing Candy Blast Vercel deployment remains the playable game staging build during mobile development. The public website uses a separate repository and Vercel project.
 
 ## Release order
 
@@ -27,4 +27,4 @@ The Vercel deployment remains a game staging build during mobile development. Sw
 4. Configure Supabase mobile redirect URLs and native Google/Apple clients.
 5. Test Android on a physical device; build and test iOS on macOS or a managed iOS build service.
 6. Create store accounts, signing assets, screenshots, privacy declarations and testing tracks.
-7. Connect real store URLs to `site/` and deploy it as the public website.
+7. Connect real store URLs in the official-site repository and publish its custom domain.

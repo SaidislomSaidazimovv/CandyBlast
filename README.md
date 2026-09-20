@@ -3,7 +3,7 @@
 The first public release is focused on 20 handcrafted levels, stable play, consistent mobile UI, and account-based cloud progress.
 
 - The playable client lives at the repository root.
-- The official download website lives in `site/`.
+- The official download website is maintained in the separate `CandyBlast-Official-Site` repository.
 - Mobile packaging and release environments are documented in [MOBILE_RELEASE_ARCHITECTURE.md](MOBILE_RELEASE_ARCHITECTURE.md).
 
 Hozirgi reliz maqsadi: 20 ta alohida sozlangan, taymersiz bosqich.
