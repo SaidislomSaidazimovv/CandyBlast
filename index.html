@@ -34,33 +34,29 @@
 </div>
 
 <div class="screen hidden" id="screen-settings">
-  <div class="panel" style="max-width:360px;width:100%;max-height:90vh;position:relative;">
-    <button onclick="goBack()" style="position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);transition:background 0.15s;z-index:1;">✕</button>
-    <div class="panel-title">⚙️ Settings</div><div class="panel-subtitle">Make the game feel right for you.</div>
-    <div class="setting-row"><div><div class="setting-label">🔊 Sound Effects</div></div><label class="toggle"><input type="checkbox" id="set-sfx" aria-label="Sound effects" checked><span class="toggle-slider"></span></label></div>
-    <div class="setting-row"><div><div class="setting-label">🎵 Music</div></div><label class="toggle"><input type="checkbox" id="set-music" aria-label="Music"><span class="toggle-slider"></span></label></div>
-    <div class="setting-row"><label class="setting-label" for="music-track">Melody</label><select id="music-track" onchange="settings.musicTrack=this.value;saveSettings();stopBgMusic();if(settings.music)startBgMusic();"><option value="sweet">Sweet Garden</option><option value="dream">Dream Clouds</option><option value="groove">Candy Groove</option></select></div>
-    <div class="setting-row"><div><div class="setting-label">📳 Vibration</div></div><label class="toggle"><input type="checkbox" id="set-vibro" aria-label="Vibration" checked><span class="toggle-slider"></span></label></div>
-    <div class="setting-row"><div><div class="setting-label">✨ Animations</div></div><label class="toggle"><input type="checkbox" id="set-anim" aria-label="Animations" checked><span class="toggle-slider"></span></label></div>
-    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
-      <div class="setting-label">🎨 Theme</div>
-      <div class="theme-row" id="theme-dots">
-        <button type="button" class="theme-dot active" aria-label="Plum theme" data-theme="" onclick="setTheme(this,'')"></button>
-        <button type="button" class="theme-dot" aria-label="Ocean theme" data-theme="theme-ocean" onclick="setTheme(this,'theme-ocean')"></button>
-        <button type="button" class="theme-dot" aria-label="Forest theme" data-theme="theme-forest" onclick="setTheme(this,'theme-forest')"></button>
-        <button type="button" class="theme-dot" aria-label="Sunset theme" data-theme="theme-fire" onclick="setTheme(this,'theme-fire')"></button>
-        <button type="button" class="theme-dot" aria-label="Candy theme" data-theme="theme-candy" onclick="setTheme(this,'theme-candy')"></button>
-        <button type="button" class="theme-dot" aria-label="Soft lavender theme" data-theme="theme-white" onclick="setTheme(this,'theme-white')"></button>
-        <button type="button" class="theme-dot" aria-label="Midnight theme" data-theme="theme-black" onclick="setTheme(this,'theme-black')"></button>
-      </div>
+  <div class="panel settings-panel">
+    <header class="settings-head"><div><div class="panel-title">⚙️ Settings</div><div class="panel-subtitle">Tune the game for your hands, eyes and ears.</div></div><button class="settings-close" onclick="goBack()" aria-label="Close settings">✕</button></header>
+    <div class="settings-tabs" role="tablist" aria-label="Settings sections"><button class="active" role="tab" aria-selected="true" data-settings-tab="general" onclick="showSettingsTab('general',this)">General</button><button role="tab" aria-selected="false" data-settings-tab="accessibility" onclick="showSettingsTab('accessibility',this)">Accessibility</button></div>
+    <div class="settings-page active" id="settings-general" role="tabpanel">
+      <section class="settings-group"><h2>Audio</h2>
+        <div class="setting-row"><div><div class="setting-label">🔊 Sound effects</div><div class="setting-sub">Swaps, matches and rewards</div></div><label class="toggle"><input type="checkbox" id="set-sfx" aria-label="Sound effects" checked><span class="toggle-slider"></span></label></div>
+        <div class="setting-row range-row"><label class="setting-label" for="set-sfx-volume">Effects level</label><div class="range-wrap"><input type="range" min="0" max="100" value="70" id="set-sfx-volume" aria-label="Sound effects volume" oninput="updateAudioLevel('sfx',this)"><span class="range-val" id="sfx-vol-val">70</span></div></div>
+        <div class="setting-row"><div><div class="setting-label">🎵 Music</div><div class="setting-sub">Background soundtrack</div></div><label class="toggle"><input type="checkbox" id="set-music" aria-label="Music"><span class="toggle-slider"></span></label></div>
+        <div class="setting-row range-row"><label class="setting-label" for="set-music-volume">Music level</label><div class="range-wrap"><input type="range" min="0" max="100" value="55" id="set-music-volume" aria-label="Music volume" oninput="updateAudioLevel('music',this)"><span class="range-val" id="music-vol-val">55</span></div></div>
+        <div class="setting-row"><label class="setting-label" for="music-track">Melody</label><select id="music-track" onchange="settings.musicTrack=this.value;saveSettings();stopBgMusic();if(settings.music)startBgMusic();"><option value="sweet">Sweet Garden</option><option value="dream">Dream Clouds</option><option value="groove">Candy Groove</option></select></div>
+      </section>
+      <section class="settings-group"><h2>Feedback</h2><div class="setting-row"><div><div class="setting-label">📳 Haptics</div><div class="setting-sub">Touch feedback on supported phones</div></div><label class="toggle"><input type="checkbox" id="set-vibro" aria-label="Haptics" checked><span class="toggle-slider"></span></label></div></section>
     </div>
-    <div class="setting-row">
-      <div><div class="setting-label">🔊 Volume</div><div class="setting-sub">Sound level</div></div>
-      <div class="range-wrap"><input type="range" min="0" max="100" value="70" id="set-volume" aria-label="Volume" oninput="updateVolume(this)"><span class="range-val" id="vol-val">70</span></div>
+    <div class="settings-page" id="settings-accessibility" role="tabpanel" hidden>
+      <section class="settings-group"><h2>Motion and clarity</h2>
+        <div class="setting-row"><div><div class="setting-label">✨ Full animations</div><div class="setting-sub">Turn off for shorter, calmer motion</div></div><label class="toggle"><input type="checkbox" id="set-anim" aria-label="Full animations" checked><span class="toggle-slider"></span></label></div>
+        <div class="setting-row"><div><div class="setting-label">✦ Flashing effects</div><div class="setting-sub">Disable bright celebration flashes</div></div><label class="toggle"><input type="checkbox" id="set-flashes" aria-label="Flashing effects" checked><span class="toggle-slider"></span></label></div>
+      </section>
+      <section class="settings-group"><h2>World palette</h2><p class="settings-note">Temporary preview palettes. These will become authored chapter worlds during the rebuild.</p><div class="theme-row" id="theme-dots">
+        <button type="button" class="theme-dot active" aria-label="Plum theme" data-theme="" onclick="setTheme(this,'')"></button><button type="button" class="theme-dot" aria-label="Ocean theme" data-theme="theme-ocean" onclick="setTheme(this,'theme-ocean')"></button><button type="button" class="theme-dot" aria-label="Forest theme" data-theme="theme-forest" onclick="setTheme(this,'theme-forest')"></button><button type="button" class="theme-dot" aria-label="Sunset theme" data-theme="theme-fire" onclick="setTheme(this,'theme-fire')"></button><button type="button" class="theme-dot" aria-label="Candy theme" data-theme="theme-candy" onclick="setTheme(this,'theme-candy')"></button><button type="button" class="theme-dot" aria-label="Soft lavender theme" data-theme="theme-white" onclick="setTheme(this,'theme-white')"></button><button type="button" class="theme-dot" aria-label="Midnight theme" data-theme="theme-black" onclick="setTheme(this,'theme-black')"></button>
+      </div></section>
     </div>
-    <div style="margin-top:20px;">
-      <button class="btn btn-secondary" onclick="resetProgress()" style="width:100%;">🗑️ Reset Progress</button>
-    </div>
+    <div class="settings-actions"><button class="btn btn-secondary" onclick="resetProgress()">🗑️ Reset progress</button></div>
   </div>
 </div>
 
