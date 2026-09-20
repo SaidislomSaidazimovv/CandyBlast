@@ -87,6 +87,25 @@ test('extra moves are persisted immediately', () => {
   assert.equal(JSON.parse(g.storage.get('cb_gamestate')).moves, g.run('getLevelSettings(1).moves+5'));
 });
 
+test('level sheet starts play once and consumes selected starting boosters', () => {
+  const g = game();
+  g.run('startMapLevelPrepared(1,["extraMoves","hammer"]);');
+  assert.equal(g.run('pregame'), false);
+  assert.equal(g.run('moves'), g.run('getLevelSettings(1).moves+5'));
+  assert.equal(g.run('hammerMode'), true);
+  assert.equal(g.run('livesData.boosters.extraMoves'), 1);
+  assert.equal(g.run('livesData.boosters.hammer'), 0);
+  assert.equal(JSON.parse(g.storage.get('cb_gamestate')).moves, g.run('getLevelSettings(1).moves+5'));
+});
+
+test('a starting prism waits for the player target before spending inventory', () => {
+  const g = game();
+  g.run('startMapLevelPrepared(1,["bomb"]);');
+  assert.equal(g.run('pregame'), false);
+  assert.equal(g.run('bombMode'), true);
+  assert.equal(g.run('livesData.boosters.bomb'), 1);
+});
+
 test('the last hammer can be cancelled and refunded', () => {
   const g = game();g.run('startMapLevel(1);hidePreGame();livesData.boosters.hammer=1;useIngameBooster("hammer");useIngameBooster("hammer");');
   assert.equal(g.run('hammerMode'), false);assert.equal(g.run('livesData.boosters.hammer'), 1);

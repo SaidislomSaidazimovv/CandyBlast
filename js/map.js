@@ -35,6 +35,7 @@ function generateLevels(){return OPENING_LEVELS.map((spec,i)=>({id:i+1,moves:spe
 
 // ═══ STATE ═══
 let mapData = { currentLevel:1, levels:[], selectedRegion:null, selectedLevel:null };
+let selectedStartingBoosters = new Set();
 
 // ═══ SAVE / LOAD ═══
 const MAP_VERSION = 6; // Progress is migrated by stable level id.
@@ -135,9 +136,72 @@ function startMapLevel(levelId) {
   goGame();
 }
 
+function toggleStartingBooster(type, button) {
+  if (!['extraMoves','hammer','bomb'].includes(type)) return;
+  if ((livesData.boosters[type] || 0) <= 0) {
+    button?.classList.add('empty-pulse');
+    setTimeout(() => button?.classList.remove('empty-pulse'), 420);
+    return;
+  }
+  // The hammer and prism both need the first board tap, so only one can be armed.
+  if (type === 'hammer' || type === 'bomb') {
+    const other = type === 'hammer' ? 'bomb' : 'hammer';
+    selectedStartingBoosters.delete(other);
+    const otherButton = document.querySelector(`[data-start-booster="${other}"]`);
+    otherButton?.classList.remove('selected');
+    otherButton?.setAttribute('aria-pressed','false');
+  }
+  if (selectedStartingBoosters.has(type)) selectedStartingBoosters.delete(type);
+  else selectedStartingBoosters.add(type);
+  const selected = selectedStartingBoosters.has(type);
+  button?.classList.toggle('selected', selected);
+  button?.setAttribute('aria-pressed', String(selected));
+}
+
+function applyStartingBoosters(boosters) {
+  const chosen = [...new Set(boosters)].filter(type => ['extraMoves','hammer','bomb'].includes(type));
+  if (chosen.includes('extraMoves') && livesData.boosters.extraMoves > 0) {
+    livesData.boosters.extraMoves--;
+    moves += 5;
+  }
+  // Targeted tools are armed for the player's first chosen candy.
+  if (chosen.includes('hammer') && livesData.boosters.hammer > 0) {
+    livesData.boosters.hammer--;
+    hammerMode = true;
+    bombMode = false;
+    showHammerHint(true);
+    document.getElementById('ingame-btn-hammer')?.classList.add('active-hammer');
+  } else if (chosen.includes('bomb') && livesData.boosters.bomb > 0) {
+    hammerMode = false;
+    bombMode = true;
+    document.getElementById('ingame-btn-bomb')?.classList.add('active-hammer');
+    document.getElementById('board-message').textContent = 'Choose a candy color for the prism blast.';
+  }
+  saveLives();
+  updateLivesUI();
+  updateIngameBoosterUI();
+  updateStats();
+  saveGameState();
+}
+
+function startMapLevelPrepared(levelId, boosters = []) {
+  startMapLevel(levelId);
+  if (mapData.selectedLevel !== levelId || gameEnded) return;
+  hidePreGame();
+  applyStartingBoosters(boosters);
+}
+
+function startSelectedMapLevel(levelId) {
+  const boosters = [...selectedStartingBoosters];
+  document.getElementById('level-info-popup')?.remove();
+  selectedStartingBoosters.clear();
+  startMapLevelPrepared(levelId, boosters);
+}
+
 // ═══ LEVEL INFO POPUP ═══
 function showLevelInfo(lv, region) {
   document.getElementById('level-info-popup')?.remove();
+  selectedStartingBoosters.clear();
   const adjMoves = lv.moves;
   const adjTarget = lv.targetScore;
   const adjTime = lv.timeSeconds;
@@ -146,7 +210,15 @@ function showLevelInfo(lv, region) {
   const popup = document.createElement('div');
   popup.id = 'level-info-popup';
   popup.className='level-popup';popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','true');popup.setAttribute('aria-labelledby','level-popup-title');
+  const booster = (type, icon, name, note) => {
+    const count = livesData.boosters[type] || 0;
+    return `<button type="button" class="level-booster-choice${count ? '' : ' empty'}" data-start-booster="${type}" aria-pressed="false" ${count ? '' : 'disabled'} onclick="toggleStartingBooster('${type}',this)">
+      <span class="level-booster-icon" aria-hidden="true">${icon}</span><span><strong>${name}</strong><small>${note}</small></span><b>x${count}</b><i aria-hidden="true">✓</i>
+    </button>`;
+  };
   popup.innerHTML = `<div class="level-popup-card">
+    <div class="level-popup-handle" aria-hidden="true"></div>
+    <button type="button" class="level-popup-close" aria-label="Close" onclick="document.getElementById('level-info-popup').remove()">×</button>
     <div class="level-popup-candy" aria-hidden="true"><img src="images/candies/${['berry','diamond','mint','star','grape'][Math.min(4,lv.colors-4)]}.svg" alt=""></div>
     <div class="ov-kicker">Level ${lv.id} · ${lv.colors} candy colors</div>
     <div class="level-name" id="level-popup-title">${lv.title}</div>
@@ -157,8 +229,13 @@ function showLevelInfo(lv, region) {
       <div><span>👣</span><strong>${adjMoves}</strong><small>Moves</small></div>
       <div><span>⭐</span><strong>${adjStar3.toLocaleString()}</strong><small>Three stars</small></div>
     </div>
-    <button class="btn btn-play" onclick="document.getElementById('level-info-popup').remove();startMapLevel(${lv.id});">▶ Play level</button>
-    <button class="btn btn-secondary" onclick="document.getElementById('level-info-popup').remove();">Close</button>
+    <div class="level-booster-heading"><strong>Starting boosters</strong><small>Pick +5 moves and one targeted tool</small></div>
+    <div class="level-booster-picker">
+      ${booster('extraMoves','⚡','+5 moves','Added before play')}
+      ${booster('hammer','🔨','Hammer','Choose one candy')}
+      ${booster('bomb','💣','Prism blast','Choose one color')}
+    </div>
+    <button class="btn btn-play level-start-button" onclick="startSelectedMapLevel(${lv.id});">▶ Play level</button>
   </div>`;
   document.body.appendChild(popup);
 }

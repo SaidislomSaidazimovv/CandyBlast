@@ -121,19 +121,14 @@ function activateHammer(){
   showHammerHint(true);
 }
 function showHammerHint(show){
-  let hint=document.getElementById('hammer-hint');
+  document.getElementById('hammer-hint')?.remove();
+  const message=document.getElementById('board-message');
   if(show){
-    if(!hint){
-      hint=document.createElement('div');hint.id='hammer-hint';
-      hint.style.cssText="text-align:center;color:#ffe259;font-family:'Fredoka One',cursive;font-size:1rem;padding:6px;animation:floatUD 1s ease-in-out infinite;";
-      hint.textContent='🔨 Tap any candy to remove it!';
-      const bw=document.getElementById('board-wrap');
-      if(bw)bw.insertAdjacentElement('beforebegin',hint);
-    }
+    if(message)message.textContent='Tap the candy you want the hammer to remove.';
   }else{
-    if(hint)hint.remove();
     document.getElementById('ingame-btn-hammer')?.classList.remove('active-hammer');
     hammerMode=false;bombMode=false;document.getElementById('ingame-btn-bomb')?.classList.remove('active-hammer');
+    if(message&&!gameEnded)message.textContent=boardInstruction();
   }
 }
 
@@ -160,8 +155,8 @@ function hidePreGame(){
 }
 function cancelPreGame(){
   window._pendingTimer=0;stopGameTimer();gameEnded=true;pregame=false;clearGameState();
-  if(mapData.selectedRegion){goScreen('levelselect');renderLevelSelect(mapData.selectedRegion);}
-  else{goScreen('map');renderMapScreen();}
+  mapData.selectedLevel=null;window._mapLevelSettings=null;
+  goScreen('map');renderMapScreen();
 }
 
 // ═══ NO LIVES POPUP ═══

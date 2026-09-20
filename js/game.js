@@ -847,7 +847,7 @@ function calcStars(ls,ts){
 }
 function showWin(){if(!beginResult())return;playWin();
   document.getElementById('win-score').textContent=levelScore.toLocaleString();
-  document.getElementById('win-next').textContent=level===RELEASE_LEVEL_COUNT?'Back to journey':'Next level →';
+  document.getElementById('win-next').textContent=level===RELEASE_LEVEL_COUNT?'Chapter journey':'Continue journey';
   document.getElementById('overlay-win').querySelector('.ov-title').textContent=level===RELEASE_LEVEL_COUNT?'Chapter complete!':'Sweet victory!';
   const starCount=calcStars(levelScore,targetScore);
   const stars='⭐'.repeat(starCount)+'☆'.repeat(3-starCount);
@@ -863,12 +863,13 @@ function showOver(){if(!beginResult())return;loseLife();playOver();
   const el=document.getElementById('overlay-over');if(el){const t=el.querySelector('.ov-title');if(t)t.textContent='Game Over 😢';el.querySelector('.ov-sub').textContent='No more moves!';}
   document.getElementById('over-score').textContent=score.toLocaleString();document.getElementById('overlay-over').classList.remove('hidden');
 }
-function nextLevel(){document.getElementById('overlay-win').classList.add('hidden');
-  // Go to next map level
-  const nextId=level+1;
-  const nextLv=mapData.levels.find(l=>l.id===nextId);
-  if(nextLv&&!nextLv.locked){startMapLevel(nextId);}
-  else{goScreen('map');renderMapScreen();}
+function returnToJourneyFromResult(overlayId){
+  document.getElementById(overlayId)?.classList.add('hidden');
+  mapData.selectedLevel=null;window._mapLevelSettings=null;
+  goScreen('map');renderMapScreen();
+}
+function nextLevel(){
+  returnToJourneyFromResult('overlay-win');
 }
 function retryLevel(){
   if(!hasLives()){showNoLivesPopup();return;}

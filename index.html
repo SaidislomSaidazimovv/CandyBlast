@@ -143,8 +143,7 @@
   <div class="ov-score" id="win-score">0</div>
   <div class="ov-sub" id="win-level-score" style="margin-top:-4px;margin-bottom:4px;font-size:.8rem;color:var(--t-secondary)"></div>
   <div class="ov-btns">
-    <button class="btn btn-play" id="win-next" onclick="nextLevel()">Next Level →</button>
-    <button class="btn btn-secondary" onclick="document.getElementById('overlay-win').classList.add('hidden');goScreen('map');renderMapScreen();">🗺️ Map</button>
+    <button class="btn btn-play" id="win-next" onclick="nextLevel()">Continue journey</button>
   </div>
 </div></div>
 
@@ -154,7 +153,7 @@
   <div class="ov-score" id="over-score">0</div>
   <div class="ov-btns">
     <button class="btn btn-play" onclick="retryLevel()">🔄 Retry</button>
-    <button class="btn btn-secondary" onclick="document.getElementById('overlay-over').classList.add('hidden');goScreen('map');renderMapScreen();">🗺️ Map</button>
+    <button class="btn btn-secondary" onclick="returnToJourneyFromResult('overlay-over')">🗺️ Journey</button>
   </div>
 </div></div>
 
