@@ -1,6 +1,7 @@
-const CACHE_NAME = 'candy-blast-v17';
+const CACHE_NAME = 'candy-blast-v18';
 const ASSETS = [
   '/js/entry.js',
+  '/js/supabase-config.js',
   '/images/ui/landscape.svg',
   '/',
   '/index.html',

@@ -136,10 +136,13 @@ status surface. The color-bomb booster waits for a selected candy and consumes
 stock only when applied. Hints rank immediate matches by objectives and special
 creation; availability checks inspect only the swapped lines on stable boards.
 
-Settings offers three locally synthesized melodies. The entry screen waits for
-page loading and offers a device-local player profile or guest play. It does not
-provide server authentication, password storage, or cross-device synchronization.
-Those require a selected account provider and backend configuration.
+Settings offers three locally synthesized melodies. The entry screen now uses
+Supabase Auth for email/password, password recovery, Google and Apple OAuth, while
+guest play remains available. Signed-in players synchronize profile, released-level
+progress, stars, scores, lives, boosters, rewards, settings and an active game with
+an offline-first merge. Run the RLS migration and configure redirect/provider values
+by following [supabase/SETUP.md](supabase/SETUP.md). Only the publishable key belongs
+in browser code; privileged credentials stay in Supabase and provider dashboards.
 
 Validation: node --test tests/regression.cjs tests/prototype.test.mjs tests/spin.cjs
 The suite compares local move checks with full-board checks on 100 generated boards.
