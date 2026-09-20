@@ -15,8 +15,10 @@ function renderTutSlide(n){
   const skipBtn=document.getElementById('tut-skip-btn');
   if(skipBtn)skipBtn.style.display=n===5?'none':'block';
   const visual=document.createElement('div');
+  visual.className='tutorial-visual';
   visual.style.cssText='flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:60px 20px 20px;';
   const panel=document.createElement('div');
+  panel.className='tutorial-sheet';
   panel.style.cssText='background:linear-gradient(135deg,rgba(60,15,100,0.97),rgba(20,5,40,0.98));border:1.5px solid rgba(255,255,255,0.12);border-radius:28px 28px 0 0;padding:28px 24px 36px;text-align:center;flex-shrink:0;';
   const slides=[
     {title:'Welcome to Candy Blast! 🍭',body:'A sweet puzzle game where you match colorful candies to score points and beat each level!',btn:"Let's Go! →"},

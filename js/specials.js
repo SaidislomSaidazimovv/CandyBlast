@@ -32,9 +32,13 @@ function isEmpty(r, c) {
 }
 
 // ═══ MATCH DETECTION WITH SPECIALS ═══
-function findMatchesNew() {
+function findMatchesNew(preferredCells = []) {
   const matched = new Set();
   const specialCreations = [];
+  const preferredInRun=(row,start,end,vertical=false)=>{
+    const chosen=preferredCells.find(p=>vertical?p.c===row&&p.r>=start&&p.r<end:p.r===row&&p.c>=start&&p.c<end);
+    return chosen ? (vertical?chosen.r:chosen.c) : start+Math.floor((end-start)/2);
+  };
 
   // Horizontal runs
   for (let r = 0; r < GRID; r++) {
@@ -47,9 +51,9 @@ function findMatchesNew() {
           const startC = c - run;
           for (let k = startC; k < c; k++) matched.add(r * GRID + k);
           if (run === 4) {
-            specialCreations.push({ r, c: startC + Math.floor(run / 2), special: SPECIAL.STRIPED_H, type: getType(r, startC) });
+            specialCreations.push({ r, c: preferredInRun(r,startC,c), special: SPECIAL.STRIPED_H, type: getType(r, startC) });
           } else if (run >= 5) {
-            specialCreations.push({ r, c: startC + Math.floor(run / 2), special: SPECIAL.BOMB, type: getType(r, startC) });
+            specialCreations.push({ r, c: preferredInRun(r,startC,c), special: SPECIAL.BOMB, type: getType(r, startC) });
           }
         }
         run = 1;
@@ -68,9 +72,9 @@ function findMatchesNew() {
           const startR = r - run;
           for (let k = startR; k < r; k++) matched.add(k * GRID + c);
           if (run === 4) {
-            specialCreations.push({ r: startR + Math.floor(run / 2), c, special: SPECIAL.STRIPED_V, type: getType(startR, c) });
+            specialCreations.push({ r: preferredInRun(c,startR,r,true), c, special: SPECIAL.STRIPED_V, type: getType(startR, c) });
           } else if (run >= 5) {
-            specialCreations.push({ r: startR + Math.floor(run / 2), c, special: SPECIAL.BOMB, type: getType(startR, c) });
+            specialCreations.push({ r: preferredInRun(c,startR,r,true), c, special: SPECIAL.BOMB, type: getType(startR, c) });
           }
         }
         run = 1;
@@ -174,41 +178,35 @@ function handleSpecialCombo(r1, c1, r2, c2) {
   vibrate(80);
 
   const isStripe = s => s === SPECIAL.STRIPED_H || s === SPECIAL.STRIPED_V;
+  const removeAt=(r,c)=>{
+    if(r<0||c<0||r>=GRID||c>=GRID||getType(r,c)<0)return;
+    triggered.add(r*GRID+c);
+    const el=getCell(r,c);if(el&&settings.anim)el.classList.add('matched');
+    removeCandy(r,c);
+  };
+  const clearRow=r=>{for(let c=0;c<GRID;c++)removeAt(r,c);};
+  const clearCol=c=>{for(let r=0;r<GRID;r++)removeAt(r,c);};
+  const clearArea=(r,c,radius)=>{for(let dr=-radius;dr<=radius;dr++)for(let dc=-radius;dc<=radius;dc++)removeAt(r+dr,c+dc);};
 
   if (sp1 === SPECIAL.BOMB && sp2 === SPECIAL.BOMB) {
-    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
-      const ct = getType(r, c);
-      if (ct === t1 || ct === t2) {
-        triggered.add(r * GRID + c);
-        const el = getCell(r, c); if (el && settings.anim) el.classList.add('matched');
-        removeCandy(r,c);
-      }
-    }
+    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) removeAt(r,c);
     showBombEffect(r1, c1);
   } else if ((sp1 === SPECIAL.BOMB && isStripe(sp2)) || (sp2 === SPECIAL.BOMB && isStripe(sp1))) {
-    const cr = r1, cc = c1;
-    for (let i = -1; i <= 1; i++) {
-      const row = cr + i;
-      if (row >= 0 && row < GRID) for (let c = 0; c < GRID; c++) { triggered.add(row * GRID + c); removeCandy(row,c); }
-      const col = cc + i;
-      if (col >= 0 && col < GRID) for (let r = 0; r < GRID; r++) { triggered.add(r * GRID + col); removeCandy(r,col); }
-    }
-    showLaserH(cr); showLaserV(cc);
-    triggered.forEach(idx => { const el = getCell(Math.floor(idx / GRID), idx % GRID); if (el && settings.anim) el.classList.add('matched'); });
+    const targetType=sp1===SPECIAL.BOMB?t2:t1;
+    const targets=[];for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++)if(getType(r,c)===targetType)targets.push({r,c});
+    targets.forEach((p,i)=>i%2?clearCol(p.c):clearRow(p.r));
+    removeAt(r1,c1);removeAt(r2,c2);showBombEffect(r1,c1);
+  } else if ((sp1 === SPECIAL.BOMB && sp2 === SPECIAL.WRAPPED) || (sp2 === SPECIAL.BOMB && sp1 === SPECIAL.WRAPPED)) {
+    const targetType=sp1===SPECIAL.BOMB?t2:t1;
+    const targets=[];for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++)if(getType(r,c)===targetType)targets.push({r,c});
+    targets.forEach(p=>clearArea(p.r,p.c,1));removeAt(r1,c1);removeAt(r2,c2);showBombEffect(r1,c1);
+  } else if ((isStripe(sp1) && sp2 === SPECIAL.WRAPPED) || (isStripe(sp2) && sp1 === SPECIAL.WRAPPED)) {
+    for(let offset=-1;offset<=1;offset++){if(r1+offset>=0&&r1+offset<GRID){clearRow(r1+offset);showLaserH(r1+offset);}if(c1+offset>=0&&c1+offset<GRID){clearCol(c1+offset);showLaserV(c1+offset);}}
   } else if (isStripe(sp1) && isStripe(sp2)) {
-    for (let c = 0; c < GRID; c++) { triggered.add(r1 * GRID + c); removeCandy(r1,c); }
-    for (let r = 0; r < GRID; r++) { triggered.add(r * GRID + c2); removeCandy(r,c2); }
+    clearRow(r1);clearCol(c2);
     showLaserH(r1); showLaserV(c2);
-    triggered.forEach(idx => { const el = getCell(Math.floor(idx / GRID), idx % GRID); if (el && settings.anim) el.classList.add('matched'); });
   } else if (sp1 === SPECIAL.WRAPPED && sp2 === SPECIAL.WRAPPED) {
-    for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) {
-      const nr = r1 + dr, nc = c1 + dc;
-      if (nr >= 0 && nr < GRID && nc >= 0 && nc < GRID) {
-        triggered.add(nr * GRID + nc);
-        const el = getCell(nr, nc); if (el && settings.anim) el.classList.add('matched');
-        removeCandy(nr,nc);
-      }
-    }
+    clearArea(r1,c1,2);
     showWrappedEffect(r1, c1);
   } else {
     triggered.add(r1 * GRID + c1); triggered.add(r2 * GRID + c2);
@@ -217,6 +215,7 @@ function handleSpecialCombo(r1, c1, r2, c2) {
     removeCandy(r1,c1); removeCandy(r2,c2);
   }
 
+  window.Candy3D?.effect?.('special',{cells:[...triggered],strength:Math.min(5,1+triggered.size/12)});
   return triggered;
 }
 

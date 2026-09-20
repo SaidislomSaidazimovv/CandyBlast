@@ -105,6 +105,7 @@ function start(){
   for(let i=0;i<64;i++){const p=pos(i);dummy.position.set(p.x,.17,p.z+.04);dummy.rotation.set(0,0,0);dummy.scale.set(1,1,1);dummy.updateMatrix();shadows.setMatrixAt(i,dummy.matrix);}
   const halo=mesh(geo(new THREE.TorusGeometry(.55,.045,8,40)),mat(new THREE.MeshBasicMaterial({color:'#fff4aa',depthTest:false})),0,.25,0);halo.rotation.x=-Math.PI/2;halo.visible=false;halo.renderOrder=10;
   const particleMesh=new THREE.InstancedMesh(geo(new THREE.IcosahedronGeometry(.055,0)),mat(new THREE.MeshBasicMaterial({color:'#fff6df'})),96);particleMesh.frustumCulled=false;particleMesh.count=0;scene.add(particleMesh);
+  particleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
   const boardEl=document.getElementById('board'),screen=document.getElementById('screen-game');
   const iceGeo=geo(new THREE.BoxGeometry(.92,.3,.92));
@@ -112,10 +113,10 @@ function start(){
   const stripeMat=mat(new THREE.MeshBasicMaterial({color:0xfff4df}));
   const stripes=new THREE.InstancedMesh(geo(new THREE.BoxGeometry(.72,.035,.09)),stripeMat,128);stripes.frustumCulled=false;scene.add(stripes);
   const bombMaterial=standard('#64384b',.22),bombs=new THREE.InstancedMesh(sphere,bombMaterial,64);bombs.frustumCulled=false;scene.add(bombs);
-  let records=[],raf=0,last=0,elapsed=0,swapAnim=null,session=-1,lost=false,disposed=false;
+  let records=[],raf=0,last=0,elapsed=0,swapAnim=null,session=-1,lost=false,disposed=false,particles=[],cameraKick=null;
   const snapshot=()=>bridge.snapshot();
   function sync(drops=[]){
-    const data=snapshot();if(session!==data.session){swapAnim?.resolve();swapAnim=null;session=data.session;}
+    const data=snapshot();if(session!==data.session){swapAnim?.resolve();swapAnim=null;particles=[];cameraKick=null;session=data.session;}
     const distances=new Map(drops.map(d=>[d.r*8+d.c,d.distance]));
     records=data.cells.map((cell,i)=>{const p=pos(i);return {...cell,i,x:p.x,z:p.z,y:.4,fall:data.anim?(distances.get(i)||0)*.7:0,fallStart:elapsed,matchedAt:null};});
     resize();wake();
@@ -133,6 +134,24 @@ function start(){
     renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(w,h,false);
     const aspect=w/h,span=Math.max(8.8,10.1/aspect);camera.left=-span*aspect/2;camera.right=span*aspect/2;camera.top=span/2;camera.bottom=-span/2;
     camera.position.set(0,18,16);camera.lookAt(0,0,0);camera.updateProjectionMatrix();camera.updateMatrixWorld();projectCells();wake();
+  }
+  function addEffect(type,payload={}){
+    const data=snapshot();if(!data.anim||data.paused)return;
+    const cells=(payload.cells||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<64);
+    const strength=Math.max(1,Math.min(5,Number(payload.strength)||Number(payload.combo)||1));
+    if(type==='invalid'){cameraKick={born:elapsed,life:.24,power:.08};wake();return;}
+    if(type==='shuffle')cameraKick={born:elapsed,life:.34,power:.055};
+    else if(type==='special')cameraKick={born:elapsed,life:.3,power:.035*strength};
+    else if(type==='match'&&strength>=3)cameraKick={born:elapsed,life:.2,power:.014*strength};
+    const amount=type==='shuffle'?1:type==='special'?Math.min(5,2+strength):strength>=3?2:1;
+    for(const i of cells){
+      const p=pos(i);
+      for(let n=0;n<amount&&particles.length<96;n++){
+        const angle=(i*.91+n*2.399+strength*.47)%(Math.PI*2),speed=.45+.13*((i+n)%4)+strength*.035;
+        particles.push({x:p.x,y:.62,z:p.z,vx:Math.cos(angle)*speed,vy:1.15+.13*((i+n)%3),vz:Math.sin(angle)*speed,born:elapsed,life:.42+strength*.055,scale:.7+strength*.08});
+      }
+    }
+    wake();
   }
   function draw(){
     const counts=[0,0,0,0,0,0];let iceCount=0,stripeCount=0,bombCount=0,moving=false;
@@ -160,6 +179,17 @@ function start(){
     }
     sweets.forEach((m,i)=>{m.count=counts[i];m.instanceMatrix.needsUpdate=true;});
     for(const [m,n] of [[iceMesh,iceCount],[stripes,stripeCount],[bombs,bombCount]]){m.count=n;m.instanceMatrix.needsUpdate=true;}
+    let particleCount=0;
+    particles=particles.filter(p=>{
+      const age=elapsed-p.born;if(age>=p.life)return false;
+      const t=age/p.life,fade=1-t;
+      dummy.position.set(p.x+p.vx*age,p.y+p.vy*age-2.1*age*age,p.z+p.vz*age);
+      dummy.rotation.set(age*8,age*11,age*6);dummy.scale.setScalar(Math.max(.01,p.scale*fade));dummy.updateMatrix();
+      particleMesh.setMatrixAt(particleCount++,dummy.matrix);return true;
+    });
+    particleMesh.count=particleCount;particleMesh.instanceMatrix.needsUpdate=true;if(particleCount)moving=true;
+    if(cameraKick){const age=elapsed-cameraKick.born;if(age>=cameraKick.life)cameraKick=null;else{const fade=1-age/cameraKick.life,offset=Math.sin(age*95)*cameraKick.power*fade;camera.position.set(offset,18,16);camera.lookAt(0,0,0);camera.updateMatrixWorld();moving=true;}}
+    if(!cameraKick&&camera.position.x!==0){camera.position.set(0,18,16);camera.lookAt(0,0,0);camera.updateMatrixWorld();}
     renderer.render(scene,camera);return moving;
   }
   function wake(){if(!raf&&!disposed&&!lost&&!document.hidden&&snapshot().active)raf=requestAnimationFrame(tick);}
@@ -168,7 +198,7 @@ function start(){
     if(!data.paused){elapsed+=dt;if(swapAnim)swapAnim.time+=dt;}
     const moving=draw();if(swapAnim&&swapAnim.time>=.17){const done=swapAnim;swapAnim=null;done.resolve();}if(!data.paused&&(moving||swapAnim))wake();else last=0;
   }
-  window.Candy3D={sync,swap(a,b){return new Promise(resolve=>{swapAnim?.resolve();swapAnim={a,b,time:0,resolve};wake();});}};
+  window.Candy3D={sync,effect:addEffect,swap(a,b){return new Promise(resolve=>{swapAnim?.resolve();swapAnim={a,b,time:0,resolve};wake();});}};
   // Classes still carry animation/selection events from the existing game.
   const observer=new MutationObserver(wake);observer.observe(boardEl,{subtree:true,attributes:true,attributeFilter:['class'],childList:true});
   const visibilityObserver=new MutationObserver(()=>{last=0;resize();wake();});visibilityObserver.observe(screen,{attributes:true,attributeFilter:['class']});

@@ -1,0 +1,111 @@
+/* Final layout contract. This file is loaded last so every screen uses the same viewport rules. */
+:root{
+  --app-height:100vh;
+  --safe-top:max(0px,env(safe-area-inset-top));
+  --safe-right:max(0px,env(safe-area-inset-right));
+  --safe-bottom:max(0px,env(safe-area-inset-bottom));
+  --safe-left:max(0px,env(safe-area-inset-left));
+  --phone-pad:clamp(12px,4vw,24px);
+}
+@supports(height:100dvh){:root{--app-height:100dvh}}
+html,body{inline-size:100%;block-size:var(--app-height);min-block-size:0;position:relative;overflow:hidden}
+.screen{inset:0;inline-size:100%;block-size:var(--app-height);min-inline-size:0;min-block-size:0}
+.screen:not(#screen-game){max-inline-size:none;left:0;transform:none;padding-left:max(var(--phone-pad),var(--safe-left));padding-right:max(var(--phone-pad),var(--safe-right))}
+.screen.hidden:not(#screen-game){transform:scale(.985)}
+#screen-start{inline-size:min(100%,600px);left:50%;transform:translateX(-50%);padding-top:max(12px,var(--safe-top));padding-bottom:max(12px,var(--safe-bottom));gap:clamp(8px,2dvh,18px)}
+#screen-start.hidden{transform:translateX(-50%) scale(.985)}
+.home-top,.home-profile,.home-actions,.home-hero,.home-play,.home-nav{min-inline-size:0}
+.home-sweets{inline-size:min(260px,68vw);block-size:clamp(88px,23dvh,220px)}
+.home-hero h1{font-size:clamp(38px,11.5vw,60px);margin-block:clamp(3px,1dvh,10px)}
+.home-hero p{max-inline-size:32ch;line-height:1.35}
+.home-play>.btn{min-block-size:clamp(48px,7dvh,58px)}
+.home-nav{grid-template-columns:repeat(4,minmax(0,1fr));padding-top:clamp(5px,1.5dvh,12px)}
+.home-nav button{min-inline-size:0;min-block-size:clamp(50px,8dvh,66px)}
+.home-nav button>span:not(.ui-icon){max-inline-size:100%;overflow:hidden;text-overflow:ellipsis}
+
+#map-container,#levelselect-container,#rewards-container,#spin-screen-container,#tut-container{inline-size:min(100%,720px)!important;block-size:var(--app-height)!important;margin-inline:auto;min-block-size:0}
+.app-screen-header,.journey-header{padding-left:max(14px,var(--safe-left))!important;padding-right:max(14px,var(--safe-right))!important;padding-top:max(12px,var(--safe-top))!important;flex:none}
+.journey-level{inline-size:clamp(58px,18vw,74px);block-size:clamp(56px,17vw,70px);font-size:clamp(18px,5vw,22px)}
+.journey-region{left:clamp(12px,8%,58px);width:calc(100% - 2 * clamp(12px,8%,58px))}
+
+.panel,.overlay-card,.entry-card,.level-popup-card,.spin-card{max-inline-size:calc(100vw - var(--safe-left) - var(--safe-right) - 24px)}
+.panel{max-block-size:calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 24px)!important}
+.overlay{padding-top:max(12px,var(--safe-top));padding-right:max(12px,var(--safe-right));padding-bottom:max(12px,var(--safe-bottom));padding-left:max(12px,var(--safe-left))}
+.overlay-card{max-block-size:calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 24px);overscroll-behavior:contain}
+.entry-overlay{block-size:var(--app-height);padding-top:max(12px,var(--safe-top));padding-right:max(12px,var(--safe-right));padding-bottom:max(12px,var(--safe-bottom));padding-left:max(12px,var(--safe-left));align-content:center}
+.entry-card{margin:auto;padding:clamp(18px,5vw,24px)}
+.entry-card input{min-inline-size:0}
+.settings-panel{inline-size:min(430px,calc(100vw - var(--safe-left) - var(--safe-right) - 24px))!important;block-size:calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 24px)!important}
+#screen-leaderboard{overflow:hidden}.lb-list{min-block-size:0;overflow-y:auto;overscroll-behavior:contain}
+
+#rewards-tabs{padding-left:max(12px,var(--safe-left))!important;padding-right:max(12px,var(--safe-right))!important}
+#rewards-tab-content{padding-left:max(12px,var(--safe-left))!important;padding-right:max(12px,var(--safe-right))!important;overscroll-behavior:contain}
+#rewards-tab-content>div[style*="grid-template-columns:repeat(5"]{grid-template-columns:repeat(auto-fit,minmax(54px,1fr))!important}
+#rewards-tab-content>div[style*="display:flex"]{min-inline-size:0;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:5px}
+#rewards-tab-content>div[style*="display:flex"]>div{min-inline-size:70px;scroll-snap-align:start}
+#spin-screen-container{padding-top:max(68px,calc(var(--safe-top) + 60px))!important;padding-right:max(12px,var(--safe-right))!important;padding-bottom:max(14px,var(--safe-bottom))!important;padding-left:max(12px,var(--safe-left))!important}
+.spin-card{padding:clamp(16px,5vw,24px)!important}
+#spin-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:clamp(5px,2vw,9px)!important}
+.spin-slot{min-inline-size:0;padding:clamp(7px,2.4vw,12px) 3px!important;overflow:hidden}
+.spin-slot>div{overflow-wrap:anywhere}
+
+.tutorial-visual{min-block-size:0!important;padding:max(54px,calc(var(--safe-top) + 44px)) var(--phone-pad) 12px!important}
+.tutorial-sheet{inline-size:100%;max-block-size:min(48vh,390px);max-block-size:min(48dvh,390px);overflow-y:auto;padding:clamp(17px,5vw,28px) var(--phone-pad) max(18px,var(--safe-bottom))!important;overscroll-behavior:contain}
+.tutorial-practice{inline-size:min(100%,250px);gap:clamp(7px,3vw,12px)}
+#tut-container .tut-candy-cell{inline-size:clamp(36px,12vw,58px);block-size:clamp(36px,12vw,58px)}
+
+html.game-3d #screen-game:not(.hidden){inline-size:min(100%,640px)!important;block-size:var(--app-height)!important;padding-left:var(--safe-left)!important;padding-right:var(--safe-right)!important}
+html.game-3d .mobile-hud{padding-top:max(5px,var(--safe-top));padding-left:max(10px,var(--safe-left));padding-right:max(10px,var(--safe-right))}
+html.game-3d .mobile-controls{padding-left:max(10px,var(--safe-left));padding-right:max(10px,var(--safe-right));padding-bottom:max(6px,var(--safe-bottom))}
+html.game-3d #screen-game .ingame-booster-btn{min-inline-size:0;max-inline-size:none}
+html.game-3d #screen-game .ingame-booster-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+@media(max-width:359px){
+  :root{--phone-pad:10px}
+  #screen-start{padding-inline:10px!important}
+  .home-profile{max-inline-size:47%;padding-right:7px!important}.home-profile-status{display:none}.home-profile-copy small{display:none}
+  .home-actions{gap:4px}.home-lives{padding-inline:5px!important}.home-lives .ui-icon{font-size:11px}
+  .app-icon-button{inline-size:42px;block-size:42px}.home-avatar{inline-size:32px;block-size:32px}
+  .home-nav button>span:not(.ui-icon){font-size:7px!important}.home-nav button>.ui-icon{padding:5px!important;font-size:18px!important}
+  .game-dialog,.level-popup-card{padding-inline:14px!important}.level-popup-card{max-block-size:94vh;max-block-size:94dvh}
+  .level-booster-heading{align-items:flex-start;flex-direction:column;gap:2px}.level-booster-heading small{text-align:left}
+  .level-booster-choice{grid-template-columns:38px minmax(0,1fr) auto}.level-booster-icon{inline-size:38px;block-size:38px}
+  #rewards-tab-content>div[style*="grid-template-columns:repeat(5"]{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .spin-title{font-size:23px}.spin-slot>div:first-child{font-size:1.25rem!important}.spin-slot>div:nth-child(2){font-size:.58rem!important}
+}
+
+@media(max-height:640px) and (orientation:portrait){
+  #screen-start{gap:5px;padding-top:max(7px,var(--safe-top));padding-bottom:max(7px,var(--safe-bottom))}
+  .home-top{min-block-size:42px}.home-sweets{block-size:clamp(72px,17dvh,105px)}.home-eyebrow{display:none}
+  .home-hero h1{font-size:clamp(34px,10.5vw,43px);line-height:.9;margin-block:2px 5px}.home-hero p{font-size:9px}
+  .home-play>.btn{min-block-size:46px;font-size:17px}.home-best{margin-top:6px}
+  .home-nav{padding-top:4px}.home-nav button{min-block-size:48px;gap:3px}.home-nav button>.ui-icon{font-size:18px!important;padding:5px!important}
+  .game-dialog{padding:18px!important}.dialog-candy{inline-size:58px;block-size:48px}.game-dialog .ov-title{font-size:23px!important}.game-dialog .ov-sub{margin-bottom:10px!important}
+  .level-popup-card{max-block-size:96vh;max-block-size:96dvh}.level-popup-candy{inline-size:48px;block-size:41px}.level-popup-stars{margin:4px 0}.level-facts{margin-bottom:8px}.level-booster-picker{gap:4px}.level-booster-choice{min-block-size:48px!important}.level-start-button{margin-top:8px!important}
+  .tutorial-sheet{max-block-size:53vh;max-block-size:53dvh}.tutorial-visual{padding-bottom:5px!important}
+  #spin-screen-container{padding-top:max(58px,calc(var(--safe-top) + 52px))!important}.spin-card{padding-block:14px!important}.spin-subtitle{margin-bottom:9px}.spin-slot{padding-block:6px!important}#spin-grid{margin-bottom:10px!important}
+  html.game-3d #screen-game .game-header{height:38px}html.game-3d #screen-game .header-btn{height:38px;width:38px}html.game-3d #screen-game .game-title-small{font-size:15px}
+  html.game-3d #screen-game .stats{height:34px;margin:3px 0}html.game-3d #screen-game .stat-value{font-size:17px!important}
+  html.game-3d #screen-game .objective-panel{padding-block:4px}html.game-3d #screen-game #objective-goals{min-height:22px}
+  html.game-3d #screen-game #board-message{min-height:19px}html.game-3d #screen-game #ingame-boosters{height:46px;gap:6px!important}
+  html.game-3d #screen-game .ingame-booster-btn{min-height:42px;padding:3px!important}
+}
+
+@media(orientation:landscape) and (max-height:550px){
+  #screen-start{inline-size:min(100%,900px)}
+  #map-container,#levelselect-container,#rewards-container,#spin-screen-container,#tut-container{max-inline-size:100%!important}
+  html.game-3d #screen-game:not(.hidden){inline-size:100%!important;max-inline-size:1000px!important;grid-template-columns:clamp(130px,28vw,180px) minmax(210px,1fr) clamp(96px,20vw,125px)!important}
+  html.game-3d .mobile-hud{padding-left:max(8px,var(--safe-left));padding-right:8px}
+  html.game-3d .mobile-controls{padding-right:max(8px,var(--safe-right));padding-left:8px}
+  .tutorial-visual{padding:10px 20px 10px max(20px,var(--safe-left))!important}.tutorial-sheet{max-block-size:100%;inline-size:min(390px,45vw);border-radius:26px 0 0 26px!important}
+  #tut-container{flex-direction:row!important}
+  #spin-screen-container{justify-content:center!important;padding-top:max(10px,var(--safe-top))!important}.spin-card{max-inline-size:620px!important}#spin-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+}
+
+@media(min-width:768px) and (orientation:portrait){
+  #map-container,#levelselect-container,#rewards-container,#tut-container{max-inline-size:720px!important}
+  .journey-level{inline-size:78px;block-size:74px}
+  .level-popup-card,.entry-card{max-inline-size:430px}
+}
+
+@media(prefers-reduced-motion:reduce){html.game-3d #screen-game #combo-display{text-shadow:none!important}}

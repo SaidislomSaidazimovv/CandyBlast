@@ -1,4 +1,4 @@
-const CACHE_NAME = 'candy-blast-v22';
+const CACHE_NAME = 'candy-blast-v24';
 const ASSETS = [
   '/js/entry.js',
   '/js/supabase-config.js',
@@ -22,6 +22,7 @@ const ASSETS = [
   '/js/renderer3d.mjs',
   '/css/mobile-game.css',
   '/css/interface.css',
+  '/css/responsive.css',
   '/js/interface.js',
   '/images/ui/icons.svg',
   '/images/ui/app.svg',

@@ -138,6 +138,22 @@ test('wrapped and striped activate before their cells are removed', () => {
   assert.equal(g.run('getType(3,3)'), -1);assert.equal(g.run('getType(3,4)'), -1);
 });
 
+test('a moved candy owns the special created by its four or five match', () => {
+  const g=game();
+  g.run('grid=Array.from({length:8},(_,r)=>Array.from({length:8},(_,c)=>(r*2+c)%6));for(let c=1;c<=5;c++)grid[3][c]=2;var preferred=findMatchesNew([{r:3,c:1}]);');
+  assert.equal(g.run('preferred.specialCreations.some(s=>s.r===3&&s.c===1&&s.special===SPECIAL.BOMB)'),true);
+});
+
+test('two color bombs clear the complete board', () => {
+  const g=game();g.run('initGrid();setCell(3,3,1,SPECIAL.BOMB);setCell(3,4,2,SPECIAL.BOMB);handleSpecialCombo(3,3,3,4);');
+  assert.equal(g.run('grid.flat().every(v=>v===-1)'),true);
+});
+
+test('a striped and wrapped combo clears three rows and three columns', () => {
+  const g=game();g.run('initGrid();setCell(3,3,1,SPECIAL.WRAPPED);setCell(3,4,2,SPECIAL.STRIPED_H);var cleared=handleSpecialCombo(3,3,3,4);');
+  assert.ok(g.run('cleared.size')>=39);
+});
+
 test('reset restores in-memory inventory and removes the saved game', () => {
   const g = game();g.run('startMapLevel(1);hidePreGame();livesData.lives=1;livesData.boosters.hammer=9;dailyData.currentDay=20;confirmReset();');
   assert.equal(g.run('livesData.lives'), 5);
@@ -310,4 +326,5 @@ test('chapter completion stays at level 20 and permits replay',()=>{const g=game
 test('runaway cascades recover a stable board and retain an untriggered special',async()=>{const g=game();g.run('startMapLevel(2);hidePreGame();settings.anim=false;delay=async()=>{};setCell(7,7,1,SPECIAL.WRAPPED);var originalFind=findMatchesNew;findMatchesNew=()=>({matched:[{r:0,c:0},{r:0,c:1},{r:0,c:2}],specialCreations:[]});');await g.run('processMatches()');g.run('findMatchesNew=originalFind;');assert.equal(g.run('findMatchesNew().matched.length'),0);assert.equal(g.run('grid.flat().some(v=>v&&v.special===SPECIAL.WRAPPED)'),true);assert.ok(g.run('findAvailableMove()'));});
 test('difficulty preference is retired and authored values are used verbatim',()=>{const g=game();g.storage.set('cb_settings',JSON.stringify({diff:'hard'}));g.run('loadSettings();startMapLevel(8);');assert.equal(g.run("'diff' in settings"),false);assert.equal(g.run('moves'),g.run('getLevelSettings(8).moves'));assert.equal(g.run('targetScore'),g.run('getLevelSettings(8).targetScore'));});
 test('settings screen no longer exposes a global difficulty control',()=>{const html=fs.readFileSync(path.join(root,'index.html'),'utf8');assert.equal(/data-diff|>\s*Difficulty\s*</i.test(html),false);});
+test('the final responsive layer is loaded last and available offline',()=>{const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');assert.ok(html.indexOf('css/responsive.css')>html.indexOf('css/interface.css'));assert.match(sw,/css\/responsive\.css/);});
 test('an invalid swap always costs one authored move',async()=>{const g=game();g.run('startMapLevel(4);hidePreGame();settings.anim=false;delay=async()=>{};settings.diff="easy";var invalidPair=null;outer:for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++)for(const [dr,dc] of [[0,1],[1,0]]){const rr=r+dr,cc=c+dc;if(rr>=GRID||cc>=GRID)continue;[grid[r][c],grid[rr][cc]]=[grid[rr][cc],grid[r][c]];const valid=findMatchesNew().matched.length>0;[grid[r][c],grid[rr][cc]]=[grid[rr][cc],grid[r][c]];if(!valid){invalidPair=[r,c,rr,cc];break outer;}}var beforeMoves=moves;');assert.ok(g.run('invalidPair'));await g.run('trySwap(...invalidPair)');assert.equal(g.run('moves'),g.run('beforeMoves-1'));});

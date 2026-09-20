@@ -122,7 +122,8 @@ function showHint(){
   if(!move){ensurePlayableBoard();renderBoard();saveGameState();return;}
   document.querySelectorAll('.cell.hint').forEach(el=>el.classList.remove('hint'));
   move.forEach(({r,c})=>{const el=getCell(r,c);if(el){el.classList.add('hint');setTimeout(()=>el.classList.remove('hint'),1800);}});
-  document.getElementById('board-message').textContent='Try swapping the glowing candies';
+  const message=document.getElementById('board-message');message.textContent='Try swapping the glowing candies';
+  setTimeout(()=>{if(message.textContent==='Try swapping the glowing candies')message.textContent=boardInstruction();},1800);
 }
 
 async function animateSwap(r1,c1,r2,c2){
