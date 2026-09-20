@@ -12,6 +12,7 @@ Open **Authentication → URL Configuration**.
 
 - During local development set **Site URL** to `http://127.0.0.1:4174/`.
 - Add `http://127.0.0.1:4174/` to **Redirect URLs**.
+- Add `https://candy-blast-six.vercel.app/` to **Redirect URLs** for the current staging deployment.
 - Once hosting is chosen, replace the Site URL with the production HTTPS URL and add that exact URL to Redirect URLs.
 - Later, add the native mobile deep-link callback used by the Android/iOS wrapper.
 
@@ -28,7 +29,8 @@ Open **Authentication → Providers → Email** and keep Email enabled. For the 
 3. Under **Clients**, create an OAuth client with application type **Web application**.
 4. Add these **Authorized JavaScript origins** while developing:
    - `http://127.0.0.1:4174`
-   - the future production origin, such as `https://example.com`
+   - `https://candy-blast-six.vercel.app`
+   - the future custom production origin
 5. Add this exact **Authorized redirect URI**:
    - `https://wvoupimfijsveodbhmue.supabase.co/auth/v1/callback`
 6. Copy the generated **Client ID** and **Client secret** into **Supabase → Authentication → Providers → Google**, then enable and save the provider.

@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#493254">
-<meta name="description" content="Candy Blast — a sweet match-3 puzzle game! Swap colorful candies, chain combos, collect special power-ups, and blast through 100 levels across 5 regions. Free to play!">
+<meta name="description" content="Candy Blast — a polished match-3 adventure with 20 handcrafted launch levels, satisfying combos, original candy worlds, and cloud-synced progress.">
 <link rel="icon" type="image/svg+xml" href="images/ui/app.svg">
 <link rel="apple-touch-icon" href="images/ui/app.svg">
 <title>Candy Blast</title>
@@ -27,10 +27,10 @@
 <canvas id="bg-canvas"></canvas>
 
 <div class="screen" id="screen-start">
- <div class="home-top"><button class="app-icon-button" onclick="goScreen('settings')" aria-label="Settings">⚙️</button><div class="home-lives"><div id="lives-hearts-mobile"></div><span id="lives-timer-mobile">Full</span></div><button class="app-icon-button" onclick="goScreen('leaderboard')" aria-label="Leaderboard">🏆</button></div>
+ <div class="home-top"><button class="home-profile" id="home-profile" onclick="window.CandyCloud?.openAccount?.()" aria-label="Open player profile"><span class="home-avatar" id="home-profile-avatar">👤</span><span class="home-profile-copy"><strong id="home-profile-name">Player</strong><small id="home-profile-status">Guest journey</small></span></button><div class="home-actions"><div class="home-lives"><div id="lives-hearts-mobile"></div><span id="lives-timer-mobile">Full</span></div><button class="app-icon-button" onclick="goScreen('settings')" aria-label="Settings">⚙️</button></div></div>
  <div class="home-hero"><span class="home-eyebrow">A LITTLE EVERYDAY MAGIC</span><div class="home-sweets" aria-hidden="true"><img src="images/candies/mint.svg" class="sweet-mint" alt=""><img src="images/candies/star.svg" class="sweet-star" alt=""><img src="images/candies/berry.svg" class="sweet-heart" alt=""><img src="images/candies/diamond.svg" class="sweet-diamond" alt=""></div><h1>Candy<span>Blast</span><i>✦</i></h1><p>Your next sweet adventure awaits.</p></div>
  <div class="home-play"><button class="btn btn-play" onclick="goScreen('map');renderMapScreen();">▶ Play</button><div class="home-best">Personal best <strong id="best-score-start">0</strong></div></div>
- <nav class="home-nav" aria-label="Main navigation"><button id="btn-daily-big" onclick="goScreen('rewards');renderRewardsScreen();">🎁<span>Rewards</span><i id="daily-notif-dot"></i></button><button id="spin-mobile-btn" onclick="openSpinScreen()">🎡<span>Lucky Spin</span><b id="spin-mobile-count">0</b></button><button onclick="tutSlide=0;goScreen('tutorial');renderTutSlide(0);">🎓<span>How to play</span></button></nav>
+ <nav class="home-nav" aria-label="Main navigation"><button id="btn-daily-big" onclick="goScreen('rewards');renderRewardsScreen();">🎁<span>Rewards</span><i id="daily-notif-dot"></i></button><button id="spin-mobile-btn" onclick="openSpinScreen()">🎡<span>Lucky Spin</span><b id="spin-mobile-count">0</b></button><button onclick="tutSlide=0;goScreen('tutorial');renderTutSlide(0);">🎓<span>How to play</span></button><button onclick="goScreen('leaderboard')">🏆<span>Scores</span></button></nav>
 </div>
 
 <div class="screen hidden" id="screen-settings">

@@ -543,17 +543,18 @@ function savePersonalScore(){const pb=readPersonalScores();pb.push({name:'You',s
 // ═══════ AUDIO ═══════
 let audioCtx=null;
 function getAC(){if(!audioCtx)try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}return audioCtx;}
-function playTone(freq,dur,type='sine',vol=0.15){
+function playTone(freq,dur,type='sine',vol=0.15,delay=0,endFreq=freq){
   if(!settings.sfx)return;const vol2=(settings.volume/100)*vol;if(vol2<=0)return;
   const ac=getAC();if(!ac)return;
-  try{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(vol2,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);o.start();o.stop(ac.currentTime+dur);}catch(e){}
+  try{const start=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type=type;o.frequency.setValueAtTime(freq,start);o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),start+dur);g.gain.setValueAtTime(.001,start);g.gain.linearRampToValueAtTime(vol2,start+Math.min(.018,dur*.2));g.gain.exponentialRampToValueAtTime(.001,start+dur);o.start(start);o.stop(start+dur+.02);}catch(e){}
 }
 function vibrate(ms=50){if(settings.vibro&&navigator.vibrate)navigator.vibrate(ms);}
 function playMatch(n){[523,659,784,1047,1319].slice(0,Math.min(n,5)).forEach((f,i)=>setTimeout(()=>playTone(f,.15,'triangle',.2),i*60));}
-function playSwap(){playTone(440,.08,'sine',.08);}
-function playInvalid(){playTone(200,.15,'sawtooth',.08);vibrate([30,30,30]);}
+function playSwap(){playTone(360,.09,'sine',.07,0,520);}
+function playInvalid(){playTone(185,.16,'triangle',.07,0,125);vibrate([30,30,30]);}
 function playWin(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,.3,'triangle',.2),i*120));vibrate(200);}
-function playOver(){[400,350,300,250].forEach((f,i)=>setTimeout(()=>playTone(f,.3,'sawtooth',.15),i*120));vibrate([100,50,100]);}
+function playOver(){[392,330,294,220].forEach((f,i)=>playTone(f,.28,'triangle',.11,i*.11,f*.86));vibrate([100,50,100]);}
+function playReward(){[659,880,1175].forEach((f,i)=>playTone(f,.22,'triangle',.13,i*.075,f*1.04));playTone(1760,.34,'sine',.045,.16,2349);}
 
 // ═══════ BACKGROUND MUSIC ═══════
 let bgMusicNodes=[],bgMusicPlaying=false,bgMusicTimer=null;

@@ -1,7 +1,7 @@
 {
   "name": "Candy Blast",
   "short_name": "CandyBlast",
-  "description": "A sweet match-3 puzzle game! Swap candies, chain combos, blast through 100 levels!",
+  "description": "A polished match-3 adventure with 20 handcrafted launch levels and cloud progress.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

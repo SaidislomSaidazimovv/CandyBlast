@@ -1,4 +1,4 @@
-const CACHE_NAME = 'candy-blast-v18';
+const CACHE_NAME = 'candy-blast-v19';
 const ASSETS = [
   '/js/entry.js',
   '/js/supabase-config.js',

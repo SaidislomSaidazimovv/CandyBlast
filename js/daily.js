@@ -75,10 +75,22 @@ function stopPlayTimer(){
   }
   saveDailyData();
 }
+const hourlyRewardQueue=[];
+let hourlyRewardShowing=false;
 function showHourlyRewardPopup(reward){
+  hourlyRewardQueue.push(reward);
+  presentNextHourlyReward();
+}
+function presentNextHourlyReward(){
+  if(hourlyRewardShowing||!hourlyRewardQueue.length)return;
+  hourlyRewardShowing=true;
+  const reward=hourlyRewardQueue[0];
   setTimeout(()=>{
-    const popup=document.createElement('div');popup.className='overlay';popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','true');popup.setAttribute('aria-label','Hourly reward');
+    if(document.querySelector('.overlay:not(.hidden)')){hourlyRewardShowing=false;setTimeout(presentNextHourlyReward,650);return;}
+    const popup=document.createElement('div');popup.className='overlay hourly-reward-overlay';popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','true');popup.setAttribute('aria-label','Hourly reward');
     popup.innerHTML=`<div class="overlay-card game-dialog reward-dialog"><div class="dialog-candy small" aria-hidden="true">${reward.icon}</div><div class="ov-kicker">Playtime reward</div><div class="ov-title">A sweet hour!</div><div class="ov-sub">${reward.label} is ready for your journey.</div><button class="btn btn-play" onclick="claimHourlyReward('${reward.type}',this)">Collect reward</button></div>`;
+    popup.querySelector('button').dataset.rewardLabel=reward.label;
+    popup.querySelector('button').dataset.rewardIcon=reward.icon;
     document.body.appendChild(popup);
   },500);
 }
@@ -87,6 +99,8 @@ function claimHourlyReward(type,btn){
   if(type==='booster')earnBooster('extraMoves',1);
   else if(type==='life')addLife(1);
   else if(type==='pack'){earnBooster('extraMoves',1);earnBooster('hammer',1);earnBooster('bomb',1);}
+  showRewardToast(btn.dataset.rewardIcon||'🎁',btn.dataset.rewardLabel||'Reward');
+  hourlyRewardQueue.shift();hourlyRewardShowing=false;presentNextHourlyReward();
 }
 
 
@@ -250,8 +264,9 @@ let rewardToastTimer;
 function showRewardToast(icon,label){
   document.getElementById('reward-notice')?.remove();clearTimeout(rewardToastTimer);
   const toast=document.createElement('div');toast.id='reward-notice';toast.className='reward-notice';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');
+  const burst=document.createElement('span');burst.className='reward-burst';burst.innerHTML='<i></i><i></i><i></i><i></i><i></i><i></i>';
   const art=document.createElement('span');art.className='reward-notice-art';art.textContent=icon;
-  const text=document.createElement('div'),title=document.createElement('strong'),detail=document.createElement('small');title.textContent='Reward collected';detail.textContent=label.replace(/\s*claimed!?/gi,'');text.append(title,detail);toast.append(art,text);document.body.append(toast);rewardToastTimer=setTimeout(()=>toast.remove(),3000);
+  const text=document.createElement('div'),title=document.createElement('strong'),detail=document.createElement('small');title.textContent='Collected!';detail.textContent=label.replace(/\s*claimed!?/gi,'');text.append(title,detail);toast.append(burst,art,text);document.body.append(toast);if(typeof playReward==='function')playReward();if(typeof vibrate==='function')vibrate([25,30,55]);rewardToastTimer=setTimeout(()=>toast.remove(),2800);
 }
 
 // ═══ UI UPDATE ═══
