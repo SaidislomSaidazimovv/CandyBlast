@@ -1,4 +1,4 @@
-const CACHE_NAME = 'candy-blast-v27';
+const CACHE_NAME = 'candy-blast-v28';
 const ASSETS = [
   '/js/entry.js',
   '/js/leaderboard.js',
@@ -25,6 +25,7 @@ const ASSETS = [
   '/css/interface.css',
   '/css/responsive.css',
   '/css/worlds.css',
+  '/css/gameplay-polish.css',
   '/js/interface.js',
   '/images/ui/icons.svg',
   '/images/ui/app.svg',

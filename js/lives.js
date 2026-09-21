@@ -130,6 +130,7 @@ function showBoosterEarned(type){showRewardToast({extraMoves:'⚡',hammer:'🔨'
 // ─── Extra Moves ───
 function activateExtraMoves(){
   moves+=5;updateStats();
+  playBoosterSound('extraMoves');
   const movesBox=document.querySelectorAll('.stat-box')[2];
   if(movesBox){movesBox.style.animation='boosterFlash 0.5s ease 3';setTimeout(()=>movesBox.style.animation='',1600);}
   hidePreGame();
@@ -205,6 +206,7 @@ function useIngameBooster(type){
   livesData.boosters[type]--;saveLives();updateLivesUI();
   if(type==='extraMoves'){
     moves+=5;updateStats();
+    playBoosterSound('extraMoves');
     const mv=document.getElementById('moves-val');
     if(mv){mv.style.animation='boosterFlash 0.4s ease 3';setTimeout(()=>mv.style.animation='',1300);}
   }else if(type==='hammer'){
@@ -223,6 +225,7 @@ function activateIngameBomb(r,c){
   let removed=0;busy=true;const session=gameSession;
   for(let row=0;row<GRID;row++)for(let col=0;col<GRID;col++)if(getType(row,col)===target){getCell(row,col)?.classList.add('matched');removeCandy(row,col);removed++;}
   score+=removed*30;levelScore+=removed*30;updateStats();showBombEffect(r,c);playMatch(removed);
+  playBoosterSound('bomb');
   setTimeout(async()=>{if(session!==gameSession)return;await dropCandies();if(session!==gameSession)return;await processMatches();if(session!==gameSession)return;finishMove();},settings.anim?300:0);
 }
 function updateIngameBoosterUI(){

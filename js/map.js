@@ -166,6 +166,7 @@ function applyStartingBoosters(boosters) {
   if (chosen.includes('extraMoves') && livesData.boosters.extraMoves > 0) {
     livesData.boosters.extraMoves--;
     moves += 5;
+    playBoosterSound('extraMoves');
   }
   // Targeted tools are armed for the player's first chosen candy.
   if (chosen.includes('hammer') && livesData.boosters.hammer > 0) {
