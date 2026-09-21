@@ -26,6 +26,7 @@ const ASSETS = [
   '/css/responsive.css',
   '/css/worlds.css',
   '/css/gameplay-polish.css',
+  '/css/journey.css',
   '/js/interface.js',
   '/images/ui/icons.svg',
   '/images/ui/app.svg',

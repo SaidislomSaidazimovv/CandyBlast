@@ -1,10 +1,9 @@
 // ═══ REGIONS ═══
 const REGIONS = [
-  { id:'central-asia', name:'Markaziy Osiyo', emoji:'🏔️', levels:[1,20], theme:'', color:'#c471ed', bgColor:'rgba(196,113,237,0.15)', border:'rgba(196,113,237,0.4)', description:'Sweet mountains of candy!' },
-  { id:'europe', name:'Yevropa', emoji:'🏰', levels:[21,40], theme:'theme-ocean', color:'#00c8ff', bgColor:'rgba(0,200,255,0.15)', border:'rgba(0,200,255,0.4)', description:'Candy castles await!' },
-  { id:'americas', name:'Amerika', emoji:'🌋', levels:[41,60], theme:'theme-fire', color:'#ff4500', bgColor:'rgba(255,69,0,0.15)', border:'rgba(255,69,0,0.4)', description:'Hot and spicy candies!' },
-  { id:'asia', name:'Sharqiy Osiyo', emoji:'🌸', levels:[61,80], theme:'theme-forest', color:'#43e97b', bgColor:'rgba(67,233,123,0.15)', border:'rgba(67,233,123,0.4)', description:'Magical forest sweets!' },
-  { id:'africa', name:'Afrika', emoji:'🌅', levels:[81,100], theme:'theme-candy', color:'#ff5fa0', bgColor:'rgba(255,95,160,0.15)', border:'rgba(255,95,160,0.4)', description:'Rainbow candy paradise!' },
+  { id:'berry-meadow', name:'Berry Meadow', emoji:'🍒', levels:[1,5], image:'berry-meadow.webp', color:'#e66f9b', description:'Learn the rhythm among berry hills.' },
+  { id:'sundae-harbour', name:'Sundae Harbour', emoji:'🌅', levels:[6,10], image:'sundae-harbour.webp', color:'#f1a45f', description:'Break frost along the sugar coast.' },
+  { id:'mintwood', name:'Mintwood Grove', emoji:'🌸', levels:[11,15], image:'mintwood.webp', color:'#68b991', description:'Build specials beneath the mint canopy.' },
+  { id:'caramel-peaks', name:'Caramel Peaks', emoji:'🏔️', levels:[16,20], image:'caramel-peaks.webp', color:'#f2c46d', description:'Master every goal on the final climb.' },
 ];
 
 // Release one: authored goals; timers are reserved for a later challenge mode.
@@ -97,19 +96,27 @@ function fmtTimeSt(s) { const m=Math.floor(s/60),sc=s%60; return m+':'+(sc<10?'0
 // ═══ MAP SCREEN ═══
 function renderMapScreen(){
   const host=document.getElementById('map-container');if(!host)return;host.innerHTML='';
+  const currentRegion=getRegionForLevel(mapData.currentLevel)||REGIONS[0];
   const header=document.createElement('header');header.className='app-screen-header journey-header';
-  header.innerHTML='<button class="app-icon-button" aria-label="Home" onclick="goScreen(&quot;start&quot;)">←</button><div><strong>Sweet Journey</strong><small>Level '+mapData.currentLevel+' / '+RELEASE_LEVEL_COUNT+'</small></div><span>⭐ '+getTotalStars()+'</span>';host.append(header);
+  header.innerHTML='<button class="app-icon-button" aria-label="Home" onclick="goScreen(&quot;start&quot;)">←</button><div><strong>Sweet Journey</strong><small>'+currentRegion.name+' · Level '+mapData.currentLevel+' / '+RELEASE_LEVEL_COUNT+'</small></div><span class="journey-star-total">⭐ '+getTotalStars()+' / '+(RELEASE_LEVEL_COUNT*3)+'</span>';host.append(header);
   const scroll=document.createElement('div');scroll.className='journey-scroll';host.append(scroll);
   const trail=document.createElement('div');trail.className='journey-trail';scroll.append(trail);
   const positions=mapData.levels.map((lv,i)=>({x:50+28*Math.sin(i*.85),y:130+i*112}));
   const height=positions.at(-1).y+150;trail.style.height=height+'px';
+  REGIONS.forEach((region,chapterIndex)=>{
+    const first=region.levels[0]-1,last=region.levels[1]-1,chapterLevels=mapData.levels.slice(first,last+1),completed=chapterLevels.filter(level=>level.completed).length;
+    const chapter=document.createElement('section');chapter.className='journey-chapter'+(completed===chapterLevels.length?' is-complete':'')+(chapterLevels.every(level=>level.locked)?' is-locked':'');chapter.dataset.world=region.id;
+    chapter.style.top=(positions[first].y-112)+'px';chapter.style.height=(positions[last].y-positions[first].y+224)+'px';chapter.style.setProperty('--chapter-image',`url("../images/worlds/${region.image}")`);chapter.style.setProperty('--chapter-accent',region.color);
+    chapter.setAttribute('aria-label',region.name+', '+completed+' of '+chapterLevels.length+' levels complete');trail.append(chapter);
+    const sign=document.createElement('div');sign.className='journey-region';sign.style.top=(positions[first].y-96)+'px';sign.innerHTML=`<span aria-hidden="true">${region.emoji}</span><span><strong>${region.name}</strong><small>${region.description}</small></span><b>${completed}/5</b>`;trail.append(sign);
+  });
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 100 '+height);svg.setAttribute('preserveAspectRatio','none');svg.classList.add('journey-path');svg.setAttribute('aria-hidden','true');
   const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d',positions.map((p,i)=>{if(!i)return 'M'+p.x+' '+p.y;const prev=positions[i-1],mid=(prev.y+p.y)/2;return 'C'+prev.x+' '+mid+' '+p.x+' '+mid+' '+p.x+' '+p.y;}).join(' '));svg.append(path);trail.append(svg);
   mapData.levels.forEach((lv,i)=>{
     const region=getRegionForLevel(lv.id),pos=positions[i];
-    if(i%20===0){const sign=document.createElement('div');sign.className='journey-region';sign.style.top=(pos.y-100)+'px';sign.textContent=region.emoji+' '+region.name;trail.append(sign);}
-    const button=document.createElement('button');button.className='journey-level'+(lv.completed?' completed':'')+(lv.id===mapData.currentLevel?' current':'');button.disabled=lv.locked;button.style.left=pos.x+'%';button.style.top=pos.y+'px';button.setAttribute('aria-label','Level '+lv.id+(lv.locked?', locked':', '+lv.stars+' stars'));
-    button.innerHTML='<span>'+(lv.locked?'🔒':lv.id)+'</span><small>'+(lv.completed?'⭐'.repeat(lv.stars):lv.id===mapData.currentLevel?'PLAY':'')+'</small>';
+    const gate=lv.id%5===0;
+    const button=document.createElement('button');button.className='journey-level world-'+region.id+(lv.completed?' completed':'')+(lv.id===mapData.currentLevel?' current':'')+(gate?' chapter-gate':'');button.disabled=lv.locked;button.dataset.level=String(lv.id);button.style.left=pos.x+'%';button.style.top=pos.y+'px';button.setAttribute('aria-label','Level '+lv.id+', '+lv.title+(lv.locked?', locked':', '+lv.stars+' stars'));
+    button.innerHTML='<span>'+(lv.locked?'🔒':lv.id)+'</span><small>'+(lv.completed?'⭐'.repeat(lv.stars):lv.id===mapData.currentLevel?'PLAY':gate?'GATE':'')+'</small>';
     button.onclick=()=>{mapData.selectedRegion=region;showLevelInfo(lv,region);};trail.append(button);
   });
   requestAnimationFrame(()=>{scroll.scrollTop=Math.max(0,positions[Math.max(0,Math.min(positions.length-1,mapData.currentLevel-1))].y-scroll.clientHeight*.45);});
