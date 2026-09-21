@@ -111,6 +111,7 @@ function start(){
   const boardEl=document.getElementById('board'),screen=document.getElementById('screen-game');
   const iceGeo=geo(new THREE.BoxGeometry(.92,.3,.92));
   const iceMesh=new THREE.InstancedMesh(iceGeo,mat(new THREE.MeshPhysicalMaterial({color:0xb9efff,transparent:true,opacity:.35,roughness:.1,depthWrite:false})),64);iceMesh.frustumCulled=false;scene.add(iceMesh);
+  const hardIceMesh=new THREE.InstancedMesh(iceGeo,mat(new THREE.MeshPhysicalMaterial({color:0x8edfff,transparent:true,opacity:.52,roughness:.06,metalness:.08,depthWrite:false})),64);hardIceMesh.frustumCulled=false;scene.add(hardIceMesh);
   const stripeMat=mat(new THREE.MeshBasicMaterial({color:0xfff4df}));
   const stripes=new THREE.InstancedMesh(geo(new THREE.BoxGeometry(.72,.035,.09)),stripeMat,128);stripes.frustumCulled=false;scene.add(stripes);
   const bombMaterial=standard('#64384b',.22),bombs=new THREE.InstancedMesh(sphere,bombMaterial,64);bombs.frustumCulled=false;scene.add(bombs);
@@ -155,7 +156,7 @@ function start(){
     wake();
   }
   function draw(){
-    const counts=[0,0,0,0,0,0];let iceCount=0,stripeCount=0,bombCount=0,moving=false;
+    const counts=[0,0,0,0,0,0];let iceCount=0,hardIceCount=0,stripeCount=0,bombCount=0,moving=false;
     const data=snapshot();halo.visible=false;
     for(const rec of records){
       const cell=boardEl.children[rec.i];if(!cell)continue;
@@ -173,13 +174,14 @@ function start(){
       dummy.position.set(x,y,z);dummy.rotation.set(0,(rec.i%3-1)*.09,0);dummy.scale.setScalar(scale*(selected?1.14:1));dummy.updateMatrix();
       if(rec.type>=0){if(rec.special==='bomb'){dummy.scale.setScalar(.4*scale);dummy.updateMatrix();bombs.setMatrixAt(bombCount++,dummy.matrix);}else sweets[rec.type].setMatrixAt(counts[rec.type]++,dummy.matrix);}
       if(rec.ice){dummy.position.set(rec.x,.34,rec.z);dummy.rotation.set(0,0,0);dummy.scale.setScalar(1);dummy.updateMatrix();iceMesh.setMatrixAt(iceCount++,dummy.matrix);}
+      if(rec.iceHits>1){dummy.position.set(rec.x,.48,rec.z);dummy.rotation.set(0,.08*(rec.i%3-1),0);dummy.scale.set(.82,.72,.82);dummy.updateMatrix();hardIceMesh.setMatrixAt(hardIceCount++,dummy.matrix);}
       if(rec.special&&rec.special!=='bomb'){
         for(let n=0;n<2;n++){const vertical=rec.special==='striped-v'||rec.special==='wrapped'&&n===1;const offset=rec.special==='wrapped'?0:(n-.5)*.22;dummy.position.set(x+(vertical?offset:0),y+.23,z+(vertical?0:offset));dummy.rotation.set(0,vertical?Math.PI/2:0,0);dummy.scale.setScalar(scale);dummy.updateMatrix();stripes.setMatrixAt(stripeCount++,dummy.matrix);}
       }
       if(selected||hint){halo.visible=true;halo.position.set(x,.26,z);}
     }
     sweets.forEach((m,i)=>{m.count=counts[i];m.instanceMatrix.needsUpdate=true;});
-    for(const [m,n] of [[iceMesh,iceCount],[stripes,stripeCount],[bombs,bombCount]]){m.count=n;m.instanceMatrix.needsUpdate=true;}
+    for(const [m,n] of [[iceMesh,iceCount],[hardIceMesh,hardIceCount],[stripes,stripeCount],[bombs,bombCount]]){m.count=n;m.instanceMatrix.needsUpdate=true;}
     let particleCount=0;
     particles=particles.filter(p=>{
       const age=elapsed-p.born;if(age>=p.life)return false;

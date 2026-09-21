@@ -10,28 +10,28 @@ const REGIONS = [
 // Release one: authored goals; timers are reserved for a later challenge mode.
 const RELEASE_LEVEL_COUNT=20;
 const OPENING_LEVELS=[
- {title:'First sweets',kind:'score',moves:24,score:1200,colors:4},
+ {title:'First sweets',kind:'score',moves:24,score:3500,colors:4},
  {title:'Berry basket',kind:'collect',moves:26,score:1600,colors:4,targets:[{type:0,count:18}]},
  {title:'A little frost',kind:'ice',moves:26,score:1800,colors:4,pattern:'corners'},
  {title:'Diamond rush',kind:'collect',moves:27,score:2000,colors:5,targets:[{type:1,count:24}]},
  {title:'Garden treats',kind:'collect',moves:28,score:2200,colors:5,targets:[{type:0,count:16},{type:2,count:16}]},
  {title:'Frozen ring',kind:'ice',moves:28,score:2400,colors:5,pattern:'ring'},
  {title:'Mint on ice',kind:'mixed',moves:30,score:2500,colors:5,targets:[{type:2,count:22}],pattern:'corners'},
- {title:'Golden meadow',kind:'score',moves:26,score:3200,colors:5},
- {title:'Snow diamonds',kind:'ice',moves:30,score:2800,colors:5,pattern:'diamond'},
+ {title:'Golden meadow',kind:'score',moves:26,score:6500,colors:5},
+ {title:'Snow diamonds',kind:'ice',moves:32,score:2800,colors:5,pattern:'diamond',iceLayers:2},
  {title:'Honey harvest',kind:'collect',moves:28,score:3000,colors:5,targets:[{type:3,count:30}]},
- {title:'Berry frost',kind:'mixed',moves:30,score:3200,colors:5,targets:[{type:0,count:24}],pattern:'ring'},
- {title:'Winter trail',kind:'mixed',moves:32,score:3400,colors:5,targets:[{type:1,count:24}],pattern:'diagonal'},
+ {title:'Berry frost',kind:'mixed',moves:34,score:3200,colors:5,targets:[{type:0,count:24}],pattern:'ring',iceLayers:2},
+ {title:'Winter trail',kind:'mixed',moves:36,score:3400,colors:5,targets:[{type:1,count:24}],pattern:'diagonal',iceLayers:2},
  {title:'Grape grove',kind:'collect',moves:30,score:3400,colors:6,targets:[{type:4,count:22}]},
  {title:'Orchard duet',kind:'collect',moves:32,score:3600,colors:6,targets:[{type:0,count:22},{type:4,count:22}]},
- {title:'Crystal crossing',kind:'ice',moves:32,score:3800,colors:6,pattern:'cross'},
- {title:'Sweet summit',kind:'score',moves:28,score:4800,colors:6},
- {title:'Frosted grapes',kind:'mixed',moves:34,score:4000,colors:6,targets:[{type:4,count:26}],pattern:'ring'},
+ {title:'Crystal crossing',kind:'ice',moves:38,score:3800,colors:6,pattern:'cross',iceLayers:2},
+ {title:'Sweet summit',kind:'score',moves:28,score:6500,colors:6},
+ {title:'Frosted grapes',kind:'mixed',moves:40,score:4000,colors:6,targets:[{type:4,count:26}],pattern:'ring',iceLayers:2},
  {title:'Three baskets',kind:'collect',moves:34,score:4400,colors:6,targets:[{type:0,count:20},{type:1,count:20},{type:2,count:20}]},
- {title:'Diamond garden',kind:'mixed',moves:34,score:4600,colors:6,targets:[{type:1,count:28}],pattern:'diamond'},
- {title:'Sweet celebration',kind:'mixed',moves:36,score:5000,colors:6,targets:[{type:3,count:28},{type:4,count:24}],pattern:'cross'},
+ {title:'Diamond garden',kind:'mixed',moves:40,score:4600,colors:6,targets:[{type:1,count:28}],pattern:'diamond',iceLayers:2},
+ {title:'Sweet celebration',kind:'mixed',moves:44,score:5000,colors:6,targets:[{type:3,count:28},{type:4,count:24}],pattern:'cross',iceLayers:2},
 ];
-function generateLevels(){return OPENING_LEVELS.map((spec,i)=>({id:i+1,moves:spec.moves,timeSeconds:0,targetScore:spec.score,star2:Math.round(spec.score*1.25),star3:Math.round(spec.score*1.6),colors:spec.colors,title:spec.title,objective:{kind:spec.kind,targets:(spec.targets||[]).map(t=>({...t})),pattern:spec.pattern||null},stars:0,completed:false,locked:i>0}));}
+function generateLevels(){return OPENING_LEVELS.map((spec,i)=>({id:i+1,moves:spec.moves,timeSeconds:0,targetScore:spec.score,star2:Math.round(spec.score*1.25),star3:Math.round(spec.score*1.6),colors:spec.colors,title:spec.title,objective:{kind:spec.kind,targets:(spec.targets||[]).map(t=>({...t})),pattern:spec.pattern||null,iceLayers:spec.iceLayers||1},stars:0,completed:false,locked:i>0}));}
 
 // ═══ STATE ═══
 let mapData = { currentLevel:1, levels:[], selectedRegion:null, selectedLevel:null };

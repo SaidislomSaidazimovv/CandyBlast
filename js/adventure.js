@@ -1,6 +1,6 @@
 // Level objectives and board assistance. Ice belongs to a tile, not a candy.
 const CANDY_NAMES = ['Berry heart','Blue diamond','Mint leaf','Honey star','Grape drop','Orange bean'];
-let objective = {kind:'score',targets:[],collected:[0,0,0,0,0,0],ice:[]};
+let objective = {kind:'score',targets:[],collected:[0,0,0,0,0,0],ice:[],iceHits:{}};
 
 function icePattern(name) {
   const cells=[];
@@ -15,8 +15,9 @@ function icePattern(name) {
   return cells;
 }
 function startObjective(spec){
+  const ice=icePattern(spec?.pattern),layers=Math.max(1,Math.min(2,Math.floor(spec?.iceLayers||1)));
   objective={kind:spec?.kind||'score',pattern:spec?.pattern||null,targets:(spec?.targets||[]).map(t=>({...t})),
-    collected:[0,0,0,0,0,0],ice:icePattern(spec?.pattern)};
+    collected:[0,0,0,0,0,0],ice,iceHits:Object.fromEntries(ice.map(index=>[index,layers]))};
 }
 function restoreObjective(saved){
   if(!saved){startObjective();return;}// Old games retain their original score goal.
@@ -24,14 +25,16 @@ function restoreObjective(saved){
     !saved.targets.every(t=>Number.isInteger(t.type)&&t.type>=0&&t.type<6&&Number.isInteger(t.count)&&t.count>0)||
     !Array.isArray(saved.collected)||saved.collected.length!==6||!saved.collected.every(n=>Number.isInteger(n)&&n>=0)||
     !Array.isArray(saved.ice)||!saved.ice.every(n=>Number.isInteger(n)&&n>=0&&n<64))throw new Error('Invalid objective');
-  objective=JSON.parse(JSON.stringify(saved));
+  const iceHits=saved.iceHits&&typeof saved.iceHits==='object'?saved.iceHits:{};
+  if(Object.entries(iceHits).some(([index,hits])=>!saved.ice.includes(+index)||!Number.isInteger(hits)||hits<1||hits>2))throw new Error('Invalid frost layers');
+  objective=JSON.parse(JSON.stringify({...saved,iceHits:Object.fromEntries(saved.ice.map(index=>[index,iceHits[index]||1]))}));
 }
 function removeCandy(r,c){
   const type=getType(r,c);
   if(type<0)return false;
   objective.collected[type]++;
-  const index=objective.ice.indexOf(r*GRID+c);
-  if(index>=0)objective.ice.splice(index,1);
+  const tile=r*GRID+c,index=objective.ice.indexOf(tile);
+  if(index>=0){const hits=Math.max(1,objective.iceHits?.[tile]||1)-1;if(hits<=0){objective.ice.splice(index,1);delete objective.iceHits[tile];}else objective.iceHits[tile]=hits;}
   grid[r][c]=-1;
   return true;
 }
@@ -48,7 +51,7 @@ function objectiveLabel(spec){
 function objectiveDescription(spec){
   if(!spec||spec.kind==='score')return 'Match candies to reach the target score.';
   const parts=(spec.targets||[]).map(t=>`${t.count} ${CANDY_NAMES[t.type].toLowerCase()}s`);
-  if(spec.pattern)parts.push(`clear ${icePattern(spec.pattern).length} ice tiles`);
+  if(spec.pattern)parts.push(`clear ${icePattern(spec.pattern).length} ${spec.iceLayers===2?'double-frost':'ice'} tiles`);
   return parts.join(' · ');
 }
 function boardInstruction(){
@@ -64,7 +67,7 @@ function updateObjectiveUI(){
     const left=Math.max(0,t.count-objective.collected[t.type]);
     goals.push(`<span class="goal-icon candy-art c${t.type}" aria-hidden="true"></span><span><small>${CANDY_NAMES[t.type]}</small><b>${left===0?'✓ Done':left+' left'}</b></span>`);
   }
-  if(objective.kind==='ice'||objective.kind==='mixed')goals.push(`<span class="ice-symbol" aria-hidden="true">❄</span><span><small>Ice tiles</small><b>${objective.ice.length===0?'✓ Clear':objective.ice.length+' left'}</b></span>`);
+  if(objective.kind==='ice'||objective.kind==='mixed'){const layers=objective.ice.reduce((sum,index)=>sum+(objective.iceHits?.[index]||1),0);goals.push(`<span class="ice-symbol" aria-hidden="true">❄</span><span><small>Frost layers</small><b>${layers===0?'✓ Clear':layers+' left'}</b></span>`);}
   el.innerHTML=goals.join('');
   document.getElementById('objective-title').textContent=objectiveLabel(objective);
 }

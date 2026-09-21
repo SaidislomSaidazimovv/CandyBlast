@@ -615,10 +615,10 @@ function renderBoard(drops=[]){
     }
   }
   for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
-    const cell=board.children[r*GRID+c],type=getType(r,c),sp=getSpecial(r,c),ice=objective.ice.includes(r*GRID+c);
-    cell.className='cell'+(ice?' iced':'')+(sp?' special-'+sp:'');
+    const cell=board.children[r*GRID+c],type=getType(r,c),sp=getSpecial(r,c),tile=r*GRID+c,ice=objective.ice.includes(tile),hardIce=ice&&(objective.iceHits?.[tile]||1)>1;
+    cell.className='cell'+(ice?' iced':'')+(hardIce?' ice-hard':'')+(sp?' special-'+sp:'');
     cell.dataset.icon=type>=0?ICONS[type]:'';
-    cell.setAttribute('aria-label',(type>=0?CANDY_NAMES[type]:'Empty')+(sp?', '+sp:'')+(ice?', ice tile':'')+', row '+(r+1)+', column '+(c+1));
+    cell.setAttribute('aria-label',(type>=0?CANDY_NAMES[type]:'Empty')+(sp?', '+sp:'')+(ice?', '+(hardIce?'double frost':'ice tile'):'')+', row '+(r+1)+', column '+(c+1));
     const art=cell.querySelector('.candy-art');art.className='candy-art'+(type>=0?' c'+type:' empty-candy');art.style.transform='';
     cell.querySelector('.special-mark').textContent=sp===SPECIAL.WRAPPED?'✦':sp===SPECIAL.BOMB?'✧':'';
     const fall=drops.find(d=>d.r===r&&d.c===c);

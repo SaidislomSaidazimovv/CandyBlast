@@ -30,6 +30,7 @@ html.game-3d #screen-game #combo-display.is-popping{
   box-shadow:0 0 8px #fff5bf;animation:match-spark .54s cubic-bezier(.18,.75,.3,1) var(--delay) both;
   will-change:transform,opacity;
 }
+.cell.iced.ice-hard::after{border-width:3px!important;background:linear-gradient(145deg,#effcff88,#72d9ff55)!important;box-shadow:inset 0 0 10px #e8fbff,0 0 6px #8be5ff99!important}
 @keyframes match-spark{
   0%{opacity:0;transform:translate3d(0,0,0) scale(.2) rotate(0deg)}
   25%{opacity:1;transform:translate3d(calc(var(--dx)*.35),calc(var(--dy)*.35),0) scale(1.05) rotate(55deg)}
