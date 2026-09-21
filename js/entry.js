@@ -12,7 +12,7 @@
  function message(error){return error?.message||error?.msg||error?.error_description||error?.error||'Something went wrong. Please try again.';}
  function setStatus(text,isError=false){const el=document.getElementById('entry-error');if(el){el.textContent=text||'';el.classList.toggle('is-error',isError);}}
  function setBusy(busy){document.querySelectorAll('#entry-overlay button,#entry-overlay input').forEach(el=>el.disabled=busy);}
- function redirectUrl(){return location.origin+location.pathname;}
+ function redirectUrl(){return window.Capacitor?.isNativePlatform?.()?'candyblast://auth/callback':location.origin+location.pathname;}
 
  async function request(path,{method='GET',body,token=session?.access_token,headers={}}={}){
   const response=await fetch(CONFIG.url+path,{method,headers:{apikey:CONFIG.publishableKey,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{}),...headers},body:body===undefined?undefined:JSON.stringify(body)});

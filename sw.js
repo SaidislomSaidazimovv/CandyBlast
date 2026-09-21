@@ -1,5 +1,6 @@
-const CACHE_NAME = 'candy-blast-v30';
-const ASSETS = [
+const CACHE_NAME = 'candy-blast-v31';
+// The launch shell stays small; large 3D and journey artwork is cached when used.
+const CORE = [
   '/js/profiles.js',
   '/js/entry.js',
   '/js/economy.js',
@@ -22,7 +23,7 @@ const ASSETS = [
   '/js/backgrounds.js',
   '/js/game.js',
   '/js/render-bridge.js',
-  '/js/renderer3d.mjs',
+  '/js/renderer-loader.js',
   '/css/mobile-game.css',
   '/css/interface.css',
   '/css/responsive.css',
@@ -30,18 +31,13 @@ const ASSETS = [
   '/css/gameplay-polish.css',
   '/css/journey.css',
   '/js/interface.js',
+  '/js/native.js',
   '/images/ui/icons.svg',
   '/images/ui/app.svg',
   '/images/ui/app-icon-512.png',
   '/images/ui/candyblast-logo.webp',
   '/images/ui/candyblast-hero.webp',
   '/images/ui/candyblast-emblem.webp',
-  '/images/worlds/berry-meadow.webp',
-  '/images/worlds/sundae-harbour.webp',
-  '/images/worlds/mintwood.webp',
-  '/images/worlds/caramel-peaks.webp',
-  '/vendor/three/three.module.min.js',
-  '/vendor/three/three.core.js',
   '/js/performance.js',
   '/css/adventure.css',
   '/js/adventure.js',
@@ -58,7 +54,7 @@ const ASSETS = [
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
+      .then(cache => cache.addAll(CORE))
       .then(() => self.skipWaiting())
   );
 });
@@ -78,9 +74,10 @@ self.addEventListener('fetch', e => {
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(response => {
-        // Cache Google Fonts on first load
-        if (e.request.url.includes('fonts.googleapis.com') ||
-            e.request.url.includes('fonts.gstatic.com')) {
+        const url = new URL(e.request.url);
+        if (url.origin === self.location.origin ||
+            url.hostname.endsWith('fonts.googleapis.com') ||
+            url.hostname.endsWith('fonts.gstatic.com')) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
         }

@@ -1,0 +1,22 @@
+{
+  "name": "candy-blast-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/regression.cjs tests/spin.cjs",
+    "build": "node scripts/build-mobile.cjs",
+    "mobile:sync": "npm run build && node -r ./scripts/cap-shell-fix.cjs ./node_modules/@capacitor/cli/bin/capacitor sync",
+    "android": "npm run mobile:sync && cap open android",
+    "ios": "npm run mobile:sync && cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/ios": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Candy Blast</string>
+    <string name="title_activity_main">Candy Blast</string>
+    <string name="package_name">uz.candyblast.game</string>
+    <string name="custom_url_scheme">uz.candyblast.game</string>
+</resources>

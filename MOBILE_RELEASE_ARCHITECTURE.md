@@ -4,7 +4,7 @@
 
 ### Android and iOS app
 
-The playable game is the primary product. It owns gameplay, onboarding, account/profile, cloud progress, settings, rewards, sound, haptics and offline play. The current browser build is the shared game client used to develop this surface; it will be wrapped with Capacitor after the permanent application ID is fixed.
+The playable game is the primary product. It owns gameplay, onboarding, account/profile, cloud progress, settings, rewards, sound, haptics and offline play. Capacitor 8 Android and iOS shells now live in this repository. The provisional application ID is `uz.candyblast.game`; confirm ownership before creating store listings because changing it later creates a different app.
 
 ### Public website
 
@@ -22,9 +22,13 @@ The existing Candy Blast Vercel deployment remains the playable game staging bui
 ## Release order
 
 1. Finish the shared mobile UI system and 20-level gameplay quality.
-2. Finalize the Android application ID and iOS bundle ID.
-3. Add Capacitor Android and iOS shells, native safe areas, deep links, haptics and secure session storage.
+2. Confirm the Android application ID and iOS bundle ID (`uz.candyblast.game` is currently configured).
+3. Android and iOS shells, safe areas, the `candyblast://auth/callback` deep link and haptics are configured. Add the callback to Supabase Auth redirect URLs.
 4. Configure Supabase mobile redirect URLs and native Google/Apple clients.
 5. Test Android on a physical device; build and test iOS on macOS or a managed iOS build service.
 6. Create store accounts, signing assets, screenshots, privacy declarations and testing tracks.
 7. Connect real store URLs in the official-site repository and publish its custom domain.
+
+## Native development
+
+Run `npm install`, then `npm run mobile:sync` after each web change. `npm run android` opens Android Studio and `npm run ios` opens Xcode. Android builds require Android Studio/SDK and a configured `ANDROID_HOME`; iOS signing and builds require macOS with Xcode. Large Three.js files and world images are now loaded and cached only when the player approaches the Journey or game screen, keeping them out of the initial launch path.

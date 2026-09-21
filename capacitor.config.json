@@ -1,0 +1,8 @@
+{
+  "appId": "uz.candyblast.game",
+  "appName": "Candy Blast",
+  "webDir": "dist",
+  "server": {"androidScheme": "https"},
+  "android": {"allowMixedContent": false},
+  "ios": {"contentInset": "never"}
+}
