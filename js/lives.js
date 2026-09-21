@@ -1,15 +1,33 @@
 // ═══════ LIVES + BOOSTERS ═══════
 const MAX_LIVES=5;
 const LIFE_REGEN_MS=30*60*1000;
+const MAX_INVENTORY=999;
 
 let livesData={lives:5,lastLostAt:null,boosters:{extraMoves:2,hammer:1,bomb:1}};
 let hammerMode=false,bombMode=false;
 let lifeTimerInterval=null;
 
 // ═══ SAVE / LOAD ═══
-function saveLives(){localStorage.setItem('cb_lives',JSON.stringify(livesData));}
+function safeWholeNumber(value,min,max,fallback){
+  return Number.isFinite(value)?Math.min(max,Math.max(min,Math.floor(value))):fallback;
+}
+function normalizeLivesData(value){
+  const source=value&&typeof value==='object'?value:{};
+  const stock=source.boosters&&typeof source.boosters==='object'?source.boosters:{};
+  const lives=safeWholeNumber(source.lives,0,MAX_LIVES,MAX_LIVES);
+  let lastLostAt=Number.isFinite(source.lastLostAt)&&source.lastLostAt>0?Math.floor(source.lastLostAt):null;
+  if(lastLostAt!==null&&lastLostAt>Date.now())lastLostAt=Date.now();
+  if(lives>=MAX_LIVES)lastLostAt=null;
+  else if(lastLostAt===null)lastLostAt=Date.now();
+  return {lives,lastLostAt,boosters:{
+    extraMoves:safeWholeNumber(stock.extraMoves,0,MAX_INVENTORY,0),
+    hammer:safeWholeNumber(stock.hammer,0,MAX_INVENTORY,0),
+    bomb:safeWholeNumber(stock.bomb,0,MAX_INVENTORY,0)
+  }};
+}
+function saveLives(){livesData=normalizeLivesData(livesData);localStorage.setItem('cb_lives',JSON.stringify(livesData));}
 function loadLives(){
-  try{const saved=localStorage.getItem('cb_lives');if(saved)livesData={...livesData,...JSON.parse(saved)};}catch(e){localStorage.removeItem('cb_lives');}
+  try{const saved=localStorage.getItem('cb_lives');livesData=normalizeLivesData(saved?JSON.parse(saved):livesData);}catch(e){localStorage.removeItem('cb_lives');livesData=normalizeLivesData(null);}
   regenLives();
 }
 function regenLives(){
@@ -33,7 +51,7 @@ function loseLife(){
   saveLives();updateLivesUI();
 }
 function addLife(amount){
-  amount=amount||1;livesData.lives=Math.min(MAX_LIVES,livesData.lives+amount);
+  amount=safeWholeNumber(amount||1,0,MAX_LIVES,1);livesData.lives=Math.min(MAX_LIVES,livesData.lives+amount);
   if(livesData.lives>=MAX_LIVES)livesData.lastLostAt=null;
   saveLives();updateLivesUI();
 }
@@ -46,7 +64,7 @@ function startLifeTimer(){
 }
 function getTimeUntilNextLife(){
   if(livesData.lives>=MAX_LIVES||!livesData.lastLostAt)return null;
-  const elapsed=Date.now()-livesData.lastLostAt;
+  const elapsed=Math.max(0,Date.now()-livesData.lastLostAt);
   return LIFE_REGEN_MS-(elapsed%LIFE_REGEN_MS);
 }
 function formatTime(ms){
@@ -99,7 +117,8 @@ function useBooster(type){
   return true;
 }
 function earnBooster(type,amount){
-  amount=amount||1;livesData.boosters[type]+=amount;saveLives();updateLivesUI();
+  if(!Object.hasOwn(livesData.boosters,type))return;
+  amount=safeWholeNumber(amount||1,0,MAX_INVENTORY,1);livesData.boosters[type]=Math.min(MAX_INVENTORY,livesData.boosters[type]+amount);saveLives();updateLivesUI();
   showBoosterEarned(type);
 }
 function shakeBoosterBtn(type){

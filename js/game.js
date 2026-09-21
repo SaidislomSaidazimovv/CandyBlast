@@ -710,7 +710,7 @@ async function trySwap(r1,c1,r2,c2){
     if(cell1){cell1.classList.add('invalid');setTimeout(()=>cell1.classList.remove('invalid'),420);}
     if(cell2){cell2.classList.add('invalid');setTimeout(()=>cell2.classList.remove('invalid'),420);}
     const flash=document.createElement('div');flash.className='board-flash';document.getElementById('board-wrap').appendChild(flash);setTimeout(()=>flash.remove(),380);
-    moves--;updateStats();const bw=document.getElementById('board-wrap');if(bw){const pop=document.createElement('div');pop.className='score-popup';pop.textContent='No match · -1 move';pop.style.cssText+='color:#ff6f91;left:50%;top:50%;transform:translateX(-50%);font-size:.9rem;';bw.appendChild(pop);setTimeout(()=>pop.remove(),900);}if(moves<=0){finishMove();return;}
+    updateStats();const bw=document.getElementById('board-wrap');if(bw){const pop=document.createElement('div');pop.className='score-popup';pop.textContent='No match · try another swap';pop.style.cssText+='color:#ff8aac;left:50%;top:50%;transform:translateX(-50%);font-size:.9rem;';bw.appendChild(pop);setTimeout(()=>pop.remove(),900);}
     finishMove();return;
   }
   moves--;combo=0;updateStats();await processMatches(preferredCells);if(session!==gameSession)return;
@@ -940,7 +940,7 @@ function restoreGameState(){
     const state=JSON.parse(raw);
     if(state.level>RELEASE_LEVEL_COUNT){localStorage.setItem('cb_gamestate_legacy_100',raw);clearGameState();return false;}
     // Don't restore if saved more than 24h ago (stale)
-    if(Date.now()-state.savedAt>24*60*60*1000){clearGameState();return false;}
+    if(!Number.isFinite(state.savedAt)||state.savedAt>Date.now()+5*60*1000||Date.now()-state.savedAt>24*60*60*1000){clearGameState();return false;}
     if(!Array.isArray(state.grid)||state.grid.length!==GRID||state.grid.some(row=>!Array.isArray(row)||row.length!==GRID||row.some(cell=>{const t=typeof cell==='object'&&cell!==null?cell.type:cell;return !Number.isInteger(t)||t<0||t>=TYPES;})))throw new Error('Invalid board');
     if(!Number.isInteger(state.moves)||state.moves<=0||!Number.isFinite(state.targetScore)||state.targetScore<=0)throw new Error('Invalid game');
     if(!Number.isFinite(state.score)||state.score<0||!Number.isFinite(state.levelScore)||state.levelScore<0||!Number.isInteger(state.activeCandyTypes)||state.activeCandyTypes<3||state.activeCandyTypes>TYPES)throw new Error('Invalid score');
