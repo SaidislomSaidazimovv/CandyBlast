@@ -15,6 +15,17 @@ test('all shipped JavaScript parses', () => {
   new vm.Script(fs.readFileSync(path.join(root, 'sw.js'), 'utf8'));
 });
 
+test('profile avatars are constrained, synced and shown in live scores',()=>{
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const profiles=fs.readFileSync(path.join(root,'js','profiles.js'),'utf8');
+  const entry=fs.readFileSync(path.join(root,'js','entry.js'),'utf8');
+  const leaderboard=fs.readFileSync(path.join(root,'js','leaderboard.js'),'utf8');
+  const sql=fs.readFileSync(path.join(root,'supabase','migrations','004_profile_avatars.sql'),'utf8');
+  assert.match(html,/js\/profiles\.js/);assert.match(profiles,/CandyProfiles=\{items,get,read,mount\}/);
+  assert.match(entry,/avatar-picker/);assert.match(entry,/display_name:name,avatar:selectedAvatar/);
+  assert.match(leaderboard,/display_name,avatar,score/);assert.match(sql,/leaderboard_scores_avatar_check/);
+});
+
 test('retry preserves authored level settings and starts a fresh timer fixture after Play', () => {
   const g = game();
   g.run("startMapLevel(1);hidePreGame();");

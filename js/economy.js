@@ -20,5 +20,5 @@
   async function claimWeeklyBonus(){const result=await rpc('economy_claim_weekly_bonus');applyState(result.state);return result;}
   async function claimLevelReward(level,stars){if(!signed())return null;const result=await rpc('economy_claim_level_reward',{p_level:level,p_stars:stars});applyState(result.state);return result;}
   function refreshIfDue(){if(signed()&&Date.now()-lastSync>60000)sync().catch(()=>{});}
-  window.CandyEconomy={sync,consume,claimDaily,claimWeeklyBonus,spin,claimLevelReward,refreshIfDue,isAuthoritative:signed,applyState};
+  window.CandyEconomy={sync,consume,claimDaily,claimWeeklyBonus,spin,claimLevelReward,refreshIfDue,isAuthoritative:signed,applyState,get state(){return {lives:livesData.lives,extra_moves:livesData.boosters.extraMoves,hammer:livesData.boosters.hammer,bomb:livesData.boosters.bomb,spins:dailyData.spinCount,gold_bars:+localStorage.getItem('cb_gold_bars')||0};}};
 })();

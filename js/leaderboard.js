@@ -10,13 +10,15 @@
   function playerName(){
     try{return (JSON.parse(localStorage.getItem('cb_profile')||'{}').name||'Player').trim().slice(0,24)||'Player';}catch{return 'Player';}
   }
+  function playerAvatar(){try{return window.CandyProfiles?.get(JSON.parse(localStorage.getItem('cb_profile')||'{}').avatar)?.id||'berry';}catch{return 'berry';}}
   function headers(json=false){
     const token=session()?.access_token||config.publishableKey;
     return {apikey:config.publishableKey,Authorization:`Bearer ${token}`,...(json?{'Content-Type':'application/json',Prefer:'return=minimal'}:{})};
   }
   async function scores(){
-    const select='user_id,display_name,score,level,stars,created_at';
-    const response=await fetch(`${config.url}/rest/v1/leaderboard_scores?select=${select}&order=score.desc&limit=500`,{headers:headers()});
+    const select='user_id,display_name,avatar,score,level,stars,created_at';
+    let response=await fetch(`${config.url}/rest/v1/leaderboard_scores?select=${select}&order=score.desc&limit=500`,{headers:headers()});
+    if(response.status===400)response=await fetch(`${config.url}/rest/v1/leaderboard_scores?select=user_id,display_name,score,level,stars,created_at&order=score.desc&limit=500`,{headers:headers()});
     if(!response.ok)throw new Error(response.status===404?'Live Scores table is not set up yet.':'Scores could not be refreshed.');
     return response.json();
   }
@@ -41,7 +43,7 @@
     data.forEach((row,index)=>{
       const item=document.createElement('div');item.className='lb-row'+(row.me?' lb-me':'');
       const rank=document.createElement('div');rank.className='lb-rank '+(index===0?'gold':index===1?'silver':index===2?'bronze':'other');rank.textContent=index===0?'1':index===1?'2':index===2?'3':`#${index+1}`;
-      const avatar=document.createElement('div');avatar.className='lb-avatar';avatar.textContent=(row.display_name||'P').slice(0,1).toUpperCase();
+      const avatar=document.createElement('div');avatar.className='lb-avatar';window.CandyProfiles?.mount(avatar,row.avatar,{label:false});
       const info=document.createElement('div');info.className='lb-info';const name=document.createElement('div');name.className='lb-name';name.textContent=(row.display_name||'Player')+(row.me?' · You':'');const level=document.createElement('div');level.className='lb-level';level.textContent=`Level ${Math.max(1,Number(row.level)||1)} · ${Math.max(0,Number(row.stars)||0)} stars`;info.append(name,level);
       const score=document.createElement('div');score.className='lb-score';score.textContent=Number(row.score||0).toLocaleString();item.append(rank,avatar,info,score);list.append(item);
     });
@@ -68,8 +70,8 @@
   }
   async function submit(result){
     const id=userId();if(!id||!result||!Number.isFinite(Number(result.score)))return false;
-    const body={user_id:id,display_name:playerName(),score:Math.max(0,Math.round(Number(result.score))),level:Math.max(1,Math.min(20,Math.round(Number(result.level)||1))),stars:Math.max(0,Math.min(3,Math.round(Number(result.stars)||0)))};
-    try{const response=await fetch(`${config.url}/rest/v1/leaderboard_scores`,{method:'POST',headers:headers(true),body:JSON.stringify(body)});if(!response.ok)throw new Error('Score upload failed');if(currentScreen==='leaderboard')refresh();return true;}catch{return false;}
+    const body={user_id:id,display_name:playerName(),avatar:playerAvatar(),score:Math.max(0,Math.round(Number(result.score))),level:Math.max(1,Math.min(20,Math.round(Number(result.level)||1))),stars:Math.max(0,Math.min(3,Math.round(Number(result.stars)||0)))};
+    try{let response=await fetch(`${config.url}/rest/v1/leaderboard_scores`,{method:'POST',headers:headers(true),body:JSON.stringify(body)});if(response.status===400){delete body.avatar;response=await fetch(`${config.url}/rest/v1/leaderboard_scores`,{method:'POST',headers:headers(true),body:JSON.stringify(body)});}if(!response.ok)throw new Error('Score upload failed');if(currentScreen==='leaderboard')refresh();return true;}catch{return false;}
   }
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentScreen==='leaderboard')refresh();});
   window.CandyLeaderboard={open,submit,refresh,get connected(){return joined;}};

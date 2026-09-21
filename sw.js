@@ -1,5 +1,6 @@
-const CACHE_NAME = 'candy-blast-v29';
+const CACHE_NAME = 'candy-blast-v30';
 const ASSETS = [
+  '/js/profiles.js',
   '/js/entry.js',
   '/js/economy.js',
   '/js/leaderboard.js',
