@@ -31,6 +31,7 @@ function loadLives(){
   regenLives();
 }
 function regenLives(){
+  if(window.CandyEconomy?.isAuthoritative?.()){window.CandyEconomy.refreshIfDue();return;}
   if(livesData.lives>=MAX_LIVES){if(livesData.lastLostAt!==null){livesData.lastLostAt=null;saveLives();}return;}
   if(!livesData.lastLostAt)return;
   const elapsed=Date.now()-livesData.lastLostAt;
@@ -48,7 +49,7 @@ function loseLife(){
   if(livesData.lives<=0)return;
   livesData.lives--;
   if(livesData.lives<MAX_LIVES&&!livesData.lastLostAt)livesData.lastLostAt=Date.now();
-  saveLives();updateLivesUI();
+  saveLives();updateLivesUI();window.CandyEconomy?.consume?.('life')?.catch(()=>{});
 }
 function addLife(amount){
   amount=safeWholeNumber(amount||1,0,MAX_LIVES,1);livesData.lives=Math.min(MAX_LIVES,livesData.lives+amount);
@@ -111,6 +112,7 @@ function useBooster(type){
   if(type==='bomb'){if(livesData.boosters.bomb<=0)return false;hidePreGame();selectBombTarget();return true;}
   if(livesData.boosters[type]<=0){shakeBoosterBtn(type);return false;}
   livesData.boosters[type]--;saveLives();updateLivesUI();
+  if(type==='extraMoves')window.CandyEconomy?.consume?.('extraMoves')?.catch(()=>{});
   if(type==='extraMoves')activateExtraMoves();
   else if(type==='hammer')activateHammer();
   else if(type==='bomb')activateBomb();
@@ -204,6 +206,7 @@ function useIngameBooster(type){
   }
 
   livesData.boosters[type]--;saveLives();updateLivesUI();
+  if(type==='extraMoves')window.CandyEconomy?.consume?.('extraMoves')?.catch(()=>{});
   if(type==='extraMoves'){
     moves+=5;updateStats();
     playBoosterSound('extraMoves');
@@ -221,6 +224,7 @@ function activateIngameBomb(r,c){
   if(!bombMode||busy||paused||gameEnded||livesData.boosters.bomb<=0)return;
   const target=getType(r,c);if(target<0)return;
   bombMode=false;livesData.boosters.bomb--;saveLives();updateLivesUI();
+  window.CandyEconomy?.consume?.('bomb')?.catch(()=>{});
   document.getElementById('ingame-btn-bomb')?.classList.remove('active-hammer');document.getElementById('board-message').textContent='';
   let removed=0;busy=true;const session=gameSession;
   for(let row=0;row<GRID;row++)for(let col=0;col<GRID;col++)if(getType(row,col)===target){getCell(row,col)?.classList.add('matched');removeCandy(row,col);removed++;}

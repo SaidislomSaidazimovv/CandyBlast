@@ -524,7 +524,7 @@ function confirmReset(){
   localStorage.removeItem('cb_gamestate');localStorage.removeItem('cb_spin_given');
   livesData={lives:5,lastLostAt:null,boosters:{extraMoves:2,hammer:1,bomb:1}};
   dailyData=createDailyData();mapData.currentLevel=1;mapData.selectedLevel=null;mapData.selectedRegion=null;
-  localStorage.removeItem('cb_best');localStorage.removeItem('cb_settings');localStorage.removeItem('cb_personal');localStorage.removeItem('cb_tutorial_done');localStorage.removeItem('cb_lives');localStorage.removeItem('cb_daily');localStorage.removeItem('cb_daily_done');localStorage.removeItem('cb_map');
+  localStorage.removeItem('cb_best');localStorage.removeItem('cb_settings');localStorage.removeItem('cb_personal');localStorage.removeItem('cb_tutorial_done');localStorage.removeItem('cb_lives');localStorage.removeItem('cb_daily');localStorage.removeItem('cb_daily_done');localStorage.removeItem('cb_gold_bars');localStorage.removeItem('cb_map');
   bestScore=0;score=0;level=1;
   settings={sfx:true,music:false,vibro:true,anim:true,flashes:true,sfxVolume:70,musicVolume:55,musicTrack:'sweet',theme:''};
   stopBgMusic();loadSettings();goScreen('start');
@@ -646,7 +646,7 @@ function onCellClick(e){
   if(bombMode){activateIngameBomb(+e.currentTarget.dataset.r,+e.currentTarget.dataset.c);return;}
   if(hammerMode){
     const hr=+e.currentTarget.dataset.r,hc=+e.currentTarget.dataset.c;
-    removeCandy(hr,hc);showHammerHint(false);busy=true;playBoosterSound('hammer');
+    removeCandy(hr,hc);showHammerHint(false);busy=true;playBoosterSound('hammer');window.CandyEconomy?.consume?.('hammer')?.catch(()=>{});
     const hb=document.getElementById('ingame-btn-hammer');if(hb)hb.classList.remove('active-hammer');
     const hcell=getCell(hr,hc);
     if(hcell){hcell.classList.add('matched');
@@ -882,7 +882,10 @@ function showWin(){if(!beginResult())return;playWin();
   document.getElementById('win-stars').textContent=stars;
   document.getElementById('win-level-score').textContent='This level: +'+levelScore.toLocaleString()+' pts';
   document.getElementById('overlay-win').classList.remove('hidden');
-  if(starCount===3){const bt=['extraMoves','hammer','bomb'];earnBooster(bt[Math.floor(Math.random()*3)]);}
+  if(starCount===3){
+    if(window.CandyEconomy?.isAuthoritative?.())window.CandyEconomy.claimLevelReward(level,starCount).then(result=>{if(result?.granted&&result.item)showBoosterEarned(result.item);}).catch(()=>{});
+    else{const bt=['extraMoves','hammer','bomb'];earnBooster(bt[Math.floor(Math.random()*3)]);}
+  }
   // Complete map level
   if(mapData&&mapData.selectedLevel){completeLevel(mapData.selectedLevel,starCount,score);mapData.selectedLevel=null;}
   window._mapStarMult=null;

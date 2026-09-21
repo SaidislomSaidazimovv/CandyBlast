@@ -39,9 +39,13 @@ function checkMonthlyLogin(){
 }
 
 // ═══ WEEKLY ═══
-function claimWeeklyDay(){
+async function claimWeeklyDay(){
   const today=getCurrentWeekDay();const weekNum=getWeekNumber();
   if(dailyData.weekNumber!==weekNum){dailyData.weeklyDays=[];dailyData.claimedWeeklyDays=[];dailyData.weekNumber=weekNum;}
+  if(window.CandyEconomy?.isAuthoritative?.()){
+    try{await window.CandyEconomy.claimDaily();if(!dailyData.weeklyDays.includes(today))dailyData.weeklyDays.push(today);if(!dailyData.claimedWeeklyDays.includes(today))dailyData.claimedWeeklyDays.push(today);saveDailyData();showRewardToast('🎁','Daily cloud reward claimed');}catch(error){if(!String(error.message).includes('daily_already_claimed'))showRewardToast('⏱️','Reward is not ready yet');}
+    return;
+  }
   if(!dailyData.weeklyDays.includes(today))dailyData.weeklyDays.push(today);
   if(!dailyData.claimedWeeklyDays.includes(today)){
     dailyData.claimedWeeklyDays.push(today);
@@ -69,6 +73,7 @@ function stopPlayTimer(){
   const elapsed=Math.floor((Date.now()-dailyData.sessionStartTime)/60000);
   dailyData.playMinutesToday+=elapsed;dailyData.sessionStartTime=null;
   const hoursPlayed=Math.floor(dailyData.playMinutesToday/60);
+  if(window.CandyEconomy?.isAuthoritative?.()){saveDailyData();return;}
   while(dailyData.hourlyRewardsClaimed<hoursPlayed&&dailyData.hourlyRewardsClaimed<3){
     const reward=HOURLY_REWARDS[dailyData.hourlyRewardsClaimed];
     showHourlyRewardPopup(reward);dailyData.hourlyRewardsClaimed++;
@@ -191,9 +196,12 @@ function renderMonthlyTab(container){
     const cell=document.createElement('div');
     cell.style.cssText=`border-radius:12px;padding:10px 6px;text-align:center;position:relative;background:${isClaimed?'rgba(67,233,123,0.1)':tierBg[tier]};border:1.5px solid ${isClaimed?'rgba(67,233,123,0.4)':isCurrent?tierBd[tier]:'rgba(255,255,255,0.06)'};opacity:${isFuture?'0.55':'1'};transition:transform 0.15s;${isCurrent&&!isClaimed?'box-shadow:0 0 12px rgba(255,220,0,0.3);':''}`;
     cell.innerHTML=`<div style="font-size:${isCurrent?'1.6rem':'1.3rem'};line-height:1;margin-bottom:4px;">${isClaimed?'✅':reward.icon}</div><div style="font-family:'Fredoka One',cursive;font-size:0.6rem;color:${isCurrent?'#ffe259':isClaimed?'#43e97b':'rgba(255,255,255,0.5)'};line-height:1.2;">Day ${reward.day}</div><div style="font-size:0.55rem;color:rgba(255,255,255,0.35);margin-top:2px;line-height:1.1;">${reward.label}</div>${isCurrent&&!isClaimed?'<div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ffe259,#ff8c42);color:#000;font-size:0.5rem;font-family:\'Fredoka One\',cursive;padding:2px 6px;border-radius:6px;white-space:nowrap;">TODAY</div>':''}`;
-    if(isCurrent&&!isClaimed){cell.style.cursor='pointer';cell.onclick=()=>{
+    if(isCurrent&&!isClaimed){cell.style.cursor='pointer';cell.onclick=async()=>{
       if(dailyData.claimedDays.includes(reward.day))return;
-      dailyData.claimedDays.push(reward.day);saveDailyData();giveMonthlyReward(reward);
+      cell.style.pointerEvents='none';
+      if(window.CandyEconomy?.isAuthoritative?.()){
+        try{await window.CandyEconomy.claimDaily();}catch(error){cell.style.pointerEvents='';if(!String(error.message).includes('daily_already_claimed'))showRewardToast('⏱️','Reward is not ready yet');renderTabContent(document.getElementById('rewards-tab-content'),'monthly');return;}
+      }else{dailyData.claimedDays.push(reward.day);saveDailyData();giveMonthlyReward(reward);}
       cell.style.background='rgba(67,233,123,0.1)';cell.style.borderColor='rgba(67,233,123,0.4)';
       cell.querySelector('div').textContent='✅';cell.style.cursor='default';cell.onclick=null;
       showRewardToast(reward.icon,reward.label);updateDailyNotifDot();
@@ -232,10 +240,11 @@ function renderWeeklyTab(container){
   bonusDiv.innerHTML=`<div style="font-size:2rem;margin-bottom:6px;">${allClaimed?'🏆':'🔒'}</div><div style="font-family:'Fredoka One',cursive;color:${allClaimed?'#ffd700':'rgba(255,255,255,0.4)'};font-size:1rem;">Full Week Bonus</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:4px;">${allClaimed?'5 Lives + All Boosters!':'Play '+(7-claimed.length)+' more days'}</div>${allClaimed&&dailyData.weeklyBonusWeek!==getWeekNumber()?'<button class="btn btn-play" style="margin-top:12px;padding:10px 24px;" onclick="claimWeeklyBonus(this)">Claim Bonus! 🎁</button>':''}`;
   container.appendChild(bonusDiv);
 }
-function claimWeeklyBonus(btn){if(dailyData.weekNumber!==getWeekNumber()||dailyData.claimedWeeklyDays.length!==7||dailyData.weeklyBonusWeek===getWeekNumber())return;dailyData.weeklyBonusWeek=getWeekNumber();saveDailyData();btn.disabled=true;btn.textContent='Claimed! ✅';addLife(5);earnBooster('extraMoves',3);earnBooster('hammer',3);earnBooster('bomb',3);showRewardToast('🏆','5 Lives + All Boosters!');}
+async function claimWeeklyBonus(btn){if(dailyData.weekNumber!==getWeekNumber()||dailyData.claimedWeeklyDays.length!==7||dailyData.weeklyBonusWeek===getWeekNumber())return;btn.disabled=true;try{if(window.CandyEconomy?.isAuthoritative?.())await window.CandyEconomy.claimWeeklyBonus();else{addLife(5);earnBooster('extraMoves',3);earnBooster('hammer',3);earnBooster('bomb',3);}dailyData.weeklyBonusWeek=getWeekNumber();saveDailyData();btn.textContent='Claimed! ✅';showRewardToast('🏆','5 Lives + All Boosters!');}catch(error){btn.disabled=false;showRewardToast('⏱️','Weekly bonus is not ready');}}
 
 // ── HOURLY TAB ──
 function renderHourlyTab(container){
+  if(window.CandyEconomy?.isAuthoritative?.()){container.innerHTML='<div class="reward-dialog-inline"><div class="spin-emblem">⏱️</div><h3>Playtime rewards</h3><p>Secure playtime rewards are being timed by the game server and will arrive in a later event update.</p></div>';return;}
   const today=getTodayKey();
   if(dailyData.lastPlayDate!==today){dailyData.playMinutesToday=0;dailyData.hourlyRewardsClaimed=0;}
   const minsPlayed=dailyData.playMinutesToday||0;const claimed=dailyData.hourlyRewardsClaimed||0;

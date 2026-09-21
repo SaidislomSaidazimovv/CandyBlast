@@ -174,6 +174,7 @@ function applyStartingBoosters(boosters) {
     livesData.boosters.extraMoves--;
     moves += 5;
     playBoosterSound('extraMoves');
+    window.CandyEconomy?.consume?.('extraMoves')?.catch(()=>{});
   }
   // Targeted tools are armed for the player's first chosen candy.
   if (chosen.includes('hammer') && livesData.boosters.hammer > 0) {

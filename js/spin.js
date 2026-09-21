@@ -73,11 +73,12 @@ function showLuckySpinPopup(){
   openSpinScreen();
 }
 
-let spinRunning=false, spinPending=null;
-function doSpin(winIdx){
+let spinRunning=false, spinPending=null,spinPendingServer=false;
+async function doSpin(winIdx){
   if(spinRunning||spinPending||!Number.isInteger(winIdx)||!SPIN_PRIZES[winIdx])return;
-  if(!useSpin())return;
-  spinRunning=true;
+  const serverSpin=globalThis.CandyEconomy?.isAuthoritative?.();
+  if(serverSpin){spinRunning=true;const waiting=document.getElementById('spin-action-btn');if(waiting){waiting.disabled=true;waiting.textContent='Checking server…';}try{const result=await globalThis.CandyEconomy.spin();winIdx=result.prize_index;spinPendingServer=true;}catch(error){spinRunning=false;if(waiting){waiting.disabled=false;waiting.textContent='Try again';}showRewardToast('⏱️','Spin needs an internet connection');return;}}
+  else{if(!useSpin())return;spinRunning=true;spinPendingServer=false;}
   const ac=getAC();if(ac?.state==='suspended')ac.resume().catch(()=>{});
   // Deduct spin
 
@@ -112,13 +113,14 @@ function finalizeSpin(winIdx){
 function claimSpinPrize(prize){
   if(spinPending===null||SPIN_PRIZES[spinPending]!==prize)return;
   spinPending=null;
-  switch(prize.type){
+  if(!spinPendingServer)switch(prize.type){
     case'life':addLife(prize.val);break;case'hammer':earnBooster('hammer',prize.val);break;
     case'bomb':earnBooster('bomb',prize.val);break;case'moves':earnBooster('extraMoves',prize.val);break;
     case'booster':earnBooster('extraMoves',1);break;
     case'pack':earnBooster('extraMoves',1);earnBooster('hammer',1);earnBooster('bomb',1);break;
     case'all3':addLife(3);earnBooster('extraMoves',3);earnBooster('hammer',3);earnBooster('bomb',3);break;
   }
+  spinPendingServer=false;
   showRewardToast(prize.icon,prize.label+' claimed!');updateSpinUI();
   // Re-render to show updated count or "no spins" state
   const count=dailyData.spinCount||0;
