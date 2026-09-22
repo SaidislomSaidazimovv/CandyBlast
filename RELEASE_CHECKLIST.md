@@ -16,7 +16,7 @@
 
 ## Quality gate
 
-- Pass `npm test` and `node tests/layout.cdp.cjs 9223`.
+- Pass `npm test`, `node tests/layout.cdp.cjs 9223`, and `node tests/performance.cdp.cjs 9223`.
 - Complete all 20 levels on at least one mid-range Android phone and one supported iPhone.
 - Test offline launch, reconnect/cloud merge, app background/restore, incoming call interruption and low-memory restart.
 - Verify Google/Apple/email sign-in, password recovery, sign-out and account deletion.
