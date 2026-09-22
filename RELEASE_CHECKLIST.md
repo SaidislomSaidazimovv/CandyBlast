@@ -12,7 +12,7 @@
 - Create the three consumable products listed in `STORE_PRODUCTS.md` on both stores.
 - Implement and deploy receipt verification; test purchase, cancel, pending, duplicate, refund and restore flows.
 - Publish public Privacy Policy, Terms of Service, support URL and account deletion instructions.
-- Replace generated Capacitor launcher/splash assets with final Candy Blast store artwork.
+- Review the generated Candy Blast launcher and splash artwork on physical Android and iOS devices.
 
 ## Quality gate
 

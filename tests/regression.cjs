@@ -37,6 +37,15 @@ test('mobile launch defers 3D and native shells use the OAuth deep link',()=>{
   assert.match(android,/android:scheme="candyblast"/);assert.match(ios,/<string>candyblast<\/string>/);
 });
 
+test('native shells contain Candy Blast launcher and splash artwork',()=>{
+  const androidIcon=path.join(root,'android','app','src','main','res','mipmap-xxxhdpi','ic_launcher.png');
+  const androidSplash=path.join(root,'android','app','src','main','res','drawable-port-xxxhdpi','splash.png');
+  const iosIcon=path.join(root,'ios','App','App','Assets.xcassets','AppIcon.appiconset','AppIcon-512@2x.png');
+  const iosContents=fs.readFileSync(path.join(root,'ios','App','App','Assets.xcassets','Splash.imageset','Contents.json'),'utf8');
+  assert.ok(fs.statSync(androidIcon).size>40000);assert.ok(fs.statSync(androidSplash).size>100000);assert.ok(fs.statSync(iosIcon).size>500000);
+  assert.match(iosContents,/universal~anyany-dark\.png/);
+});
+
 test('shop fails closed and credits only server-verified store receipts',()=>{
   const shop=fs.readFileSync(path.join(root,'js','shop.js'),'utf8');
   const economy=fs.readFileSync(path.join(root,'js','economy.js'),'utf8');
