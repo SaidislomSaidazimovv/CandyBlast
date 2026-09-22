@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="css/worlds.css">
 <link rel="stylesheet" href="css/gameplay-polish.css">
 <link rel="stylesheet" href="css/journey.css">
+<link rel="stylesheet" href="css/shop.css">
 </head>
 <body>
 <div id="entry-overlay" class="entry-overlay"><div class="entry-card"><img src="images/ui/candyblast-emblem.webp" alt=""><h1>Candy Blast</h1><p role="status">Preparing your sweet adventure…</p><progress aria-label="Loading game"></progress><noscript>Enable JavaScript to play Candy Blast.</noscript></div></div>
@@ -31,7 +32,7 @@
 <canvas id="bg-canvas"></canvas>
 
 <div class="screen" id="screen-start">
- <div class="home-top"><button class="home-profile" id="home-profile" onclick="window.CandyCloud?.openAccount?.()" aria-label="Open player profile"><span class="home-avatar" id="home-profile-avatar">👤</span><span class="home-profile-copy"><strong id="home-profile-name">Player</strong><small id="home-profile-status">Guest journey</small></span></button><div class="home-actions"><div class="home-lives"><div id="lives-hearts-mobile"></div><span id="lives-timer-mobile">Full</span></div><button class="app-icon-button" onclick="goScreen('settings')" aria-label="Settings">⚙️</button></div></div>
+ <div class="home-top"><button class="home-profile" id="home-profile" onclick="window.CandyCloud?.openAccount?.()" aria-label="Open player profile"><span class="home-avatar" id="home-profile-avatar">👤</span><span class="home-profile-copy"><strong id="home-profile-name">Player</strong><small id="home-profile-status">Guest journey</small></span></button><div class="home-actions"><button class="home-gold" onclick="openShop()" aria-label="Open shop"><span>🪙</span><b id="home-gold-count">0</b><i>+</i></button><div class="home-lives"><div id="lives-hearts-mobile"></div><span id="lives-timer-mobile">Full</span></div><button class="app-icon-button" onclick="goScreen('settings')" aria-label="Settings">⚙️</button></div></div>
  <div class="home-hero"><span class="home-eyebrow">A LITTLE EVERYDAY MAGIC</span><img class="home-brand-lockup" src="images/ui/candyblast-hero.webp" alt="Candy Blast"><p>Your next sweet adventure awaits.</p></div>
  <div class="home-play"><button class="btn btn-play" onclick="goScreen('map');renderMapScreen();">▶ Play</button><div class="home-best">Personal best <strong id="best-score-start">0</strong></div></div>
  <nav class="home-nav" aria-label="Main navigation"><button id="btn-daily-big" onclick="goScreen('rewards');renderRewardsScreen();">🎁<span>Rewards</span><i id="daily-notif-dot"></i></button><button id="spin-mobile-btn" onclick="openSpinScreen()">🎡<span>Lucky Spin</span><b id="spin-mobile-count">0</b></button><button onclick="tutSlide=0;goScreen('tutorial');renderTutSlide(0);">🎓<span>How to play</span></button><button onclick="goScreen('leaderboard')">🏆<span>Scores</span></button></nav>
@@ -196,6 +197,8 @@
   </div>
 </div>
 
+<div class="screen hidden" id="screen-shop"><div id="shop-container"></div></div>
+
 <div class="screen hidden" id="screen-tutorial">
   <div style="position:fixed;top:16px;left:0;right:0;display:flex;justify-content:space-between;padding:0 20px;z-index:300;pointer-events:none;" id="tut-nav">
     <button onclick="goScreen('start')" style="pointer-events:all;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);font-size:.8rem;padding:6px 14px;border-radius:20px;cursor:pointer;font-family:'Nunito',sans-serif;">← Back</button>
@@ -232,6 +235,7 @@
 <script src="js/entry.js"></script>
 <script src="js/economy.js"></script>
 <script src="js/leaderboard.js"></script>
+<script src="js/shop.js"></script>
 <script src="js/native.js"></script>
 <script>
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}

@@ -10,7 +10,7 @@
     if(state.daily_claimed_today&&dailyData.currentDay&&!dailyData.claimedDays.includes(dailyData.currentDay))dailyData.claimedDays.push(dailyData.currentDay);
     localStorage.setItem('cb_lives',JSON.stringify(livesData));localStorage.setItem('cb_daily',JSON.stringify(dailyData));
     localStorage.setItem('cb_gold_bars',String(Math.max(0,Math.floor(+state.gold_bars||0))));
-    lastSync=Date.now();updateLivesUI();updateTimerDisplay();updateDailyUI();return state;
+    lastSync=Date.now();updateLivesUI();updateTimerDisplay();updateDailyUI();window.CandyShop?.updateBalance?.();return state;
   }
   async function rpc(name,body){if(!signed())throw new Error('Sign in to use cloud rewards.');return window.CandyCloud.rpc(name,body);}
   async function sync(){if(!signed())return null;if(syncing)return syncing;syncing=rpc('economy_get_state').then(applyState).finally(()=>{syncing=null});return syncing;}
@@ -19,6 +19,7 @@
   async function spin(){const result=await rpc('economy_spin');applyState(result.state);return result;}
   async function claimWeeklyBonus(){const result=await rpc('economy_claim_weekly_bonus');applyState(result.state);return result;}
   async function claimLevelReward(level,stars){if(!signed())return null;const result=await rpc('economy_claim_level_reward',{p_level:level,p_stars:stars});applyState(result.state);return result;}
+  async function spendGold(offer){if(!signed())return null;const result=await rpc('economy_spend_gold',{p_offer:offer});applyState(result);window.CandyShop?.updateBalance?.();return result;}
   function refreshIfDue(){if(signed()&&Date.now()-lastSync>60000)sync().catch(()=>{});}
-  window.CandyEconomy={sync,consume,claimDaily,claimWeeklyBonus,spin,claimLevelReward,refreshIfDue,isAuthoritative:signed,applyState,get state(){return {lives:livesData.lives,extra_moves:livesData.boosters.extraMoves,hammer:livesData.boosters.hammer,bomb:livesData.boosters.bomb,spins:dailyData.spinCount,gold_bars:+localStorage.getItem('cb_gold_bars')||0};}};
+  window.CandyEconomy={sync,consume,claimDaily,claimWeeklyBonus,spin,claimLevelReward,spendGold,refreshIfDue,isAuthoritative:signed,applyState,get state(){return {lives:livesData.lives,extra_moves:livesData.boosters.extraMoves,hammer:livesData.boosters.hammer,bomb:livesData.boosters.bomb,spins:dailyData.spinCount,gold_bars:+localStorage.getItem('cb_gold_bars')||0};}};
 })();

@@ -420,7 +420,7 @@ function goGame(){
   // Guard: only run if intentionally triggered (from map/tutorial)
   if(!_goGameIntentional){
     // Block if any other screen is visible
-    const blocking=['rewards','leaderboard','settings','tutorial','levelselect','map'];
+    const blocking=['rewards','leaderboard','settings','tutorial','levelselect','map','shop'];
     for(const s of blocking){
       const el=document.getElementById('screen-'+s);
       if(el&&!el.classList.contains('hidden'))return;

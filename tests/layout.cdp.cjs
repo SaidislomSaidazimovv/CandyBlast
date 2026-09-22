@@ -34,6 +34,7 @@ async function connect(){
     ['settings',`goScreen('settings')`],
     ['rewards',`goScreen('rewards');renderRewardsScreen()`],
     ['spin',`openSpinScreen()`],
+    ['shop',`openShop()`],
     ['tutorial',`tutSlide=1;goScreen('tutorial');renderTutSlide(1)`],
     ['game',`startMapLevelPrepared(1,[])`]
   ];
@@ -44,7 +45,7 @@ async function connect(){
       await evaluate(open);await delay(name==='tutorial'?420:380);
       const result=await evaluate(`(()=>{const vw=innerWidth,vh=innerHeight,root=document.querySelector('.screen:not(.hidden)');const visible=el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>1&&r.height>1};const overflow=[...root.querySelectorAll('*')].filter(visible).filter(el=>{if(el.closest('.journey-trail')&&!el.classList.contains('journey-level'))return false;const r=el.getBoundingClientRect();return r.left < -2 || r.right > vw+2;}).slice(0,8).map(el=>({tag:el.tagName,id:el.id,cls:el.className?.toString().slice(0,80),rect:[Math.round(el.getBoundingClientRect().left),Math.round(el.getBoundingClientRect().right)]}));return {viewport:[vw,vh],screen:root.id,root:[Math.round(root.getBoundingClientRect().width),Math.round(root.getBoundingClientRect().height)],scrollWidth:document.documentElement.scrollWidth,overflow};})()`);
       if(result.scrollWidth>width+2||result.root[0]>width+2||result.root[1]>height+2||result.overflow.length)failures.push({size:`${width}x${height}`,name,...result});
-      if(outputDir&&width===320&&(name==='home'||name==='rewards'||name==='game'||name==='tutorial')){const shot=await send('Page.captureScreenshot',{format:'png',fromSurface:true});fs.mkdirSync(outputDir,{recursive:true});fs.writeFileSync(path.join(outputDir,`${width}x${height}-${name}.png`),Buffer.from(shot.data,'base64'));}
+      if(outputDir&&width===320&&(name==='home'||name==='rewards'||name==='shop'||name==='game'||name==='tutorial')){const shot=await send('Page.captureScreenshot',{format:'png',fromSurface:true});fs.mkdirSync(outputDir,{recursive:true});fs.writeFileSync(path.join(outputDir,`${width}x${height}-${name}.png`),Buffer.from(shot.data,'base64'));}
     }
   }
   const authScreens=[

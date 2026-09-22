@@ -37,6 +37,18 @@ test('mobile launch defers 3D and native shells use the OAuth deep link',()=>{
   assert.match(android,/android:scheme="candyblast"/);assert.match(ios,/<string>candyblast<\/string>/);
 });
 
+test('shop fails closed and credits only server-verified store receipts',()=>{
+  const shop=fs.readFileSync(path.join(root,'js','shop.js'),'utf8');
+  const economy=fs.readFileSync(path.join(root,'js','economy.js'),'utf8');
+  const sql=fs.readFileSync(path.join(root,'supabase','migrations','005_verified_purchases.sql'),'utf8');
+  const verifier=fs.readFileSync(path.join(root,'supabase','functions','verify-purchase','index.ts'),'utf8');
+  assert.match(shop,/functions\/v1\/verify-purchase/);assert.match(shop,/transactionId/);assert.match(shop,/proof/);
+  assert.doesNotMatch(shop,/setItem\(['"]cb_gold_bars/);assert.match(economy,/economy_spend_gold/);
+  assert.match(sql,/unique \(platform,transaction_id\)/);assert.match(sql,/grant execute[^;]+to service_role/);
+  assert.match(sql,/revoke all on function public\.economy_grant_verified_purchase[^;]+authenticated/);
+  assert.match(verifier,/purchase_verification_not_configured/);assert.match(verifier,/result\?\.valid!==true/);
+});
+
 test('retry preserves authored level settings and starts a fresh timer fixture after Play', () => {
   const g = game();
   g.run("startMapLevel(1);hidePreGame();");

@@ -29,6 +29,8 @@ The existing Candy Blast Vercel deployment remains the playable game staging bui
 6. Create store accounts, signing assets, screenshots, privacy declarations and testing tracks.
 7. Connect real store URLs in the official-site repository and publish its custom domain.
 
+The monetization catalog and release gates are documented in `STORE_PRODUCTS.md` and `RELEASE_CHECKLIST.md`. Store buttons fail closed until verified native billing is connected; the game never grants currency from a client-only success response.
+
 ## Native development
 
 Run `npm install`, then `npm run mobile:sync` after each web change. `npm run android` opens Android Studio and `npm run ios` opens Xcode. Android builds require Android Studio/SDK and a configured `ANDROID_HOME`; iOS signing and builds require macOS with Xcode. Large Three.js files and world images are now loaded and cached only when the player approaches the Journey or game screen, keeping them out of the initial launch path.
