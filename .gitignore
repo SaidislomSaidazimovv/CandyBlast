@@ -1,2 +1,6 @@
 node_modules/
 dist/
+
+# Internal product, release, and architecture notes stay local.
+*.md
+!/README.md
