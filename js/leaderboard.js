@@ -69,6 +69,7 @@
     addStatus(list,'Refreshing live scores…');refresh();connect();clearInterval(refreshTimer);refreshTimer=setInterval(refresh,15000);return true;
   }
   async function submit(result){
+    if(session()&&!await window.CandyCloud.accessToken())return false;
     const id=userId();if(!id||!result||!Number.isFinite(Number(result.score)))return false;
     const body={user_id:id,display_name:playerName(),avatar:playerAvatar(),score:Math.max(0,Math.round(Number(result.score))),level:Math.max(1,Math.min(20,Math.round(Number(result.level)||1))),stars:Math.max(0,Math.min(3,Math.round(Number(result.stars)||0)))};
     try{let response=await fetch(`${config.url}/rest/v1/leaderboard_scores`,{method:'POST',headers:headers(true),body:JSON.stringify(body)});if(response.status===400){delete body.avatar;response=await fetch(`${config.url}/rest/v1/leaderboard_scores`,{method:'POST',headers:headers(true),body:JSON.stringify(body)});}if(!response.ok)throw new Error('Score upload failed');if(currentScreen==='leaderboard')refresh();return true;}catch{return false;}

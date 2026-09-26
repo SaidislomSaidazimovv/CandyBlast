@@ -28,10 +28,12 @@
     if(!storeReady()){status('Mobile store purchases are not available yet.',true);return;}
     button.disabled=true;
     try{
+      if(!await window.CandyCloud.accessToken())throw new Error('Reconnect to renew your account before purchasing.');
       const result=await store().purchase({productId:id});
       if(!result?.transactionId||!result?.proof||!result?.platform)throw new Error('Store did not return a verifiable receipt.');
-      const config=window.CANDY_SUPABASE,session=window.CandyCloud.session;
-      const response=await fetch(`${config.url}/functions/v1/verify-purchase`,{method:'POST',headers:{apikey:config.publishableKey,Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({platform:result.platform,productId:id,transactionId:result.transactionId,proof:result.proof})});
+      const config=window.CANDY_SUPABASE,accessToken=await window.CandyCloud.accessToken();
+      if(!accessToken)throw new Error('Purchase pending verification. Reconnect to your account.');
+      const response=await fetch(`${config.url}/functions/v1/verify-purchase`,{method:'POST',headers:{apikey:config.publishableKey,Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify({platform:result.platform,productId:id,transactionId:result.transactionId,proof:result.proof})});
       const verified=await response.json().catch(()=>({}));
       if(!response.ok)throw new Error(verified.error||'Purchase verification is pending.');
       await window.CandyEconomy.sync();render();status('Gold bars added to your wallet.');

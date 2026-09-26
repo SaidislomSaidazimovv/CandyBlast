@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test": "node --test tests/regression.cjs tests/spin.cjs",
+    "test": "node --test tests/regression.cjs tests/spin.cjs tests/auth-session.cjs",
     "build": "node scripts/build-mobile.cjs",
     "mobile:sync": "npm run build && node -r ./scripts/cap-shell-fix.cjs ./node_modules/@capacitor/cli/bin/capacitor sync",
     "android": "npm run mobile:sync && cap open android",

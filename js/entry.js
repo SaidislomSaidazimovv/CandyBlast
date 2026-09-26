@@ -4,7 +4,7 @@
  const TRACKED_KEYS=['cb_profile','cb_best','cb_settings','cb_personal','cb_tutorial_done','cb_map','cb_gamestate'];
  const SESSION_KEY='cb_supabase_session',GUEST_KEY='cb_guest_mode',LOCAL_STAMP='cb_cloud_local_updated';
  const nativeSet=Storage.prototype.setItem,nativeRemove=Storage.prototype.removeItem;
- let session=null,syncTimer=0,syncing=false,callbackError='';
+ let session=null,syncTimer=0,syncing=false,callbackError='',refreshTimer=0,refreshPromise=null;
 
  function readJSON(key,fallback=null){try{return JSON.parse(localStorage.getItem(key)||'null')??fallback;}catch{return fallback;}}
  function writeRaw(key,value){nativeSet.call(localStorage,key,String(value));}
@@ -14,24 +14,56 @@
  function setBusy(busy){document.querySelectorAll('#entry-overlay button,#entry-overlay input').forEach(el=>el.disabled=busy);}
  function redirectUrl(){return window.Capacitor?.isNativePlatform?.()?'candyblast://auth/callback':location.origin+location.pathname;}
 
- async function request(path,{method='GET',body,token=session?.access_token,headers={}}={}){
-  const response=await fetch(CONFIG.url+path,{method,headers:{apikey:CONFIG.publishableKey,'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{}),...headers},body:body===undefined?undefined:JSON.stringify(body)});
+ async function request(path,{method='GET',body,token,headers={}}={}){
+  if(token===undefined&&session){await refreshSession();if(session&&session.expires_at<=Date.now()/1000)throw new Error('Session renewal pending. Connect to the internet and try again.');}
+  const bearer=token===undefined?session?.access_token:token;
+  const response=await fetch(CONFIG.url+path,{method,headers:{apikey:CONFIG.publishableKey,'Content-Type':'application/json',...(bearer?{Authorization:'Bearer '+bearer}:{}),...headers},body:body===undefined?undefined:JSON.stringify(body)});
   const data=response.status===204?null:await response.json().catch(()=>null);
-  if(!response.ok)throw new Error(message(data)||`Request failed (${response.status})`);
+  if(!response.ok){const error=new Error(message(data)||`Request failed (${response.status})`);error.status=response.status;error.code=data?.error_code||data?.code||data?.error;throw error;}
   return data;
  }
- function saveSession(next){session=next&&next.access_token?next:null;if(session)writeRaw(SESSION_KEY,JSON.stringify(session));else removeRaw(SESSION_KEY);updateProfileButton();}
+ function tokenExpiry(token){try{const payload=token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');return Number(JSON.parse(atob(payload)).exp)||0;}catch{return 0;}}
+ function scheduleRefresh(delay){
+  clearTimeout(refreshTimer);refreshTimer=0;
+  if(!session?.refresh_token||document.visibilityState==='hidden')return;
+  const untilExpiry=(session.expires_at-Math.floor(Date.now()/1000)-90)*1000;
+  refreshTimer=setTimeout(()=>refreshSession().catch(()=>{}),Math.min(2147483647,Math.max(15000,delay??untilExpiry)));
+ }
+ function saveSession(next,{fresh=false}={}){
+  session=next?.access_token&&next?.refresh_token?{...next,expires_at:Number(next.expires_at)||tokenExpiry(next.access_token)||(fresh?Math.floor(Date.now()/1000)+Number(next.expires_in||3600):0)}:null;
+  if(session)writeRaw(SESSION_KEY,JSON.stringify(session));else removeRaw(SESSION_KEY);
+  scheduleRefresh();updateProfileButton();
+ }
  function parseCallback(){
   const hash=new URLSearchParams(location.hash.slice(1));
   if(hash.get('error_description')||hash.get('error')){callbackError=hash.get('error_description')||hash.get('error');history.replaceState({},document.title,location.pathname+location.search);return false;}
   if(!hash.get('access_token'))return false;
-  saveSession({access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token'),expires_in:+hash.get('expires_in')||3600,expires_at:Math.floor(Date.now()/1000)+(+hash.get('expires_in')||3600),token_type:'bearer'});
+  saveSession({access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token'),expires_in:+hash.get('expires_in')||3600,expires_at:Math.floor(Date.now()/1000)+(+hash.get('expires_in')||3600),token_type:'bearer'},{fresh:true});
   const type=hash.get('type');history.replaceState({},document.title,location.pathname+location.search);return type==='recovery'?'recovery':true;
  }
- async function refreshSession(){
-  const saved=readJSON(SESSION_KEY);if(!saved?.refresh_token)return null;
-  if(saved.expires_at&&saved.expires_at>Date.now()/1000+60){saveSession(saved);return saved;}
-  try{const next=await request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:saved.refresh_token},token:null});saveSession(next);return next;}catch{saveSession(null);return null;}
+ function refreshSession(){
+  const saved=readJSON(SESSION_KEY);
+  if(!saved?.access_token||!saved?.refresh_token){if(session)saveSession(null);return Promise.resolve(null);}
+  if(!session||session.refresh_token!==saved.refresh_token)saveSession(saved);
+  if(session.expires_at>Date.now()/1000+90)return Promise.resolve(session);
+  if(navigator.onLine===false){scheduleRefresh(60000);return Promise.resolve(session);}
+  if(refreshPromise)return refreshPromise;
+  const renew=async()=>{
+   const latest=readJSON(SESSION_KEY);
+   if(!latest?.refresh_token){saveSession(null);return null;}
+   if(latest.refresh_token!==saved.refresh_token&&Number(latest.expires_at)>Date.now()/1000+90){saveSession(latest);return session;}
+   try{
+    const next=await request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:latest.refresh_token},token:null});
+    if(readJSON(SESSION_KEY)?.refresh_token===latest.refresh_token)saveSession(next,{fresh:true});
+   }catch(error){
+    const ended=['refresh_token_not_found','refresh_token_already_used','session_not_found','session_expired'].includes(error.code);
+    if(ended&&readJSON(SESSION_KEY)?.refresh_token===latest.refresh_token)saveSession(null);
+    else scheduleRefresh(60000);
+   }
+   return session;
+  };
+  refreshPromise=Promise.resolve().then(()=>navigator.locks?.request?navigator.locks.request('candyblast-auth-refresh',renew):renew()).finally(()=>{refreshPromise=null;});
+  return refreshPromise;
  }
  async function currentUser(){if(!session)return null;try{return await request('/auth/v1/user');}catch{return null;}}
 
@@ -79,12 +111,12 @@
   const appleMark='<span class="provider-mark apple-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.19.07 2.02.66 2.72.71 1.05-.21 2.05-.81 3.17-.73 1.34.11 2.35.64 3.02 1.6-2.76 1.66-2.1 5.3.43 6.32-.51 1.34-1.17 2.67-2.34 3.97M12.03 7.25c-.15-1.99 1.48-3.63 3.34-3.79.26 2.3-2.09 4.02-3.34 3.79"/></svg></span>';
   const signup=mode==='signup';const overlay=shell(`<h1>${signup?'Create account':'Welcome back'}</h1><p>${signup?'Save your journey and continue on any device.':'Sign in to restore your Candy Blast journey.'}</p><div class="auth-providers"><button type="button" class="auth-provider" data-provider="google">${googleMark}<span>Continue with Google</span></button><button type="button" class="auth-provider" data-provider="apple">${appleMark}<span>Continue with Apple</span></button></div><div class="auth-divider"><span>or use email</span></div><form id="auth-form">${signup?'<label for="auth-name">Player name</label><input id="auth-name" autocomplete="nickname" maxlength="24" required placeholder="Your name">':''}<label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="email" required placeholder="you@example.com"><label for="auth-password">Password</label><input id="auth-password" type="password" autocomplete="${signup?'new-password':'current-password'}" minlength="8" required placeholder="At least 8 characters"><button class="btn btn-play" type="submit">${signup?'Create account':'Sign in'}</button></form>${signup?'':'<button class="auth-link" type="button" id="auth-forgot">Forgot password?</button>'}<button class="auth-switch" type="button" id="auth-switch">${signup?'Already have an account? Sign in':'New here? Create account'}</button><button class="btn btn-secondary" type="button" id="entry-guest">Play as guest</button>`);
   overlay.querySelectorAll('[data-provider]').forEach(btn=>btn.onclick=()=>oauth(btn.dataset.provider));overlay.querySelector('#auth-switch').onclick=()=>authScreen(signup?'signin':'signup');overlay.querySelector('#entry-guest').onclick=()=>{writeRaw(GUEST_KEY,'1');leave();};if(!signup)overlay.querySelector('#auth-forgot').onclick=forgotScreen;
-  overlay.querySelector('#auth-form').onsubmit=async event=>{event.preventDefault();setBusy(true);setStatus('');const email=overlay.querySelector('#auth-email').value.trim(),password=overlay.querySelector('#auth-password').value;try{if(signup){const name=overlay.querySelector('#auth-name').value.trim(),data=await request('/auth/v1/signup',{method:'POST',body:{email,password,data:{display_name:name},email_redirect_to:redirectUrl()},token:null});localStorage.setItem('cb_profile',JSON.stringify({name}));if(data.access_token){saveSession(data);removeRaw(GUEST_KEY);await finishSignIn();}else setStatus('Check your email and confirm the account. Then return here and sign in.');}else{const data=await request('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password},token:null});saveSession(data);removeRaw(GUEST_KEY);await finishSignIn();}}catch(error){setStatus(message(error),true);}finally{setBusy(false);}};
+  overlay.querySelector('#auth-form').onsubmit=async event=>{event.preventDefault();setBusy(true);setStatus('');const email=overlay.querySelector('#auth-email').value.trim(),password=overlay.querySelector('#auth-password').value;try{if(signup){const name=overlay.querySelector('#auth-name').value.trim(),data=await request('/auth/v1/signup',{method:'POST',body:{email,password,data:{display_name:name},email_redirect_to:redirectUrl()},token:null});localStorage.setItem('cb_profile',JSON.stringify({name}));if(data.access_token){saveSession(data,{fresh:true});removeRaw(GUEST_KEY);await finishSignIn();}else setStatus('Check your email and confirm the account. Then return here and sign in.');}else{const data=await request('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password},token:null});saveSession(data,{fresh:true});removeRaw(GUEST_KEY);await finishSignIn();}}catch(error){setStatus(message(error),true);}finally{setBusy(false);}};
  }
  function forgotScreen(){const overlay=shell(`<h1>Reset password</h1><p>We will send a secure recovery link to your email.</p><form id="recover-form"><label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="email" required placeholder="you@example.com"><button class="btn btn-play" type="submit">Send recovery link</button></form><button class="auth-switch" type="button" id="auth-back">Back to sign in</button>`);overlay.querySelector('#auth-back').onclick=()=>authScreen();overlay.querySelector('form').onsubmit=async e=>{e.preventDefault();setBusy(true);try{await request('/auth/v1/recover',{method:'POST',body:{email:overlay.querySelector('input').value.trim(),redirect_to:redirectUrl()},token:null});setStatus('Recovery email sent. Open its link on this device.');}catch(error){setStatus(message(error),true);}finally{setBusy(false);}};}
  function resetScreen(){const overlay=shell(`<h1>Choose a new password</h1><p>Use at least 8 characters.</p><form id="reset-form"><label for="new-password">New password</label><input id="new-password" type="password" autocomplete="new-password" minlength="8" required><button class="btn btn-play" type="submit">Update password</button></form>`);overlay.querySelector('form').onsubmit=async e=>{e.preventDefault();setBusy(true);try{await request('/auth/v1/user',{method:'PUT',body:{password:overlay.querySelector('input').value}});setStatus('Password updated. Your journey is ready.');setTimeout(()=>finishSignIn(),650);}catch(error){setStatus(message(error),true);}finally{setBusy(false);}};}
  function oauth(provider){location.assign(CONFIG.url+'/auth/v1/authorize?provider='+encodeURIComponent(provider)+'&redirect_to='+encodeURIComponent(redirectUrl()));}
- async function finishSignIn(){try{await hydrateProfile();const result=await reconcileCloud();await window.CandyEconomy?.sync?.();if(result.changed){location.reload();return;}leave();}catch(error){writeRaw('cb_cloud_error',message(error));leave();}}
+ async function finishSignIn(){if(navigator.onLine===false){leave();return;}try{await hydrateProfile();const result=await reconcileCloud();await window.CandyEconomy?.sync?.();if(result.changed){location.reload();return;}leave();}catch(error){writeRaw('cb_cloud_error',message(error));leave();}}
  async function signOut(){try{if(session)await request('/auth/v1/logout',{method:'POST'});}catch{}saveSession(null);removeRaw(GUEST_KEY);authScreen();}
  function updateProfileButton(){
   const profile=readJSON('cb_profile',{}),map=readJSON('cb_map',{}),name=profile?.name||'Player',current=Math.max(1,+map?.currentLevel||1),stars=(map?.levels||[]).reduce((sum,item)=>sum+(+item.stars||0),0);
@@ -108,7 +140,10 @@
   const overlay=shell(`<div class="account-hero"><span class="account-avatar"></span><div><h1>Your journey</h1><p class="account-email"></p></div></div><div class="account-stats"><div><strong>${current}</strong><small>Level</small></div><div><strong>${stars}</strong><small>Stars</small></div><div><strong>${best.toLocaleString()}</strong><small>Best</small></div></div><div class="account-wallet" aria-label="Inventory"><span>❤️ <b>${Math.max(0,+wallet.lives||0)}</b></span><span>🔨 <b>${Math.max(0,+wallet.hammer||0)}</b></span><span>🌈 <b>${Math.max(0,+wallet.bomb||0)}</b></span><span>🪙 <b>${Math.max(0,+wallet.gold_bars||0)}</b></span></div><div class="cloud-state${cloudError?' has-error':''}"><span class="cloud-dot"></span><div><strong>Cloud progress</strong><small>${cloudText}</small></div></div><form id="profile-form"><label for="player-name">Player name</label><input id="player-name" autocomplete="nickname" maxlength="24" required><fieldset class="avatar-picker"><legend>Choose your candy avatar</legend><div>${avatarButtons}</div></fieldset><button class="btn btn-play" type="submit">Save & sync</button></form><button class="btn btn-secondary" id="account-close" type="button">Back to game</button><button class="auth-link danger-link" id="account-signout" type="button">Sign out</button>`,'Player account');let selectedAvatar=avatar?.id||'berry';window.CandyProfiles?.mount(overlay.querySelector('.account-avatar'),selectedAvatar);overlay.querySelector('.account-email').textContent=user?.email||'';overlay.querySelector('#player-name').value=name;overlay.querySelectorAll('.avatar-choice').forEach(button=>button.onclick=()=>{selectedAvatar=window.CandyProfiles.get(button.dataset.avatar).id;overlay.querySelectorAll('.avatar-choice').forEach(choice=>{const on=choice===button;choice.classList.toggle('active',on);choice.setAttribute('aria-pressed',String(on));});window.CandyProfiles.mount(overlay.querySelector('.account-avatar'),selectedAvatar);});overlay.querySelector('#account-close').onclick=leave;overlay.querySelector('#account-signout').onclick=signOut;overlay.querySelector('form').onsubmit=async e=>{e.preventDefault();const name=overlay.querySelector('#player-name').value.trim();if(!name)return;const nextProfile={name,avatar:selectedAvatar};localStorage.setItem('cb_profile',JSON.stringify(nextProfile));setBusy(true);try{await request('/auth/v1/user',{method:'PUT',body:{data:{display_name:name,avatar:selectedAvatar}}});await pushCloud();setStatus('Profile and progress synced.');updateProfileButton();}catch(error){setStatus(message(error),true);}finally{setBusy(false);}};
  }
  const profile=document.createElement('button');profile.type='button';profile.className='profile-menu';profile.onclick=accountScreen;document.querySelector('#screen-settings .panel')?.append(profile);
- window.CandyCloud={sync:pushCloud,openAccount:accountScreen,refreshProfile:updateProfileButton,rpc:(name,body={})=>request('/rest/v1/rpc/'+name,{method:'POST',body}),get session(){return session;}};window.addEventListener('online',()=>{queueSync();window.CandyEconomy?.sync?.().catch(()=>{});});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')pushCloud().catch(()=>{});else{queueSync();window.CandyEconomy?.refreshIfDue?.();}});
+ window.CandyCloud={sync:pushCloud,openAccount:accountScreen,refreshProfile:updateProfileButton,refreshSession,accessToken:async()=>{await refreshSession();return session?.expires_at>Date.now()/1000?session.access_token:null;},rpc:(name,body={})=>request('/rest/v1/rpc/'+name,{method:'POST',body}),get session(){return session;}};
+ window.addEventListener('storage',event=>{if(event.key!==SESSION_KEY)return;session=readJSON(SESSION_KEY);scheduleRefresh();updateProfileButton();});
+ window.addEventListener('online',async()=>{await refreshSession();if(!session)return;try{const result=await reconcileCloud();await window.CandyEconomy?.sync?.();if(result.changed)location.reload();}catch{queueSync();}});
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){clearTimeout(refreshTimer);pushCloud().catch(()=>{});}else{refreshSession().then(()=>{queueSync();window.CandyEconomy?.refreshIfDue?.();}).catch(()=>{});}});
  async function ready(){if(!CONFIG?.url||!CONFIG?.publishableKey){authScreen();setStatus('Supabase configuration is missing.',true);return;}const callback=parseCallback();if(!session)await refreshSession();updateProfileButton();if(callback==='recovery'){resetScreen();return;}if(session){await finishSignIn();return;}if(localStorage.getItem(GUEST_KEY)==='1'&&!callbackError){leave();return;}authScreen();if(callbackError)setStatus(callbackError,true);}
  if(document.readyState==='complete')ready();else window.addEventListener('load',ready,{once:true});
 })();
