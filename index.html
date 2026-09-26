@@ -26,6 +26,7 @@
 <link rel="stylesheet" href="css/journey.css">
 <link rel="stylesheet" href="css/shop.css">
 <link rel="stylesheet" href="css/experience.css">
+<link rel="stylesheet" href="css/player-experience.css">
 </head>
 <body>
 <div id="entry-overlay" class="entry-overlay"><div class="entry-card"><img src="images/ui/candyblast-emblem.webp" alt=""><h1>Candy Blast</h1><p role="status">Preparing your sweet adventure…</p><progress aria-label="Loading game"></progress><noscript>Enable JavaScript to play Candy Blast.</noscript></div></div>
@@ -33,7 +34,7 @@
 <canvas id="bg-canvas"></canvas>
 
 <div class="screen" id="screen-start">
- <div class="home-top"><button class="home-profile" id="home-profile" onclick="window.CandyCloud?.openAccount?.()" aria-label="Open player profile"><span class="home-avatar" id="home-profile-avatar">👤</span><span class="home-profile-copy"><strong id="home-profile-name">Player</strong><small id="home-profile-status">Level 1 · 0 stars</small></span></button><div class="home-actions"><button class="home-gold" type="button" onclick="openShop()" aria-label="Open Sweet Shop, 0 gold bars"><span class="gold-bar-icon" aria-hidden="true"></span><span class="home-gold-copy"><b id="home-gold-count">0</b><small>Gold</small></span><span class="home-gold-plus" aria-hidden="true">+</span></button><div class="home-lives"><div id="lives-hearts-mobile"></div><span id="lives-timer-mobile">Full</span></div><button class="app-icon-button" onclick="goScreen('settings')" aria-label="Settings">⚙️</button></div></div>
+ <div class="home-top"><button class="home-profile" id="home-profile" onclick="window.CandyCloud?.openAccount?.()" aria-label="Open player profile"><span class="home-avatar" id="home-profile-avatar">👤</span><span class="home-profile-copy"><strong id="home-profile-name">Player</strong><small id="home-profile-status">Level 1 · 0 stars</small></span></button><div class="home-actions"><button class="home-gold" type="button" onclick="openShop()" aria-label="Open Sweet Shop, 0 gold bars"><span class="gold-bar-icon" aria-hidden="true"></span><span class="home-gold-copy"><b id="home-gold-count">0</b><small>Gold</small></span><span class="home-gold-plus" aria-hidden="true">+</span></button><div class="home-lives" aria-label="5 of 5 hearts"><div id="lives-hearts-mobile"></div><span id="lives-timer-mobile" hidden></span></div><button class="app-icon-button" onclick="goScreen('settings')" aria-label="Settings">⚙️</button></div></div>
  <div class="home-hero"><span class="home-eyebrow">A LITTLE EVERYDAY MAGIC</span><img class="home-brand-lockup" src="images/ui/candyblast-hero.webp" alt="Candy Blast"><p>Your next sweet adventure awaits.</p></div>
  <div class="home-play"><button class="btn btn-play" onclick="goScreen('map');">▶ Play</button><div class="home-best">Personal best <strong id="best-score-start">0</strong></div></div>
  <nav class="home-nav" aria-label="Main navigation"><button id="btn-daily-big" onclick="goScreen('rewards');renderRewardsScreen();">🎁<span>Rewards</span><i id="daily-notif-dot"></i></button><button id="spin-mobile-btn" onclick="openSpinScreen()">🎡<span>Lucky Spin</span><b id="spin-mobile-count">0</b></button><button onclick="tutSlide=0;goScreen('tutorial');renderTutSlide(0);">🎓<span>How to play</span></button><button onclick="goScreen('leaderboard')">🏆<span>Scores</span></button></nav>
@@ -65,16 +66,15 @@
 </div>
 
 <div class="screen hidden" id="screen-leaderboard">
-  <div class="panel" style="max-width:380px;width:100%;max-height:90vh;position:relative;">
-    <button ontouchend="closeToStart(event)" onclick="closeToStart(event)" style="position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);transition:background 0.15s;z-index:10;">✕</button>
-    <div class="panel-title">🏆 Live Scores</div><div class="panel-subtitle">Fresh results appear automatically.</div>
-    <div class="lb-tabs">
-      <button class="lb-tab active" onclick="showTab(this,'global')">🌍 Global</button>
-      <button class="lb-tab" onclick="showTab(this,'weekly')">📅 Weekly</button>
-      <button class="lb-tab" onclick="showTab(this,'personal')">👤 Personal</button>
+  <section class="panel scores-panel" aria-label="Live Scores">
+    <header class="scores-hero"><span class="scores-hero-icon" aria-hidden="true">🏆</span><div><small>THE SWEET LEAGUE</small><h1>Live Scores</h1><p>Climb the ranks one level at a time.</p></div><button class="scores-close" type="button" onclick="closeToStart(event)" aria-label="Close scores">✕</button></header>
+    <div class="lb-tabs" role="tablist" aria-label="Score period">
+      <button class="lb-tab active" role="tab" aria-selected="true" onclick="showTab(this,'global')">🌍 <span>Global</span></button>
+      <button class="lb-tab" role="tab" aria-selected="false" onclick="showTab(this,'weekly')">📅 <span>Weekly</span></button>
+      <button class="lb-tab" role="tab" aria-selected="false" onclick="showTab(this,'personal')">👤 <span>Mine</span></button>
     </div>
     <div class="lb-list" id="lb-list" aria-live="polite"></div>
-  </div>
+  </section>
 </div>
 
 <div class="screen hidden" id="screen-game">
@@ -201,10 +201,7 @@
 <div class="screen hidden" id="screen-shop"><div id="shop-container"></div></div>
 
 <div class="screen hidden" id="screen-tutorial">
-  <div style="position:fixed;top:16px;left:0;right:0;display:flex;justify-content:space-between;padding:0 20px;z-index:300;pointer-events:none;" id="tut-nav">
-    <button onclick="goScreen('start')" style="pointer-events:all;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);font-size:.8rem;padding:6px 14px;border-radius:20px;cursor:pointer;font-family:'Nunito',sans-serif;">← Back</button>
-    <button id="tut-skip-btn" onclick="skipTutorial()" style="pointer-events:all;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);font-size:.8rem;padding:6px 14px;border-radius:20px;cursor:pointer;font-family:'Nunito',sans-serif;">Skip →</button>
-  </div>
+  <div id="tut-nav"><button type="button" onclick="goScreen('start')">← Back</button><span>HOW TO PLAY</span><button type="button" id="tut-skip-btn" onclick="skipTutorial()">Skip →</button></div>
   <div id="tut-container" style="width:100%;height:100dvh;height:100vh;display:flex;flex-direction:column;overflow:hidden;position:relative;"></div>
 </div>
 

@@ -16,34 +16,27 @@ function renderTutSlide(n){
   if(skipBtn)skipBtn.style.display=n===5?'none':'block';
   const visual=document.createElement('div');
   visual.className='tutorial-visual';
-  visual.style.cssText='flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:60px 20px 20px;';
   const panel=document.createElement('div');
   panel.className='tutorial-sheet';
-  panel.style.cssText='background:linear-gradient(135deg,rgba(60,15,100,0.97),rgba(20,5,40,0.98));border:1.5px solid rgba(255,255,255,0.12);border-radius:28px 28px 0 0;padding:28px 24px 36px;text-align:center;flex-shrink:0;';
   const slides=[
-    {title:'Welcome to Candy Blast! 🍭',body:'A sweet puzzle game where you match colorful candies to score points and beat each level!',btn:"Let's Go! →"},
-    {title:'Tap to Swap! 👆',body:'Tap any candy, then tap an adjacent candy next to it. Swap to line up three matching candies. You can also swipe toward a neighbor.',btn:'Got it! →'},
-    {title:'Match 3 or More! 🎯',body:'Line up 3 or more same candies in a row or column — they explode and you earn points!',btn:'Nice! →'},
-    {title:'Chain Combos! 🔥',body:'When new candies fall and match automatically, it creates a COMBO! Each combo multiplies your score!',btn:'Awesome! →'},
-    {title:'Score Big, Move Smart! 🧠',body:'Reach the target score before your moves run out. Earn more points to reach the next star milestone!',btn:'Understood! →'},
-    {title:"You're Ready! 🎉",body:'Match candies, chain combos, and reach the target score. Good luck, champion!',btn:'▶ Start Playing!'}
+    {title:'Welcome to Candy Blast!',body:'Match colorful candies and complete each level’s goal. Your first adventure starts here.',btn:"Let's go →"},
+    {title:'Swap two neighbors',body:'Tap a candy, then its neighbor to swap them. Try the glowing pair above.',btn:'Got it →'},
+    {title:'Make a match',body:'Line up at least three of the same candy. Matched candies disappear and new ones fall into place.',btn:'Nice →'},
+    {title:'Chain a combo',body:'Falling candies can match again. Keep an eye out for new matches and special candy combinations.',btn:'Awesome →'},
+    {title:'Follow the goal',body:'Each level shows what to collect or clear. Use your moves wisely; stars reward higher scores.',btn:'Understood →'},
+    {title:"You're ready!",body:'Play the level, watch its goal, and enjoy the sweet surprises along the way.',btn:'▶ Start playing'}
   ];
   const s=slides[n];
-  const title=document.createElement('div');
-  title.style.cssText="font-family:'Fredoka One',cursive;font-size:1.65rem;background:linear-gradient(135deg,#ffe259,#ff5fa0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;";
+  const title=document.createElement('h1');title.className='tutorial-title';
   title.textContent=s.title;
-  const body=document.createElement('p');
-  body.style.cssText='color:rgba(255,255,255,0.75);font-size:0.95rem;line-height:1.65;margin-bottom:22px;max-width:300px;margin-left:auto;margin-right:auto;';
+  const body=document.createElement('p');body.className='tutorial-copy';
   body.textContent=s.body;
-  const dots=document.createElement('div');
-  dots.style.cssText='display:flex;gap:8px;justify-content:center;margin-bottom:18px;';
+  const dots=document.createElement('div');dots.className='tutorial-dots';dots.setAttribute('aria-label',`Step ${n+1} of 6`);
   for(let i=0;i<6;i++){
-    const dot=document.createElement('div');
-    dot.style.cssText=`height:8px;border-radius:4px;transition:all 0.3s;width:${i===n?'28px':'8px'};background:${i===n?'var(--t-primary,#ff5fa0)':'rgba(255,255,255,0.2)'};`;
+    const dot=document.createElement('i');dot.className=i===n?'active':'';
     dots.appendChild(dot);
   }
   const btn=document.createElement('button');btn.className='btn btn-play';
-  btn.style.cssText='width:100%;padding:14px;font-size:1.1rem;';
   btn.textContent=s.btn;btn.onclick=nextTutSlide;
   panel.appendChild(title);panel.appendChild(body);panel.appendChild(dots);panel.appendChild(btn);
   buildTutVisual(n,visual);
@@ -55,7 +48,7 @@ function buildTutVisual(n,wrap){
   else if(n===3)buildVis3(wrap);else if(n===4)buildVis4(wrap);else if(n===5)buildVis5(wrap);
 }
 function buildVis0(wrap){
-  const grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;';
+  const grid=document.createElement('div');grid.className='tutorial-showcase-grid';
   [0,1,2,3,4,5].forEach((t,i)=>{
     const cell=document.createElement('div');cell.className='tut-candy-cell '+TUT_COLORS[t];
     cell.textContent=TUT_ICONS[t];cell.style.animation=`floatUD ${1.5+i*.2}s ease-in-out ${i*.15}s infinite`;

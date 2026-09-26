@@ -531,7 +531,7 @@ function confirmReset(){
 }
 
 // ═══════ LEADERBOARD ═══════
-function showTab(el,type){document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');if(!window.CandyLeaderboard?.open?.(type))renderLB(type);}
+function showTab(el,type){document.querySelectorAll('.lb-tab').forEach(t=>{const active=t===el;t.classList.toggle('active',active);t.setAttribute('aria-selected',String(active));});if(!window.CandyLeaderboard?.open?.(type))renderLB(type);}
 function renderLB(type){
   const list=document.getElementById('lb-list');
   let data=type==='weekly'?weeklyLB:type==='personal'?getPersonalLB():globalLB;

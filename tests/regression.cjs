@@ -26,6 +26,16 @@ test('profile avatars are constrained, synced and shown in live scores',()=>{
   assert.match(leaderboard,/display_name,avatar,score/);assert.match(sql,/leaderboard_scores_avatar_check/);
 });
 
+test('full hearts hide the redundant label and depleted hearts show a countdown',()=>{
+  const g=game();
+  g.run('livesData.lives=5;livesData.lastLostAt=null;updateTimerDisplay()');
+  assert.equal(g.run('document.getElementById("lives-timer-mobile").hidden'),true);
+  assert.equal(g.run('document.getElementById("lives-timer-mobile").textContent'),'');
+  g.run('livesData.lives=4;livesData.lastLostAt=Date.now();updateTimerDisplay()');
+  assert.equal(g.run('document.getElementById("lives-timer-mobile").hidden'),false);
+  assert.match(g.run('document.getElementById("lives-timer-mobile").textContent'),/^(?:29:5[0-9]|30:00)$/);
+});
+
 test('mobile launch defers 3D and native shells use the OAuth deep link',()=>{
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
   const loader=fs.readFileSync(path.join(root,'js','renderer-loader.js'),'utf8');

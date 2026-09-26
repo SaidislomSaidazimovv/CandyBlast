@@ -94,17 +94,19 @@ function updateLivesUI(){
   const playBtn=document.querySelector('#screen-start .btn-play');
   if(playBtn){playBtn.disabled=livesData.lives<=0;playBtn.style.opacity=livesData.lives<=0?'0.5':'1';playBtn.style.cursor=livesData.lives<=0?'not-allowed':'pointer';}
   updateIngameBoosterUI();
+  updateTimerDisplay();
 }
 function updateTimerDisplay(){
   const remaining=getTimeUntilNextLife();
-  const txt=remaining?formatTime(remaining):'Full';
-  const clr=remaining?'#ff88cc':'#43e97b';
+  const txt=remaining?formatTime(remaining):'';
   // Desktop
   const timerEl=document.getElementById('lives-timer');
-  if(timerEl){timerEl.textContent=txt;timerEl.style.color=clr;}
+  if(timerEl){timerEl.textContent=txt;timerEl.hidden=!remaining;}
   // Mobile
   const timerElM=document.getElementById('lives-timer-mobile');
-  if(timerElM){timerElM.textContent=txt;timerElM.style.color=clr;}
+  if(timerElM){timerElM.textContent=txt;timerElM.hidden=!remaining;}
+  const homeLives=document.querySelector('.home-lives');
+  if(homeLives)homeLives.setAttribute('aria-label',`${livesData.lives} of ${MAX_LIVES} hearts${remaining?`; next heart in ${txt}`:''}`);
 }
 
 // ═══ BOOSTERS ═══
