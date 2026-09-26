@@ -136,27 +136,29 @@ function renderRewardsScreen(){
 
   // Close
   const closeBtn=document.createElement('button');
-  closeBtn.style.cssText="position:absolute;top:12px;right:16px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);font-size:1rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;";
+  closeBtn.className='rewards-close';closeBtn.setAttribute('aria-label','Close rewards');
   closeBtn.textContent='✕';closeBtn.onclick=()=>goScreen('start');
   container.appendChild(closeBtn);
+
+  const hero=document.createElement('header');hero.className='rewards-hero';
+  hero.innerHTML=`<span class="rewards-hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="images/ui/icons.svg#gift"></use></svg></span><div><small>YOUR DAILY TREATS</small><h1>Sweet rewards</h1><p>Come back, play and collect.</p></div><span class="rewards-hero-day">Day ${dailyData.currentDay||1}</span>`;
+  container.appendChild(hero);
 
   // Tabs
   const tabs=document.createElement('div');
   tabs.id='rewards-tabs';
-  tabs.style.cssText='display:flex;gap:0;padding:12px 16px 0;flex-shrink:0;';
-  const tabDefs=[{id:'monthly',label:'📅 Monthly'},{id:'weekly',label:'📆 Weekly'},{id:'hourly',label:'⏱️ Hourly'}];
+  tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Rewards');
+  const tabDefs=[{id:'monthly',label:'Monthly',icon:'calendar'},{id:'weekly',label:'Weekly',icon:'gift'},{id:'hourly',label:'Playtime',icon:'clock'}];
   tabDefs.forEach(t=>{
     const btn=document.createElement('button');
     btn.dataset.tab=t.id;
-    btn.style.cssText=`flex:1;padding:10px 4px;border:none;border-radius:12px 12px 0 0;font-family:'Fredoka One',cursive;font-size:0.85rem;cursor:pointer;transition:all 0.2s;background:${t.id==='monthly'?'rgba(255,255,255,0.1)':'transparent'};color:${t.id==='monthly'?'#fff':'rgba(255,255,255,0.4)'};border-bottom:${t.id==='monthly'?'2px solid var(--t-primary,#ff5fa0)':'2px solid transparent'};`;
-    btn.textContent=t.label;
+    btn.type='button';btn.setAttribute('role','tab');btn.setAttribute('aria-selected',String(t.id==='monthly'));btn.classList.toggle('active',t.id==='monthly');
+    btn.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><use href="images/ui/icons.svg#${t.icon}"></use></svg><span>${t.label}</span>`;
     btn.onclick=()=>{
       activeRewardsTab=t.id;
       tabs.querySelectorAll('button').forEach(b=>{
         const isActive=b.dataset.tab===t.id;
-        b.style.background=isActive?'rgba(255,255,255,0.1)':'transparent';
-        b.style.color=isActive?'#fff':'rgba(255,255,255,0.4)';
-        b.style.borderBottom=isActive?'2px solid var(--t-primary,#ff5fa0)':'2px solid transparent';
+        b.classList.toggle('active',isActive);b.setAttribute('aria-selected',String(isActive));
       });
       renderTabContent(content,t.id);
     };
@@ -165,7 +167,6 @@ function renderRewardsScreen(){
 
   const content=document.createElement('div');
   content.id='rewards-tab-content';
-  content.style.cssText='flex:1;overflow-y:auto;padding:16px;';
 
   container.appendChild(tabs);container.appendChild(content);
   renderTabContent(content,'monthly');
@@ -181,29 +182,26 @@ function renderTabContent(container,tab){
 // ── MONTHLY TAB ──
 function renderMonthlyTab(container){
   const currentDay=dailyData.currentDay||1;const claimed=dailyData.claimedDays||[];
-  const title=document.createElement('div');title.style.cssText="font-family:'Fredoka One',cursive;font-size:1.3rem;color:#fff;margin-bottom:4px;";
-  title.textContent='Day '+currentDay+' of 30 🗓️';
-  const sub=document.createElement('div');sub.style.cssText='font-size:0.8rem;color:rgba(255,255,255,0.4);margin-bottom:16px;';
-  sub.textContent='Log in daily to earn bigger rewards!';
+  const title=document.createElement('h2');title.className='rewards-section-title';title.textContent='A month of surprises';
+  const sub=document.createElement('p');sub.className='rewards-section-copy';sub.textContent='Collect one treat each day. Day '+currentDay+' of 30.';
   container.appendChild(title);container.appendChild(sub);
 
   const grid=document.createElement('div');grid.className='monthly-reward-grid';
   MONTHLY_REWARDS.forEach(reward=>{
     const isClaimed=claimed.includes(reward.day);const isCurrent=reward.day===currentDay;const isFuture=reward.day>currentDay;
     const tier=reward.day<=7?'normal':reward.day<=14?'silver':reward.day<=21?'gold':reward.day<=27?'platinum':'diamond';
-    const tierBg={normal:'rgba(255,255,255,0.08)',silver:'rgba(192,192,192,0.12)',gold:'rgba(255,215,0,0.12)',platinum:'rgba(100,200,255,0.12)',diamond:'rgba(255,100,200,0.2)'};
-    const tierBd={normal:'rgba(255,255,255,0.1)',silver:'rgba(192,192,192,0.3)',gold:'rgba(255,215,0,0.35)',platinum:'rgba(100,200,255,0.4)',diamond:'rgba(255,100,200,0.5)'};
-    const cell=document.createElement('div');
-    cell.style.cssText=`border-radius:12px;padding:10px 6px;text-align:center;position:relative;background:${isClaimed?'rgba(67,233,123,0.1)':tierBg[tier]};border:1.5px solid ${isClaimed?'rgba(67,233,123,0.4)':isCurrent?tierBd[tier]:'rgba(255,255,255,0.06)'};opacity:${isFuture?'0.55':'1'};transition:transform 0.15s;${isCurrent&&!isClaimed?'box-shadow:0 0 12px rgba(255,220,0,0.3);':''}`;
-    cell.innerHTML=`<div style="font-size:${isCurrent?'1.6rem':'1.3rem'};line-height:1;margin-bottom:4px;">${isClaimed?'✅':reward.icon}</div><div style="font-family:'Fredoka One',cursive;font-size:0.6rem;color:${isCurrent?'#ffe259':isClaimed?'#43e97b':'rgba(255,255,255,0.5)'};line-height:1.2;">Day ${reward.day}</div><div style="font-size:0.55rem;color:rgba(255,255,255,0.35);margin-top:2px;line-height:1.1;">${reward.label}</div>${isCurrent&&!isClaimed?'<div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ffe259,#ff8c42);color:#000;font-size:0.5rem;font-family:\'Fredoka One\',cursive;padding:2px 6px;border-radius:6px;white-space:nowrap;">TODAY</div>':''}`;
+    const cell=document.createElement(isCurrent&&!isClaimed?'button':'div');if(cell.tagName==='BUTTON')cell.type='button';
+    cell.className=`reward-day tier-${tier}${isClaimed?' is-claimed':''}${isCurrent?' is-current':''}${isFuture?' is-future':''}`;
+    cell.innerHTML=`<span class="reward-day-icon">${isClaimed?'✅':reward.icon}</span><strong>Day ${reward.day}</strong><small>${reward.label}</small>${isCurrent&&!isClaimed?'<em>Today</em>':''}`;
+    if(cell.tagName==='BUTTON')cell.setAttribute('aria-label','Claim Day '+reward.day+': '+reward.label);
     if(isCurrent&&!isClaimed){cell.style.cursor='pointer';cell.onclick=async()=>{
       if(dailyData.claimedDays.includes(reward.day))return;
       cell.style.pointerEvents='none';
       if(window.CandyEconomy?.isAuthoritative?.()){
         try{await window.CandyEconomy.claimDaily();}catch(error){cell.style.pointerEvents='';if(!String(error.message).includes('daily_already_claimed'))showRewardToast('⏱️','Reward is not ready yet');renderTabContent(document.getElementById('rewards-tab-content'),'monthly');return;}
       }else{dailyData.claimedDays.push(reward.day);saveDailyData();giveMonthlyReward(reward);}
-      cell.style.background='rgba(67,233,123,0.1)';cell.style.borderColor='rgba(67,233,123,0.4)';
-      cell.querySelector('div').textContent='✅';cell.style.cursor='default';cell.onclick=null;
+      cell.classList.add('is-claimed');cell.classList.remove('is-current');
+      cell.querySelector('.reward-day-icon').textContent='✅';cell.querySelector('em')?.remove();cell.disabled=true;cell.onclick=null;
       showRewardToast(reward.icon,reward.label);updateDailyNotifDot();
     };}
     grid.appendChild(cell);
@@ -215,29 +213,26 @@ function renderMonthlyTab(container){
 function renderWeeklyTab(container){
   const weekDays=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const today=getCurrentWeekDay();const claimed=dailyData.claimedWeeklyDays||[];
-  const title=document.createElement('div');title.style.cssText="font-family:'Fredoka One',cursive;font-size:1.3rem;color:#fff;margin-bottom:4px;";
-  title.textContent='This Week 📆';
-  const sub=document.createElement('div');sub.style.cssText='font-size:0.8rem;color:rgba(255,255,255,0.4);margin-bottom:20px;';
-  sub.textContent='Play each day to collect all 7 rewards!';
+  const title=document.createElement('h2');title.className='rewards-section-title';title.textContent='This week';
+  const sub=document.createElement('p');sub.className='rewards-section-copy';sub.textContent='Visit each day to unlock the weekly bonus.';
   container.appendChild(title);container.appendChild(sub);
 
-  const row=document.createElement('div');row.style.cssText='display:flex;gap:8px;';
+  const row=document.createElement('div');row.className='reward-week-grid';
   WEEKLY_REWARDS.forEach(reward=>{
     const isToday=reward.day===today;const isClaimed=claimed.includes(reward.day);
     const dayIdx=weekDays.indexOf(reward.day);const todayIdx=weekDays.indexOf(today);const isPast=dayIdx<todayIdx;
-    const cell=document.createElement('div');
-    cell.style.cssText=`flex:1;border-radius:14px;padding:10px 4px;text-align:center;position:relative;background:${isClaimed?'rgba(67,233,123,0.12)':isToday?'rgba(255,220,0,0.1)':'rgba(255,255,255,0.05)'};border:1.5px solid ${isClaimed?'rgba(67,233,123,0.35)':isToday?'rgba(255,220,0,0.4)':'rgba(255,255,255,0.08)'};opacity:${!isPast&&!isToday&&!isClaimed?'0.4':'1'};cursor:${isToday&&!isClaimed?'pointer':'default'};transition:transform 0.15s;`;
-    cell.innerHTML=`<div style="font-size:1.4rem;line-height:1;margin-bottom:6px;">${isClaimed?'✅':reward.icon}</div><div style="font-family:'Fredoka One',cursive;font-size:0.65rem;color:${isToday?'#ffe259':isClaimed?'#43e97b':'rgba(255,255,255,0.5)'};margin-bottom:3px;">${reward.day}</div><div style="font-size:0.55rem;color:rgba(255,255,255,0.35);line-height:1.2;">${reward.label}</div>`;
-    if(isToday&&!isClaimed){cell.onclick=()=>{claimWeeklyDay();renderTabContent(document.getElementById('rewards-tab-content'),'weekly');};}
+    const cell=document.createElement(isToday&&!isClaimed?'button':'div');if(cell.tagName==='BUTTON')cell.type='button';
+    cell.className=`reward-week-day${isClaimed?' is-claimed':''}${isToday?' is-current':''}${!isPast&&!isToday&&!isClaimed?' is-future':''}`;
+    cell.innerHTML=`<span class="reward-day-icon">${isClaimed?'✅':reward.icon}</span><strong>${reward.day}</strong><small>${reward.label}</small>`;
+    if(isToday&&!isClaimed){cell.onclick=async()=>{cell.disabled=true;await claimWeeklyDay();renderTabContent(document.getElementById('rewards-tab-content'),'weekly');};}
     row.appendChild(cell);
   });
   container.appendChild(row);
 
   // Weekly bonus
   const allClaimed=claimed.length===7;
-  const bonusDiv=document.createElement('div');
-  bonusDiv.style.cssText=`margin-top:20px;text-align:center;background:${allClaimed?'rgba(255,215,0,0.15)':'rgba(255,255,255,0.04)'};border:1.5px solid ${allClaimed?'rgba(255,215,0,0.4)':'rgba(255,255,255,0.08)'};border-radius:16px;padding:16px;`;
-  bonusDiv.innerHTML=`<div style="font-size:2rem;margin-bottom:6px;">${allClaimed?'🏆':'🔒'}</div><div style="font-family:'Fredoka One',cursive;color:${allClaimed?'#ffd700':'rgba(255,255,255,0.4)'};font-size:1rem;">Full Week Bonus</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:4px;">${allClaimed?'5 Lives + All Boosters!':'Play '+(7-claimed.length)+' more days'}</div>${allClaimed&&dailyData.weeklyBonusWeek!==getWeekNumber()?'<button class="btn btn-play" style="margin-top:12px;padding:10px 24px;" onclick="claimWeeklyBonus(this)">Claim Bonus! 🎁</button>':''}`;
+  const bonusDiv=document.createElement('div');bonusDiv.className='reward-week-bonus'+(allClaimed?' is-ready':'');
+  bonusDiv.innerHTML=`<span class="reward-bonus-icon" aria-hidden="true">${allClaimed?'🏆':'🔒'}</span><div><strong>Full Week Bonus</strong><small>${allClaimed?'5 Lives + All Boosters!':'Play '+(7-claimed.length)+' more days'}</small></div>${allClaimed&&dailyData.weeklyBonusWeek!==getWeekNumber()?'<button class="btn btn-play" onclick="claimWeeklyBonus(this)">Claim Bonus! 🎁</button>':''}`;
   container.appendChild(bonusDiv);
 }
 async function claimWeeklyBonus(btn){if(dailyData.weekNumber!==getWeekNumber()||dailyData.claimedWeeklyDays.length!==7||dailyData.weeklyBonusWeek===getWeekNumber())return;btn.disabled=true;try{if(window.CandyEconomy?.isAuthoritative?.())await window.CandyEconomy.claimWeeklyBonus();else{addLife(5);earnBooster('extraMoves',3);earnBooster('hammer',3);earnBooster('bomb',3);}dailyData.weeklyBonusWeek=getWeekNumber();saveDailyData();btn.textContent='Claimed! ✅';showRewardToast('🏆','5 Lives + All Boosters!');}catch(error){btn.disabled=false;showRewardToast('⏱️','Weekly bonus is not ready');}}
@@ -248,22 +243,19 @@ function renderHourlyTab(container){
   const today=getTodayKey();
   if(dailyData.lastPlayDate!==today){dailyData.playMinutesToday=0;dailyData.hourlyRewardsClaimed=0;}
   const minsPlayed=dailyData.playMinutesToday||0;const claimed=dailyData.hourlyRewardsClaimed||0;
-  const title=document.createElement('div');title.style.cssText="font-family:'Fredoka One',cursive;font-size:1.3rem;color:#fff;margin-bottom:4px;";
-  title.textContent='Play Time Rewards ⏱️';
-  const sub=document.createElement('div');sub.style.cssText='font-size:0.8rem;color:rgba(255,255,255,0.4);margin-bottom:20px;';
-  sub.textContent='Earn rewards for every hour you play!';
+  const title=document.createElement('h2');title.className='rewards-section-title';title.textContent='Playtime treats';
+  const sub=document.createElement('p');sub.className='rewards-section-copy';sub.textContent='Every hour of play brings a new reward.';
   container.appendChild(title);container.appendChild(sub);
 
   const progressPct=Math.min(100,(minsPlayed%60)/60*100);const nextHour=60-(minsPlayed%60);
-  const pw=document.createElement('div');pw.style.cssText='margin-bottom:24px;';
-  pw.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:0.8rem;color:rgba(255,255,255,0.5);margin-bottom:8px;"><span>Today: ${minsPlayed} min played</span><span>Next reward: ${nextHour} min</span></div><div style="background:rgba(255,255,255,0.1);border-radius:8px;height:10px;overflow:hidden;"><div style="height:100%;border-radius:8px;background:linear-gradient(90deg,#4facfe,#00f2fe);width:${progressPct}%;transition:width 0.5s;box-shadow:0 0 8px rgba(79,172,254,0.5);"></div></div>`;
+  const pw=document.createElement('div');pw.className='reward-time-progress';
+  pw.innerHTML=`<div><span>Today: ${minsPlayed} min played</span><span>Next: ${nextHour} min</span></div><div class="reward-time-track"><span style="width:${progressPct}%"></span></div>`;
   container.appendChild(pw);
 
   HOURLY_REWARDS.forEach((reward,i)=>{
     const isClaimed=i<claimed;const isNext=i===claimed;
-    const slot=document.createElement('div');
-    slot.style.cssText=`display:flex;align-items:center;gap:16px;background:${isClaimed?'rgba(67,233,123,0.08)':isNext?'rgba(79,172,254,0.08)':'rgba(255,255,255,0.04)'};border:1.5px solid ${isClaimed?'rgba(67,233,123,0.3)':isNext?'rgba(79,172,254,0.3)':'rgba(255,255,255,0.06)'};border-radius:16px;padding:16px;margin-bottom:10px;opacity:${!isClaimed&&!isNext?'0.4':'1'};`;
-    slot.innerHTML=`<div style="font-size:2.2rem;line-height:1;">${isClaimed?'✅':reward.icon}</div><div style="flex:1;"><div style="font-family:'Fredoka One',cursive;font-size:1rem;color:${isClaimed?'#43e97b':isNext?'#4facfe':'rgba(255,255,255,0.4)'};margin-bottom:2px;">Hour ${reward.hour}</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.45);">${reward.label}</div></div><div style="font-family:'Fredoka One',cursive;font-size:0.8rem;color:rgba(255,255,255,0.3);">${isClaimed?'Done!':isNext?nextHour+'m left':'Locked'}</div>`;
+    const slot=document.createElement('div');slot.className='reward-time-slot'+(isClaimed?' is-claimed':'')+(isNext?' is-next':'');
+    slot.innerHTML=`<span class="reward-day-icon">${isClaimed?'✅':reward.icon}</span><div><strong>Hour ${reward.hour}</strong><small>${reward.label}</small></div><b>${isClaimed?'Done':isNext?nextHour+'m left':'Locked'}</b>`;
     container.appendChild(slot);
   });
 }

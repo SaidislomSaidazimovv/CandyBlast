@@ -10,11 +10,7 @@ const SPIN_PRIZES=[
   {icon:'🔨',label:'Hammer',sub:'BRONZE',type:'hammer',val:1,tier:'bronze'},
   {icon:'💣',label:'Bomb',sub:'BRONZE',type:'bomb',val:1,tier:'bronze'}
 ];
-const TIER_STYLES={
-  gold:{bg:'rgba(255,215,0,0.18)',border:'rgba(255,215,0,0.6)',label:'#ffd700',glow:'rgba(255,215,0,0.4)'},
-  silver:{bg:'rgba(192,192,192,0.12)',border:'rgba(192,192,192,0.4)',label:'#c0c0c0',glow:'rgba(192,192,192,0.3)'},
-  bronze:{bg:'rgba(205,127,50,0.1)',border:'rgba(205,127,50,0.3)',label:'#cd7f32',glow:'rgba(205,127,50,0.2)'}
-};
+const SPIN_SHORT_LABELS=['5 hearts','Boost x3','3 hearts','Gift pack','+10 moves','Booster','1 heart','Hammer','Bomb'];
 
 // Opens spin as a full screen (like settings/leaderboard)
 function openSpinScreen(){
@@ -42,29 +38,26 @@ function renderSpinScreen(){
 
   if(count<=0){
     // No spins state
-    card.innerHTML=`
-      <div class="spin-emblem" aria-hidden="true">🎡</div><div class="ov-kicker">Daily bonus</div>
-      <div class="spin-title">Lucky Spin</div>
-      <div class="spin-subtitle">No spins available.<br>Earn another spin from Daily Rewards.</div>
-      <button class="btn btn-secondary" onclick="goScreen('rewards');renderRewardsScreen();">View rewards</button>
-    `;
+    card.innerHTML=`<div class="spin-empty-art" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="images/ui/icons.svg#spin"></use></svg><b>0</b></div><div class="ov-kicker">Daily bonus</div>
+      <h1 class="spin-title">Lucky Spin</h1><p class="spin-subtitle">Your wheel is resting. Collect a spin from Daily Rewards and come back for a surprise.</p>
+      <button class="btn btn-secondary spin-rewards-link" onclick="goScreen('rewards');renderRewardsScreen();">See daily rewards <span aria-hidden="true">→</span></button>`;
     container.appendChild(card);
     return;
   }
 
   // Has spins — show wheel
+  card.classList.add('has-spins');
   const weights=[10,10,16,17,17,8,8,7,7];const total=weights.reduce((a,b)=>a+b,0);
   let rand=Math.random()*total,winIdx=0;
   for(let i=0;i<weights.length;i++){rand-=weights[i];if(rand<=0){winIdx=i;break;}}
 
-  card.innerHTML=`
-    <div class="ov-kicker">Daily bonus</div><div class="spin-title">🎡 Lucky Spin</div>
-    <div class="spin-subtitle">Spins left: <strong id="spin-remaining">${count}</strong></div>
-    <div id="spin-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;">
-      ${SPIN_PRIZES.map((p,i)=>{const s=TIER_STYLES[p.tier];return`<div class="spin-slot" id="spin-slot-${i}" style="border-radius:14px;padding:12px 6px;background:${s.bg};border:2px solid ${s.border};cursor:default;transition:all 0.08s;position:relative;"><div style="font-size:1.6rem;line-height:1;margin-bottom:4px;">${p.icon}</div><div style="font-family:'Fredoka One',cursive;font-size:0.7rem;color:#fff;line-height:1.2;margin-bottom:2px;">${p.label}</div><div style="font-size:0.55rem;font-weight:700;color:${s.label};letter-spacing:0.5px;">${p.sub}</div></div>`;}).join('')}
-    </div>
-    <button id="spin-action-btn" class="btn btn-play" style="width:100%;padding:14px;font-size:1.1rem;" onclick="doSpin(${winIdx})">🎡 Spin!</button>
-  `;
+  card.innerHTML=`<div class="ov-kicker">DAILY BONUS</div><h1 class="spin-title">Lucky Spin</h1>
+    <p class="spin-subtitle">One turn, one sweet surprise. Spins ready: <strong id="spin-remaining">${count}</strong></p>
+    <div class="spin-wheel-shell"><span class="spin-pointer" aria-hidden="true"></span><div id="spin-grid" class="spin-rotor" role="img" aria-label="Wheel with nine possible rewards">
+      ${SPIN_PRIZES.map((p,i)=>{const angle=-Math.PI/2+i*2*Math.PI/9,x=(50+35*Math.cos(angle)).toFixed(2),y=(50+35*Math.sin(angle)).toFixed(2);return`<div class="spin-slot tier-${p.tier}" id="spin-slot-${i}" style="--slot-x:${x}%;--slot-y:${y}%;" aria-hidden="true"><span class="spin-prize-icon">${p.icon}</span><strong>${SPIN_SHORT_LABELS[i]}</strong></div>`;}).join('')}
+    </div><span class="spin-wheel-hub" aria-hidden="true">✦</span></div>
+    <button id="spin-action-btn" class="btn btn-play" onclick="doSpin(${winIdx})">Spin the wheel</button>
+    <p class="spin-hint" role="status">The pointer shows your prize.</p>`;
   container.appendChild(card);
 }
 
@@ -80,20 +73,24 @@ async function doSpin(winIdx){
   if(serverSpin){spinRunning=true;const waiting=document.getElementById('spin-action-btn');if(waiting){waiting.disabled=true;waiting.textContent='Checking server…';}try{const result=await globalThis.CandyEconomy.spin();winIdx=result.prize_index;spinPendingServer=true;}catch(error){spinRunning=false;if(waiting){waiting.disabled=false;waiting.textContent='Try again';}showRewardToast('⏱️','Spin needs an internet connection');return;}}
   else{if(!useSpin())return;spinRunning=true;spinPendingServer=false;}
   const ac=getAC();if(ac?.state==='suspended')ac.resume().catch(()=>{});
+  if(typeof playNoise==='function')playNoise(.055,.045,520);
+  const reduced=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const rotor=document.getElementById('spin-grid');if(rotor?.style){rotor.style.transitionDuration=reduced?'250ms':'3300ms';rotor.style.transform='rotate('+(1800-winIdx*40)+'deg)';}
   // Deduct spin
 
   const btn=document.getElementById('spin-action-btn');if(btn){btn.disabled=true;btn.textContent='Spinning...';}
   const totalSteps=28+winIdx;let step=0,dl=60,prevIdx=-1;
+  if(reduced){setTimeout(()=>finalizeSpin(winIdx),280);return;}
   function tick(){
     if(!document.getElementById('spin-grid')){spinRunning=false;return;}
-    if(prevIdx>=0){const prev=document.getElementById('spin-slot-'+prevIdx);if(prev){const s=TIER_STYLES[SPIN_PRIZES[prevIdx].tier];prev.style.background=s.bg;prev.style.borderColor=s.border;prev.style.transform='scale(1)';prev.style.boxShadow='none';}}
+    if(prevIdx>=0)document.getElementById('spin-slot-'+prevIdx)?.classList.toggle('is-active',false);
     const curIdx=step%9;const cur=document.getElementById('spin-slot-'+curIdx);
-    if(cur){cur.style.background='rgba(255,255,255,0.25)';cur.style.borderColor='#ffffff';cur.style.transform='scale(1.08)';cur.style.boxShadow='0 0 16px rgba(255,255,255,0.5)';}
-    document.querySelectorAll('.spin-slot').forEach((slot,i)=>slot.classList.toggle('is-active',i===curIdx));
-    playTone(500+curIdx*35,.045,'triangle',.09);
+    cur?.classList.toggle('is-active',true);
+    playTone(680-step*6,.045,'triangle',.075);
+    if(step%3===0&&typeof vibrate==='function')vibrate(8);
     prevIdx=curIdx;step++;
     if(step<totalSteps){if(step>totalSteps-6)dl=100+(6-(totalSteps-step))*65;else if(step>totalSteps-12)dl=90;setTimeout(tick,dl);}
-    else{setTimeout(()=>finalizeSpin(winIdx),400);}
+    else{setTimeout(()=>finalizeSpin(winIdx),500);}
   }
   setTimeout(tick,100);
 }
@@ -102,12 +99,13 @@ function finalizeSpin(winIdx){
   if(!spinRunning)return;spinRunning=false;spinPending=winIdx;
   document.querySelectorAll('.spin-slot').forEach((slot,i)=>{slot.classList.remove('is-active');slot.classList.toggle('is-winner',i===winIdx);slot.style.transform='';slot.style.boxShadow='none';});
   playWin();
-  const winner=SPIN_PRIZES[winIdx];const s=TIER_STYLES[winner.tier];
+  const winner=SPIN_PRIZES[winIdx];
   const winSlot=document.getElementById('spin-slot-'+winIdx);
-  if(winSlot){winSlot.style.background=winner.tier==='gold'?'rgba(255,215,0,0.45)':winner.tier==='silver'?'rgba(192,192,192,0.4)':'rgba(205,127,50,0.35)';winSlot.style.borderColor=s.label;winSlot.style.transform='scale(1.15)';winSlot.style.boxShadow='0 0 24px '+s.glow+',0 0 40px '+s.glow;}
+  if(winSlot)winSlot.classList.toggle('is-winner',true);
   const rem=document.getElementById('spin-remaining');if(rem)rem.textContent=dailyData.spinCount||0;
   const btn=document.getElementById('spin-action-btn');
-  if(btn){btn.disabled=false;btn.textContent='Claim '+winner.icon+' '+winner.label+'!';btn.style.background='linear-gradient(135deg,'+s.border+','+s.label+')';btn.onclick=()=>claimSpinPrize(winner);}
+  if(btn){btn.disabled=false;btn.textContent='Claim '+winner.label;btn.classList?.add?.('spin-claim');btn.onclick=()=>claimSpinPrize(winner);}
+  const hint=document.querySelector?.('.spin-hint');if(hint)hint.textContent='You won '+winner.label+'!';
 }
 
 function claimSpinPrize(prize){
