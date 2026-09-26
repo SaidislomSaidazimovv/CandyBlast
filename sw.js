@@ -1,4 +1,4 @@
-const CACHE_NAME = 'candy-blast-v38';
+const CACHE_NAME = 'candy-blast-v39';
 // The launch shell stays small; large 3D and journey artwork is cached when used.
 const CORE = [
   '/js/profiles.js',

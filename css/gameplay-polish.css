@@ -1,9 +1,17 @@
 /* Gameplay feedback layer: short, composited animations only. */
 html.game-3d #screen-game .game-title-small{
-  min-width:0;max-width:58%;justify-content:center;gap:7px;
+  min-width:0;max-width:none;justify-content:center;gap:7px;
+}
+html.game-3d #screen-game .game-header{
+  display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;
+  align-items:center;column-gap:8px;
+}
+html.game-3d #screen-game .game-title-candy{
+  display:block;width:25px;height:25px;flex:none;object-fit:contain;
+  filter:drop-shadow(0 2px 2px #38223e66);
 }
 html.game-3d #screen-game #game-level-name{
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 html.game-3d #screen-game .stat-box{
   transition:background-color .18s ease,transform .18s ease,box-shadow .18s ease;
@@ -47,7 +55,7 @@ html.game-3d #screen-game .ingame-booster-btn.active-hammer::before{
 .result-dialog .stars .ui-icon:nth-child(2){animation-delay:.09s}.result-dialog .stars .ui-icon:nth-child(3){animation-delay:.18s}
 @keyframes star-land{0%{opacity:0;transform:translateY(-20px) rotate(-25deg) scale(.2)}100%{opacity:1;transform:none}}
 
-@media(max-width:360px){html.game-3d #screen-game .game-title-small{font-size:14px;max-width:52%}}
+@media(max-width:360px){html.game-3d #screen-game .game-title-small{font-size:14px}html.game-3d #screen-game .game-title-candy{width:20px;height:20px}}
 @media(prefers-reduced-motion:reduce){
   .match-spark{display:none!important}html.game-3d #screen-game .stat-box.is-critical,html.game-3d #screen-game #combo-display,.result-dialog .stars .ui-icon{animation:none!important}
 }
