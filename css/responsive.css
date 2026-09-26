@@ -40,7 +40,9 @@ html,body{inline-size:100%;block-size:var(--app-height);min-block-size:0;positio
 
 #rewards-tabs{padding-left:max(12px,var(--safe-left))!important;padding-right:max(12px,var(--safe-right))!important}
 #rewards-tab-content{padding-left:max(12px,var(--safe-left))!important;padding-right:max(12px,var(--safe-right))!important;overscroll-behavior:contain}
-#rewards-tab-content>div[style*="grid-template-columns:repeat(5"]{grid-template-columns:repeat(auto-fit,minmax(54px,1fr))!important}
+#rewards-tab-content .monthly-reward-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;min-width:0}
+@media(max-width:439px){#rewards-tab-content .monthly-reward-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:359px){#rewards-tab-content .monthly-reward-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 #rewards-tab-content>div[style*="display:flex"]{min-inline-size:0;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:5px}
 #rewards-tab-content>div[style*="display:flex"]>div{min-inline-size:70px;scroll-snap-align:start}
 #spin-screen-container{padding-top:max(68px,calc(var(--safe-top) + 60px))!important;padding-right:max(12px,var(--safe-right))!important;padding-bottom:max(14px,var(--safe-bottom))!important;padding-left:max(12px,var(--safe-left))!important}

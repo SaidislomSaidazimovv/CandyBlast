@@ -187,7 +187,7 @@ function renderMonthlyTab(container){
   sub.textContent='Log in daily to earn bigger rewards!';
   container.appendChild(title);container.appendChild(sub);
 
-  const grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:repeat(5,1fr);gap:8px;';
+  const grid=document.createElement('div');grid.className='monthly-reward-grid';
   MONTHLY_REWARDS.forEach(reward=>{
     const isClaimed=claimed.includes(reward.day);const isCurrent=reward.day===currentDay;const isFuture=reward.day>currentDay;
     const tier=reward.day<=7?'normal':reward.day<=14?'silver':reward.day<=21?'gold':reward.day<=27?'platinum':'diamond';
