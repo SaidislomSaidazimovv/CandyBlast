@@ -116,23 +116,24 @@ function renderMapScreen(){
   const prefersLessMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const currentRegion=getRegionForLevel(mapData.currentLevel)||REGIONS[0];
   const header=document.createElement('header');header.className='app-screen-header journey-header';
-  header.innerHTML='<button class="app-icon-button" aria-label="Home" onclick="goScreen(&quot;start&quot;)">←</button><div><small class="journey-eyebrow">YOUR SWEET ADVENTURE</small><strong>Sweet Journey</strong><small>'+currentRegion.name+' · Level '+mapData.currentLevel+' / '+RELEASE_LEVEL_COUNT+'</small></div><span class="journey-star-total">⭐ '+getTotalStars()+' / '+(RELEASE_LEVEL_COUNT*3)+'</span>';host.append(header);
+  header.innerHTML='<button class="app-icon-button" aria-label="Back home" onclick="goScreen(&quot;start&quot;)">←</button><div><strong>Sweet Journey</strong><small>'+currentRegion.name+'</small></div><span class="journey-star-total" aria-label="'+getTotalStars()+' of '+(RELEASE_LEVEL_COUNT*3)+' stars">★ <b>'+getTotalStars()+'</b><small>/ '+(RELEASE_LEVEL_COUNT*3)+'</small></span>';host.append(header);
   const scroll=document.createElement('div');scroll.className='journey-scroll';host.append(scroll);
   const trail=document.createElement('div');trail.className='journey-trail';scroll.append(trail);
-  const positions=mapData.levels.map((lv,i)=>({x:50+27*Math.sin(i*.95),y:170+i*132}));
-  const height=positions.at(-1).y+190;trail.style.height=height+'px';
+  const positions=mapData.levels.map((lv,i)=>({x:50+29*Math.sin(i*1.02-.52),y:137+i*94}));
+  const height=positions.at(-1).y+150;trail.style.height=height+'px';
   REGIONS.forEach((region,chapterIndex)=>{
     const first=region.levels[0]-1,last=region.levels[1]-1,chapterLevels=mapData.levels.slice(first,last+1),completed=chapterLevels.filter(level=>level.completed).length;
     const chapter=document.createElement('section');chapter.className='journey-chapter'+(completed===chapterLevels.length?' is-complete':'')+(chapterLevels.every(level=>level.locked)?' is-locked':'');chapter.dataset.world=region.id;
-    chapter.style.top=(positions[first].y-170)+'px';chapter.style.height=(positions[last].y-positions[first].y+340)+'px';chapter.style.setProperty('--chapter-image',`url("../images/worlds/${region.image}")`);chapter.style.setProperty('--chapter-accent',region.color);
+    chapter.style.top=(positions[first].y-137)+'px';chapter.style.height=(positions[last].y-positions[first].y+220)+'px';chapter.style.setProperty('--chapter-image',`url("../images/worlds/${region.image}")`);chapter.style.setProperty('--chapter-accent',region.color);
     chapter.setAttribute('aria-label',region.name+', '+completed+' of '+chapterLevels.length+' levels complete');trail.append(chapter);
     const mastery=getRegionMastery(region);
-    const sign=document.createElement('div');sign.className='journey-region';sign.style.top=(positions[first].y-130)+'px';sign.innerHTML=`<span class="journey-region-mark" aria-hidden="true">${region.emoji}</span><span class="journey-region-copy"><small>WORLD ${String(chapterIndex+1).padStart(2,'0')} · LEVELS ${region.levels[0]}–${region.levels[1]}</small><strong>${region.name}</strong><small>${mastery.tier?mastery.tier+' mastery earned':mastery.earned+'/'+mastery.next+' stars to Bronze mastery'}</small></span><b class="journey-mastery ${mastery.tier?'has-mastery':''}" aria-label="${mastery.earned} of 15 stars, ${mastery.tier||'no'} mastery">${mastery.tier?'★ '+mastery.tier:'★ '+mastery.earned+'/15'}</b>`;trail.append(sign);
+    const sign=document.createElement('div');sign.className='journey-region';sign.style.top=(positions[first].y-118)+'px';sign.innerHTML=`<span class="journey-region-mark" aria-hidden="true">${region.emoji}</span><span class="journey-region-copy"><small>WORLD ${chapterIndex+1} · LEVELS ${region.levels[0]}–${region.levels[1]}</small><strong>${region.name}</strong></span><b class="journey-mastery ${mastery.tier?'has-mastery':''}" aria-label="${mastery.earned} of 15 stars, ${mastery.tier||'no'} mastery">★ ${mastery.earned}/15</b>`;trail.append(sign);
   });
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 100 '+height);svg.setAttribute('preserveAspectRatio','none');svg.classList.add('journey-path');svg.setAttribute('aria-hidden','true');
   const addRoute=(className,d)=>{if(!d)return;const path=document.createElementNS(svg.namespaceURI,'path');path.classList.add(className);path.setAttribute('d',d);path.setAttribute('vector-effect','non-scaling-stroke');path.setAttribute('pathLength','100');svg.append(path);return path;};
   addRoute('journey-route-shadow',journeyPath(positions));
   addRoute('journey-route-base',journeyPath(positions));
+  addRoute('journey-route-stripe',journeyPath(positions));
   const reveal=journeyReveal&&journeyReveal.to===mapData.currentLevel?journeyReveal:null;
   addRoute('journey-route-done',journeyPath(positions,0,Math.max(0,reveal&&!prefersLessMotion?reveal.from-1:mapData.currentLevel-1)));
   if(reveal&&!prefersLessMotion)addRoute('journey-route-reveal',journeyPath(positions,reveal.from-1,reveal.to-1));
@@ -141,16 +142,18 @@ function renderMapScreen(){
     const region=getRegionForLevel(lv.id),pos=positions[i];
     const gate=lv.id%5===0;
     const button=document.createElement('button');button.className='journey-level world-'+region.id+(lv.completed?' completed':'')+(lv.id===mapData.currentLevel?' current':'')+(gate?' chapter-gate':'')+(reveal?.to===lv.id?' newly-unlocked':'');button.disabled=lv.locked;button.dataset.level=String(lv.id);button.style.left=pos.x+'%';button.style.top=pos.y+'px';button.style.setProperty('--level-accent',region.color);button.setAttribute('aria-label','Level '+lv.id+', '+lv.title+(lv.locked?', locked':', '+lv.stars+' stars'));
-    button.innerHTML=(gate?'<i class="journey-gate-mark" aria-hidden="true">◆</i>':'')+'<span class="journey-level-face"><b>'+(lv.locked?'🔒':lv.id)+'</b></span><small class="journey-level-stars">'+(lv.completed?'⭐'.repeat(lv.stars):lv.id===mapData.currentLevel?'PLAY':'')+'</small>';
+    button.innerHTML=(gate?'<i class="journey-gate-mark" aria-hidden="true">♛</i>':'')+'<span class="journey-level-face"><b>'+(lv.locked?'🔒':lv.id)+'</b></span><small class="journey-level-stars" aria-hidden="true">'+(lv.completed?'★'.repeat(lv.stars)+'☆'.repeat(3-lv.stars):lv.id===mapData.currentLevel?'PLAY':'')+'</small>';
     button.onclick=()=>{mapData.selectedRegion=region;showLevelInfo(lv,region);};trail.append(button);
   });
   if(reveal){
     const marker=document.createElement('div');marker.className='journey-unlock-banner';marker.style.left=positions[reveal.to-1].x+'%';marker.style.top=(positions[reveal.to-1].y-86)+'px';marker.setAttribute('role','status');marker.textContent='Level '+reveal.to+' unlocked!';trail.append(marker);
+    if(!prefersLessMotion){
+      const traveler=document.createElement('img');traveler.className='journey-traveler';traveler.src='images/candies/berry.svg';traveler.alt='';traveler.setAttribute('aria-hidden','true');trail.append(traveler);
+      const from=positions[reveal.from-1],to=positions[reveal.to-1];
+      traveler.animate([{left:from.x+'%',top:from.y+'px',transform:'translate(-50%,-50%) scale(.65)',opacity:0},{left:from.x+'%',top:from.y+'px',transform:'translate(-50%,-50%) scale(1)',opacity:1,offset:.15},{left:to.x+'%',top:to.y+'px',transform:'translate(-50%,-50%) scale(1.12)',opacity:1,offset:.85},{left:to.x+'%',top:to.y+'px',transform:'translate(-50%,-50%) scale(.65)',opacity:0}],{duration:1050,easing:'ease-in-out'}).finished.finally(()=>traveler.remove());
+    }
   }
-  const active=mapData.levels[mapData.currentLevel-1];
-  const dock=document.createElement('div');dock.className='journey-dock';
-  dock.innerHTML=`<div class="journey-dock-copy"><small>${active.completed?'REPLAY':'NEXT STOP'} · LEVEL ${active.id}</small><strong>${active.title}</strong></div><button type="button" class="journey-dock-play" aria-label="Play level ${active.id}">${active.completed?'Replay':'Play'} <span aria-hidden="true">▶</span></button>`;
-  dock.querySelector('button').onclick=()=>{mapData.selectedRegion=currentRegion;showLevelInfo(active,currentRegion);};host.append(dock);
+  const currentButton=document.createElement('button');currentButton.type='button';currentButton.className='journey-find-current';currentButton.textContent='✦  Level '+mapData.currentLevel;currentButton.setAttribute('aria-label','Find current level '+mapData.currentLevel);currentButton.onclick=()=>scroll.scrollTo({top:Math.max(0,positions[mapData.currentLevel-1].y-scroll.clientHeight*.48),behavior:prefersLessMotion?'instant':'smooth'});host.append(currentButton);
   requestAnimationFrame(()=>{
     const target=positions[mapData.currentLevel-1].y-scroll.clientHeight*.48;
     if(reveal&&!prefersLessMotion){
@@ -270,25 +273,19 @@ function showLevelInfo(lv, region) {
     </button>`;
   };
   popup.innerHTML = `<div class="level-popup-card">
-    <div class="level-popup-handle" aria-hidden="true"></div>
+    <div class="level-popup-crown" aria-hidden="true">✦</div>
     <button type="button" class="level-popup-close" aria-label="Close" onclick="document.getElementById('level-info-popup').remove()">×</button>
-    <div class="level-popup-candy" aria-hidden="true"><img src="images/candies/${['berry','diamond','mint','star','grape'][Math.min(4,lv.colors-4)]}.svg" alt=""></div>
-    <div class="ov-kicker">Level ${lv.id} · ${lv.colors} candy colors</div>
+    <div class="level-popup-heading"><span class="level-popup-number">LEVEL ${lv.id}</span><div class="level-popup-stars" aria-label="${lv.stars} of 3 stars">${'★'.repeat(lv.stars)}${'☆'.repeat(3-lv.stars)}</div></div>
     <div class="level-name" id="level-popup-title">${lv.title}</div>
-    <div class="pregame-objective">${objectiveDescription(lv.objective)}</div>
-    <div class="level-popup-stars" aria-label="${lv.stars} of 3 stars">${'⭐'.repeat(lv.stars)}${'☆'.repeat(3-lv.stars)}</div>
-    <div class="level-facts">
-      <div><span>🎯</span><strong>${adjTarget.toLocaleString()}</strong><small>${lv.objective.kind==='score'?'Target':'Star score'}</small></div>
-      <div><span>👣</span><strong>${adjMoves}</strong><small>Moves</small></div>
-      <div><span>⭐</span><strong>${adjStar3.toLocaleString()}</strong><small>Three stars</small></div>
-    </div>
-    <div class="level-booster-heading"><strong>Starting boosters</strong><small>Pick +5 moves and one targeted tool</small></div>
+    <div class="level-popup-goal"><small>YOUR GOAL</small><strong>${objectiveDescription(lv.objective)}</strong></div>
+    <div class="level-popup-brief"><span>◈ ${adjMoves} moves</span><span>✦ ${adjTarget.toLocaleString()} points</span></div>
+    <div class="level-booster-heading"><strong>Start with a boost</strong><small>Choose +5 moves and one tool</small></div>
     <div class="level-booster-picker">
-      ${booster('extraMoves','⚡','+5 moves','Added before play')}
-      ${booster('hammer','🔨','Hammer','Choose one candy')}
-      ${booster('bomb','💣','Prism blast','Choose one color')}
+      ${booster('extraMoves','⚡','+5 moves','Extra turns')}
+      ${booster('hammer','🔨','Hammer','Tap a candy')}
+      ${booster('bomb','💎','Prism','Pick a color')}
     </div>
-    <button class="btn btn-play level-start-button" onclick="startSelectedMapLevel(${lv.id});">▶ Play level</button>
+    <button class="btn btn-play level-start-button" onclick="startSelectedMapLevel(${lv.id});">Play!</button>
   </div>`;
   document.body.appendChild(popup);
 }
