@@ -179,7 +179,7 @@ function hidePreGame(){
 function cancelPreGame(){
   window._pendingTimer=0;stopGameTimer();gameEnded=true;pregame=false;clearGameState();
   mapData.selectedLevel=null;window._mapLevelSettings=null;
-  goScreen('map');renderMapScreen();
+  goScreen('map');
 }
 
 // ═══ NO LIVES POPUP ═══

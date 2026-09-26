@@ -35,6 +35,7 @@ function generateLevels(){return OPENING_LEVELS.map((spec,i)=>({id:i+1,moves:spe
 // ═══ STATE ═══
 let mapData = { currentLevel:1, levels:[], selectedRegion:null, selectedLevel:null };
 let selectedStartingBoosters = new Set();
+let journeyReveal = null;
 
 // ═══ SAVE / LOAD ═══
 const MAP_VERSION = 6; // Progress is migrated by stable level id.
@@ -66,11 +67,13 @@ function loadMapData() {
 function completeLevel(levelId, starsCount, finalScore) {
   const lv = mapData.levels.find(l => l.id === levelId);
   if (!lv) return;
+  const next = mapData.levels.find(l => l.id === levelId + 1);
+  const unlockedNext=!!next?.locked;
   if (starsCount > lv.stars) lv.stars = starsCount;
   lv.completed = true;
   mapData.currentLevel=Math.max(mapData.currentLevel,Math.min(RELEASE_LEVEL_COUNT,levelId+1));
-  const next = mapData.levels.find(l => l.id === levelId + 1);
   if (next) { next.locked = false; mapData.currentLevel = Math.max(mapData.currentLevel, levelId + 1); }
+  if(unlockedNext)journeyReveal={from:levelId,to:levelId+1};
   saveMapData();
   window.CandyCloud?.refreshProfile?.();
   window.CandyLeaderboard?.submit?.({level:levelId,score:finalScore,stars:starsCount});
@@ -99,33 +102,63 @@ function fmtTimeSt(s) { const m=Math.floor(s/60),sc=s%60; return m+':'+(sc<10?'0
 
 // ═══ DIFFICULTY CONFIG ═══
 // ═══ MAP SCREEN ═══
+function journeyPath(positions,start=0,end=positions.length-1){
+  if(end<start)return '';
+  let d='M'+positions[start].x+' '+positions[start].y;
+  for(let i=start+1;i<=end;i++){
+    const previous=positions[i-1],point=positions[i],middle=(previous.y+point.y)/2;
+    d+=' C'+previous.x+' '+middle+' '+point.x+' '+middle+' '+point.x+' '+point.y;
+  }
+  return d;
+}
 function renderMapScreen(){
   const host=document.getElementById('map-container');if(!host)return;host.innerHTML='';
+  const prefersLessMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const currentRegion=getRegionForLevel(mapData.currentLevel)||REGIONS[0];
   const header=document.createElement('header');header.className='app-screen-header journey-header';
-  header.innerHTML='<button class="app-icon-button" aria-label="Home" onclick="goScreen(&quot;start&quot;)">←</button><div><strong>Sweet Journey</strong><small>'+currentRegion.name+' · Level '+mapData.currentLevel+' / '+RELEASE_LEVEL_COUNT+'</small></div><span class="journey-star-total">⭐ '+getTotalStars()+' / '+(RELEASE_LEVEL_COUNT*3)+'</span>';host.append(header);
+  header.innerHTML='<button class="app-icon-button" aria-label="Home" onclick="goScreen(&quot;start&quot;)">←</button><div><small class="journey-eyebrow">YOUR SWEET ADVENTURE</small><strong>Sweet Journey</strong><small>'+currentRegion.name+' · Level '+mapData.currentLevel+' / '+RELEASE_LEVEL_COUNT+'</small></div><span class="journey-star-total">⭐ '+getTotalStars()+' / '+(RELEASE_LEVEL_COUNT*3)+'</span>';host.append(header);
   const scroll=document.createElement('div');scroll.className='journey-scroll';host.append(scroll);
   const trail=document.createElement('div');trail.className='journey-trail';scroll.append(trail);
-  const positions=mapData.levels.map((lv,i)=>({x:50+28*Math.sin(i*.85),y:130+i*112}));
-  const height=positions.at(-1).y+150;trail.style.height=height+'px';
+  const positions=mapData.levels.map((lv,i)=>({x:50+27*Math.sin(i*.95),y:170+i*132}));
+  const height=positions.at(-1).y+190;trail.style.height=height+'px';
   REGIONS.forEach((region,chapterIndex)=>{
     const first=region.levels[0]-1,last=region.levels[1]-1,chapterLevels=mapData.levels.slice(first,last+1),completed=chapterLevels.filter(level=>level.completed).length;
     const chapter=document.createElement('section');chapter.className='journey-chapter'+(completed===chapterLevels.length?' is-complete':'')+(chapterLevels.every(level=>level.locked)?' is-locked':'');chapter.dataset.world=region.id;
-    chapter.style.top=(positions[first].y-112)+'px';chapter.style.height=(positions[last].y-positions[first].y+224)+'px';chapter.style.setProperty('--chapter-image',`url("../images/worlds/${region.image}")`);chapter.style.setProperty('--chapter-accent',region.color);
+    chapter.style.top=(positions[first].y-170)+'px';chapter.style.height=(positions[last].y-positions[first].y+340)+'px';chapter.style.setProperty('--chapter-image',`url("../images/worlds/${region.image}")`);chapter.style.setProperty('--chapter-accent',region.color);
     chapter.setAttribute('aria-label',region.name+', '+completed+' of '+chapterLevels.length+' levels complete');trail.append(chapter);
     const mastery=getRegionMastery(region);
-    const sign=document.createElement('div');sign.className='journey-region';sign.style.top=(positions[first].y-96)+'px';sign.innerHTML=`<span aria-hidden="true">${region.emoji}</span><span><strong>${region.name}</strong><small>${mastery.tier?mastery.tier+' mastery earned':mastery.earned+'/'+mastery.next+' stars to Bronze mastery'}</small></span><b class="journey-mastery ${mastery.tier?'has-mastery':''}" aria-label="${mastery.earned} of 15 stars, ${mastery.tier||'no'} mastery">${mastery.tier?'★ '+mastery.tier:'★ '+mastery.earned+'/15'}</b>`;trail.append(sign);
+    const sign=document.createElement('div');sign.className='journey-region';sign.style.top=(positions[first].y-130)+'px';sign.innerHTML=`<span class="journey-region-mark" aria-hidden="true">${region.emoji}</span><span class="journey-region-copy"><small>WORLD ${String(chapterIndex+1).padStart(2,'0')} · LEVELS ${region.levels[0]}–${region.levels[1]}</small><strong>${region.name}</strong><small>${mastery.tier?mastery.tier+' mastery earned':mastery.earned+'/'+mastery.next+' stars to Bronze mastery'}</small></span><b class="journey-mastery ${mastery.tier?'has-mastery':''}" aria-label="${mastery.earned} of 15 stars, ${mastery.tier||'no'} mastery">${mastery.tier?'★ '+mastery.tier:'★ '+mastery.earned+'/15'}</b>`;trail.append(sign);
   });
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 100 '+height);svg.setAttribute('preserveAspectRatio','none');svg.classList.add('journey-path');svg.setAttribute('aria-hidden','true');
-  const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d',positions.map((p,i)=>{if(!i)return 'M'+p.x+' '+p.y;const prev=positions[i-1],mid=(prev.y+p.y)/2;return 'C'+prev.x+' '+mid+' '+p.x+' '+mid+' '+p.x+' '+p.y;}).join(' '));svg.append(path);trail.append(svg);
+  const addRoute=(className,d)=>{if(!d)return;const path=document.createElementNS(svg.namespaceURI,'path');path.classList.add(className);path.setAttribute('d',d);path.setAttribute('vector-effect','non-scaling-stroke');path.setAttribute('pathLength','100');svg.append(path);return path;};
+  addRoute('journey-route-shadow',journeyPath(positions));
+  addRoute('journey-route-base',journeyPath(positions));
+  const reveal=journeyReveal&&journeyReveal.to===mapData.currentLevel?journeyReveal:null;
+  addRoute('journey-route-done',journeyPath(positions,0,Math.max(0,reveal&&!prefersLessMotion?reveal.from-1:mapData.currentLevel-1)));
+  if(reveal&&!prefersLessMotion)addRoute('journey-route-reveal',journeyPath(positions,reveal.from-1,reveal.to-1));
+  trail.append(svg);
   mapData.levels.forEach((lv,i)=>{
     const region=getRegionForLevel(lv.id),pos=positions[i];
     const gate=lv.id%5===0;
-    const button=document.createElement('button');button.className='journey-level world-'+region.id+(lv.completed?' completed':'')+(lv.id===mapData.currentLevel?' current':'')+(gate?' chapter-gate':'');button.disabled=lv.locked;button.dataset.level=String(lv.id);button.style.left=pos.x+'%';button.style.top=pos.y+'px';button.setAttribute('aria-label','Level '+lv.id+', '+lv.title+(lv.locked?', locked':', '+lv.stars+' stars'));
-    button.innerHTML='<span>'+(lv.locked?'🔒':lv.id)+'</span><small>'+(lv.completed?'⭐'.repeat(lv.stars):lv.id===mapData.currentLevel?'PLAY':gate?'GATE':'')+'</small>';
+    const button=document.createElement('button');button.className='journey-level world-'+region.id+(lv.completed?' completed':'')+(lv.id===mapData.currentLevel?' current':'')+(gate?' chapter-gate':'')+(reveal?.to===lv.id?' newly-unlocked':'');button.disabled=lv.locked;button.dataset.level=String(lv.id);button.style.left=pos.x+'%';button.style.top=pos.y+'px';button.style.setProperty('--level-accent',region.color);button.setAttribute('aria-label','Level '+lv.id+', '+lv.title+(lv.locked?', locked':', '+lv.stars+' stars'));
+    button.innerHTML=(gate?'<i class="journey-gate-mark" aria-hidden="true">◆</i>':'')+'<span class="journey-level-face"><b>'+(lv.locked?'🔒':lv.id)+'</b></span><small class="journey-level-stars">'+(lv.completed?'⭐'.repeat(lv.stars):lv.id===mapData.currentLevel?'PLAY':'')+'</small>';
     button.onclick=()=>{mapData.selectedRegion=region;showLevelInfo(lv,region);};trail.append(button);
   });
-  requestAnimationFrame(()=>{scroll.scrollTop=Math.max(0,positions[Math.max(0,Math.min(positions.length-1,mapData.currentLevel-1))].y-scroll.clientHeight*.45);});
+  if(reveal){
+    const marker=document.createElement('div');marker.className='journey-unlock-banner';marker.style.left=positions[reveal.to-1].x+'%';marker.style.top=(positions[reveal.to-1].y-86)+'px';marker.setAttribute('role','status');marker.textContent='Level '+reveal.to+' unlocked!';trail.append(marker);
+  }
+  const active=mapData.levels[mapData.currentLevel-1];
+  const dock=document.createElement('div');dock.className='journey-dock';
+  dock.innerHTML=`<div class="journey-dock-copy"><small>${active.completed?'REPLAY':'NEXT STOP'} · LEVEL ${active.id}</small><strong>${active.title}</strong></div><button type="button" class="journey-dock-play" aria-label="Play level ${active.id}">${active.completed?'Replay':'Play'} <span aria-hidden="true">▶</span></button>`;
+  dock.querySelector('button').onclick=()=>{mapData.selectedRegion=currentRegion;showLevelInfo(active,currentRegion);};host.append(dock);
+  requestAnimationFrame(()=>{
+    const target=positions[mapData.currentLevel-1].y-scroll.clientHeight*.48;
+    if(reveal&&!prefersLessMotion){
+      scroll.scrollTop=Math.max(0,positions[reveal.from-1].y-scroll.clientHeight*.48);
+      requestAnimationFrame(()=>{trail.classList.add('journey-revealing');scroll.scrollTo({top:Math.max(0,target),behavior:'smooth'});});
+    }else scroll.scrollTop=Math.max(0,target);
+  });
+  if(reveal)journeyReveal=null;
 }
 
 function renderLevelSelect(){renderMapScreen();}
@@ -228,6 +261,8 @@ function showLevelInfo(lv, region) {
   const popup = document.createElement('div');
   popup.id = 'level-info-popup';
   popup.className='level-popup';popup.setAttribute('role','dialog');popup.setAttribute('aria-modal','true');popup.setAttribute('aria-labelledby','level-popup-title');
+  popup.style.setProperty('--popup-world-image',`url("../images/worlds/${region.image}")`);
+  popup.onclick=event=>{if(event.target===popup)popup.remove();};
   const booster = (type, icon, name, note) => {
     const count = livesData.boosters[type] || 0;
     return `<button type="button" class="level-booster-choice${count ? '' : ' empty'}" data-start-booster="${type}" aria-pressed="false" ${count ? '' : 'disabled'} onclick="toggleStartingBooster('${type}',this)">

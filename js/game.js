@@ -897,7 +897,7 @@ function showOver(){if(!beginResult())return;loseLife();playOver();
 function returnToJourneyFromResult(overlayId){
   document.getElementById(overlayId)?.classList.add('hidden');
   mapData.selectedLevel=null;window._mapLevelSettings=null;
-  goScreen('map');renderMapScreen();
+  goScreen('map');
 }
 function nextLevel(){
   returnToJourneyFromResult('overlay-win');
@@ -914,7 +914,7 @@ function showQuitDialog(){
   // If win/loss overlay already showing, just go home
   const winUp=!document.getElementById('overlay-win').classList.contains('hidden');
   const overUp=!document.getElementById('overlay-over').classList.contains('hidden');
-  if(winUp||overUp){mapData.selectedLevel=null;window._mapLevelSettings=null;goScreen('map');renderMapScreen();return;}
+  if(winUp||overUp){mapData.selectedLevel=null;window._mapLevelSettings=null;goScreen('map');return;}
   if(busy)return;
   pauseGame();document.getElementById('overlay-pause').classList.add('hidden');document.getElementById('overlay-quit').classList.remove('hidden');
 }
@@ -927,7 +927,7 @@ function confirmQuit(){
   // Toast
   const toast=document.createElement('div');toast.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);color:#ff5fa0;font-family:\"Fredoka One\",cursive;padding:10px 24px;border-radius:20px;font-size:0.95rem;z-index:1000;white-space:nowrap;animation:scoreFloat 2s ease forwards;border:1px solid rgba(255,95,160,0.3);';
   toast.textContent='💔 -1 Life';document.body.appendChild(toast);setTimeout(()=>toast.remove(),1500);
-  goScreen('map');renderMapScreen();
+  goScreen('map');
 }
 function cancelQuit(){document.getElementById('overlay-quit').classList.add('hidden');resumeGame();}
 function delay(ms){return new Promise(r=>setTimeout(r,ms)).then(()=>waitIfPaused());}
