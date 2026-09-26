@@ -72,6 +72,7 @@ function completeLevel(levelId, starsCount, finalScore) {
   const next = mapData.levels.find(l => l.id === levelId + 1);
   if (next) { next.locked = false; mapData.currentLevel = Math.max(mapData.currentLevel, levelId + 1); }
   saveMapData();
+  window.CandyCloud?.refreshProfile?.();
   window.CandyLeaderboard?.submit?.({level:levelId,score:finalScore,stars:starsCount});
   window.CandyWorldScene?.setLevel(mapData.currentLevel);
 }
@@ -88,6 +89,10 @@ function getRegionForLevel(levelId) {
 
 function getTotalStars() {
   return mapData.levels.reduce((sum, l) => sum + (l.stars || 0), 0);
+}
+function getRegionMastery(region) {
+  const earned=mapData.levels.filter(level=>level.id>=region.levels[0]&&level.id<=region.levels[1]).reduce((sum,level)=>sum+level.stars,0);
+  return {earned,tier:earned>=15?'Gold':earned>=10?'Silver':earned>=5?'Bronze':'',next:earned<5?5:earned<10?10:earned<15?15:15};
 }
 
 function fmtTimeSt(s) { const m=Math.floor(s/60),sc=s%60; return m+':'+(sc<10?'0':'')+sc; }
@@ -108,7 +113,8 @@ function renderMapScreen(){
     const chapter=document.createElement('section');chapter.className='journey-chapter'+(completed===chapterLevels.length?' is-complete':'')+(chapterLevels.every(level=>level.locked)?' is-locked':'');chapter.dataset.world=region.id;
     chapter.style.top=(positions[first].y-112)+'px';chapter.style.height=(positions[last].y-positions[first].y+224)+'px';chapter.style.setProperty('--chapter-image',`url("../images/worlds/${region.image}")`);chapter.style.setProperty('--chapter-accent',region.color);
     chapter.setAttribute('aria-label',region.name+', '+completed+' of '+chapterLevels.length+' levels complete');trail.append(chapter);
-    const sign=document.createElement('div');sign.className='journey-region';sign.style.top=(positions[first].y-96)+'px';sign.innerHTML=`<span aria-hidden="true">${region.emoji}</span><span><strong>${region.name}</strong><small>${region.description}</small></span><b>${completed}/5</b>`;trail.append(sign);
+    const mastery=getRegionMastery(region);
+    const sign=document.createElement('div');sign.className='journey-region';sign.style.top=(positions[first].y-96)+'px';sign.innerHTML=`<span aria-hidden="true">${region.emoji}</span><span><strong>${region.name}</strong><small>${mastery.tier?mastery.tier+' mastery earned':mastery.earned+'/'+mastery.next+' stars to Bronze mastery'}</small></span><b class="journey-mastery ${mastery.tier?'has-mastery':''}" aria-label="${mastery.earned} of 15 stars, ${mastery.tier||'no'} mastery">${mastery.tier?'★ '+mastery.tier:'★ '+mastery.earned+'/15'}</b>`;trail.append(sign);
   });
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 100 '+height);svg.setAttribute('preserveAspectRatio','none');svg.classList.add('journey-path');svg.setAttribute('aria-hidden','true');
   const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d',positions.map((p,i)=>{if(!i)return 'M'+p.x+' '+p.y;const prev=positions[i-1],mid=(prev.y+p.y)/2;return 'C'+prev.x+' '+mid+' '+p.x+' '+mid+' '+p.x+' '+p.y;}).join(' '));svg.append(path);trail.append(svg);
