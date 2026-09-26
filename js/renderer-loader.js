@@ -8,8 +8,11 @@
     return loading;
   }
   const journey=document.getElementById('screen-map'),game=document.getElementById('screen-game');
-  const observer=new MutationObserver(()=>{if(!journey?.classList.contains('hidden')||!game?.classList.contains('hidden'))load();});
+  const isVisible=element=>element&&!element.classList.contains('hidden');
+  const observer=new MutationObserver(()=>{if(isVisible(journey)||isVisible(game))load();});
   if(journey)observer.observe(journey,{attributes:true,attributeFilter:['class']});
   if(game)observer.observe(game,{attributes:true,attributeFilter:['class']});
   window.CandyRenderer={load,get loading(){return !!loading;}};
+  // A saved game can be restored before this loader runs, so no class change follows.
+  if(isVisible(journey)||isVisible(game))load();
 })();

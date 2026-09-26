@@ -12,6 +12,8 @@ html,body{inline-size:100%;block-size:var(--app-height);min-block-size:0;positio
 .screen{inset:0;inline-size:100%;block-size:var(--app-height);min-inline-size:0;min-block-size:0}
 .screen:not(#screen-game){max-inline-size:none;left:0;transform:none;padding-left:max(var(--phone-pad),var(--safe-left));padding-right:max(var(--phone-pad),var(--safe-right))}
 .screen.hidden:not(#screen-game){transform:scale(.985)}
+.screen#screen-start{left:50%;transform:translateX(-50%)}
+.screen#screen-start.hidden{transform:translateX(-50%) scale(.985)}
 #screen-start{inline-size:min(100%,600px);left:50%;transform:translateX(-50%);padding-top:max(12px,var(--safe-top));padding-bottom:max(12px,var(--safe-bottom));gap:clamp(8px,2dvh,18px)}
 #screen-start.hidden{transform:translateX(-50%) scale(.985)}
 .home-top,.home-profile,.home-actions,.home-hero,.home-play,.home-nav{min-inline-size:0}
@@ -58,7 +60,7 @@ html,body{inline-size:100%;block-size:var(--app-height);min-block-size:0;positio
 
 html.game-3d #screen-game:not(.hidden){inline-size:min(100%,640px)!important;block-size:var(--app-height)!important;padding-left:var(--safe-left)!important;padding-right:var(--safe-right)!important}
 html.game-3d .mobile-hud{padding-top:max(5px,var(--safe-top));padding-left:max(10px,var(--safe-left));padding-right:max(10px,var(--safe-right))}
-html.game-3d .mobile-controls{padding-left:max(10px,var(--safe-left));padding-right:max(10px,var(--safe-right));padding-bottom:max(6px,var(--safe-bottom))}
+html.game-3d .mobile-controls{padding-left:max(10px,var(--safe-left));padding-right:max(10px,var(--safe-right));padding-bottom:max(14px,calc(var(--safe-bottom) + 8px))}
 html.game-3d #screen-game .ingame-booster-btn{min-inline-size:0;max-inline-size:none}
 html.game-3d #screen-game .ingame-booster-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
